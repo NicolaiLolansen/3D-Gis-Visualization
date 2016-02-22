@@ -77,8 +77,10 @@
   <ItemGroup>
     <Content Include="3D\dat-gui_panel.js" />
     <Content Include="3D\index.html" />
+    <Content Include="3D\jquery-2.2.0.js" />
     <Content Include="3D\Qgis2threejs.css" />
     <Content Include="3D\Qgis2threejs.js" />
+    <Content Include="3D\Qgis2threejsOld.js" />
     <Content Include="3D\Test.js" />
     <Content Include="Web.config" />
   </ItemGroup>
