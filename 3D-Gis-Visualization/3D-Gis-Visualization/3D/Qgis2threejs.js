@@ -745,18 +745,46 @@ limitations:
       for (var i = 0; i <= layer.f.length - 10; i++) {
         console.log(layer.f[i].a[0]);
       }
-
-
     app.selectedLayerId = layerId;
     app.selectedFeatureId = featureId;
     app.highlightObject = highlightObject;
   };
 
+
+  app.getList = function () {
+
+      var d = new Date().getTime(); // for now
+
+          var host = "http://dawa.aws.dk";
+          var parametre = {};
+          parametre.adresser = "grønnevej";
+
+          $.ajax({
+              url: "http://dawa.aws.dk/adresser?vejnavn=Gammel%20Kongevej",
+              dataType: "json",
+          })
+          .then(function (response) {
+              if (response.length === 1) {
+                  console.log("Bad stuff");
+              }
+              else {
+                  console.log("Good stuff" + response.length);
+                  var n = new Date().getTime();
+                  var total = n - d;
+                  console.log("Time elapsed for DAWA Call: " + total);
+              }
+          })
+          .fail(function (jqXHR, textStatus, errorThrown) {
+              console.log("Failed jquery");
+          });
+          
+  }
+
   // Called from *Controls.js when canvas is clicked
   app.canvasClicked = function (e) {
     var canvasOffset = app._offset(app.renderer.domElement);
     var objs = app.intersectObjects(e.clientX - canvasOffset.left, e.clientY - canvasOffset.top);
-
+    app.getList();
     for (var i = 0, l = objs.length; i < l; i++) {
       var obj = objs[i];
       if (!obj.object.visible) continue;
