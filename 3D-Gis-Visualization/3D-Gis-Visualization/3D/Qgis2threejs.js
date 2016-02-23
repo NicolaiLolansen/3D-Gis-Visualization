@@ -175,7 +175,7 @@ limitations:
 
     // scene
     app.scene = new THREE.Scene();
-    app.scene.autoUpdate = false;
+    app.scene.autoUpdate = true;
 
     app._queryableObjects = [];
     app.queryObjNeedsUpdate = true;
@@ -347,7 +347,7 @@ limitations:
 
   app.buildDefaultCamera = function () {
     app.camera = new THREE.PerspectiveCamera(45, app.width / app.height, 0.1, 1000);
-    app.camera.position.set(0, -100, 100);
+    app.camera.position.set(0, 0, 10);
   };
 
   app.currentViewUrl = function () {
@@ -582,6 +582,8 @@ limitations:
 
     // clicked coordinates
     var pt = app.project.toMapCoordinates(point.x, point.y, point.z);
+    console.log(point.x + " " + point.y);
+    
     r.push('<table class="coords">');
     r.push("<caption>Clicked coordinates</caption>");
     r.push("<tr><td>");
@@ -590,7 +592,9 @@ limitations:
     else {
       var lonLat = proj4(app.project.proj).inverse([pt.x, pt.y]);
       r.push(Q3D.Utils.convertToDMS(lonLat[1], lonLat[0]) + ", Elev. " + pt.z.toFixed(2));
+      
     }
+    app.getList(pt.x.toFixed(2), pt.y.toFixed(2));
 
     r.push("</td></tr></table>");
 
@@ -724,54 +728,94 @@ limitations:
       obj.material = high_mat;
     };
 
+ 
     // create a highlight object (if layer type is Point, slightly bigger than the object)
     var highlightObject = new THREE.Group();
     var clone, s = (layer.type == Q3D.LayerType.Point) ? 1.01 : 1;
+    var sprite = makeTextSprite(app.address, 24);
 
     for (var i = 0, l = f.objs.length; i < l; i++) {
       clone = f.objs[i].clone();
+      console.log(clone.matrixWorld);
       clone.traverse(setMaterial);
       if (s != 1) clone.scale.set(clone.scale.x * s, clone.scale.y * s, clone.scale.z * s);
+
+
       highlightObject.add(clone);
+      
     }
 
+      //Calculates the position of the cloned object in world coordinates
+    clone.geometry.computeBoundingBox();
+    var boundingBox = clone.geometry.boundingBox;
+
+    var position = new THREE.Vector3();
+    position.subVectors(boundingBox.max, boundingBox.min);
+    position.multiplyScalar(0.5);
+    position.add(boundingBox.min);
+
+    position.applyMatrix4(clone.matrixWorld);
+    sprite.position.set(position.x, position.y, 1.2);
     // add the highlight object to the scene
     app.scene.add(highlightObject);
-
+    app.scene.updateMatrixWorld(true);
+    app.scene.add(sprite);
       /*
       Makeshift method to iterate over all buildings in the scene
       */
-       
-      for (var i = 0; i <= layer.f.length - 10; i++) {
-        console.log(layer.f[i].a[0]);
-      }
+     // for (var i = 0; i <= layer.f.length - 10; i++) {
+     //   console.log(layer.f[i].a[0]);
+     // }
     app.selectedLayerId = layerId;
     app.selectedFeatureId = featureId;
     app.highlightObject = highlightObject;
   };
+   var makeTextSprite = function(message, fontsize) {
+        var ctx, texture, sprite, spriteMaterial, 
+            canvas = document.createElement('canvas');
+        ctx = canvas.getContext('2d');
+        ctx.font = fontsize + "px Arial";
 
+        // setting canvas width/height before ctx draw, else canvas is empty
+        canvas.width = ctx.measureText(message).width;
+        canvas.height = fontsize * 2; // fontsize * 1.5
 
-  app.getList = function () {
+        // after setting the canvas width/height we have to re-set font to apply!?! looks like ctx reset
+        ctx.font = fontsize + "px Arial";        
+        ctx.fillStyle = "rgba(255,0,0,1)";
+        ctx.fillText(message, 0, fontsize);
 
+        texture = new THREE.Texture(canvas);
+        texture.minFilter = THREE.LinearFilter; // NearestFilter;
+        texture.needsUpdate = true;
+
+        spriteMaterial = new THREE.SpriteMaterial({map : texture});
+        sprite = new THREE.Sprite(spriteMaterial);
+        return sprite;   
+    }
+
+  app.getList = function (xCor, yCor) {
       var d = new Date().getTime(); // for now
 
           var host = "http://dawa.aws.dk";
           var parametre = {};
-          parametre.adresser = "grønnevej";
-
+          var srid = "";
           $.ajax({
-              url: "http://dawa.aws.dk/adresser?vejnavn=Gammel%20Kongevej",
+              url: "http://dawa.aws.dk/adgangsadresser/reverse?x=" + xCor + "&y=" + yCor + "&srid=25832",
               dataType: "json",
           })
-          .then(function (response) {
-              if (response.length === 1) {
+          .done(function (response) {
+              if (response.length === 0) {
                   console.log("Bad stuff");
               }
               else {
-                  console.log("Good stuff" + response.length);
+                  app.address = response.vejstykke.adresseringsnavn + " " + response.husnr;
+                  console.log("Good stuff");
+
                   var n = new Date().getTime();
                   var total = n - d;
                   console.log("Time elapsed for DAWA Call: " + total);
+                       
               }
           })
           .fail(function (jqXHR, textStatus, errorThrown) {
@@ -784,7 +828,6 @@ limitations:
   app.canvasClicked = function (e) {
     var canvasOffset = app._offset(app.renderer.domElement);
     var objs = app.intersectObjects(e.clientX - canvasOffset.left, e.clientY - canvasOffset.top);
-    app.getList();
     for (var i = 0, l = objs.length; i < l; i++) {
       var obj = objs[i];
       if (!obj.object.visible) continue;
@@ -803,11 +846,12 @@ limitations:
         object = object.parent;
       }
 
-      // highlight clicked object
+      
+      app.showQueryResult(obj.point, layerId, featureId);
+
+        // highlight clicked object
       app.highlightFeature((layerId === undefined) ? null : layerId,
                             (featureId === undefined) ? null : featureId);
-
-      app.showQueryResult(obj.point, layerId, featureId);
 
       if (Q3D.Options.debugMode && object instanceof THREE.Mesh) {
         var face = obj.face,
