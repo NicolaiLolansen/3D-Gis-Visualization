@@ -14,7 +14,8 @@ Q3D.gui = {
       rot: false,  // auto rotation
       wf: false    // wireframe mode
     },
-    i: Q3D.application.showInfo
+    i: Q3D.application.showInfo,
+    FOTsearch: '0000000000'
   },
 
   // initialize gui
@@ -25,6 +26,7 @@ Q3D.gui = {
     if (setupDefaultItems === undefined || setupDefaultItems == true) {
       this.addLayersFolder();
       this.addCustomPlaneFolder();
+      this.addFunctionsFolder();
       if (Q3D.isTouchDevice) this.addCommandsFolder();
       this.addHelpButton();
     }
@@ -135,6 +137,23 @@ Q3D.gui = {
       });
     }
     folder.add(this.parameters.cmd, 'wf').name('Wireframe Mode').onChange(Q3D.application.setWireframeMode);
+  },
+
+  addFunctionsFolder: function () {
+      var parameters = this.parameters;
+      var funcFolder = this.gui.addFolder('Functions');
+      funcFolder.add(this.parameters, 'FOTsearch').onFinishChange(
+          /*
+            This is where a search function should be called/added
+            The user input for FOT-parameter can be accessed with: parameters.FOTsearch
+            Right now a simple function has been made to print the FOT
+            Should be a function call with parameters.FOTsearch as argument
+          */
+          function () {                            // I'm a
+              console.log(parameters.FOTsearch)    // temporary
+          }                                        // placeholder 
+
+          ).name('Search for FOT');
   },
 
   addHelpButton: function () {
