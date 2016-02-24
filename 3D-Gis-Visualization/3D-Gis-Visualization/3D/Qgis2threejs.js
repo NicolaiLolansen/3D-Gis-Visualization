@@ -732,7 +732,7 @@ limitations:
     // create a highlight object (if layer type is Point, slightly bigger than the object)
     var highlightObject = new THREE.Group();
     var clone, s = (layer.type == Q3D.LayerType.Point) ? 1.01 : 1;
-    var sprite = makeTextSprite(app.address, 24);
+    var sprite = app.makeTextSprite(app.address, 24);
 
     for (var i = 0, l = f.objs.length; i < l; i++) {
       clone = f.objs[i].clone();
@@ -742,7 +742,6 @@ limitations:
 
 
       highlightObject.add(clone);
-      
     }
 
       //Calculates the position of the cloned object in world coordinates
@@ -770,60 +769,93 @@ limitations:
     app.selectedFeatureId = featureId;
     app.highlightObject = highlightObject;
   };
-   var makeTextSprite = function(message, fontsize) {
-        var ctx, texture, sprite, spriteMaterial, 
-            canvas = document.createElement('canvas');
-        ctx = canvas.getContext('2d');
-        ctx.font = fontsize + "px Arial";
 
-        // setting canvas width/height before ctx draw, else canvas is empty
-        canvas.width = ctx.measureText(message).width;
-        canvas.height = fontsize * 2; // fontsize * 1.5
+  app.makeTextSprite = function (message, fontsize) {
+      var ctx, texture, sprite, spriteMaterial,
+          canvas = document.createElement('canvas');
+      ctx = canvas.getContext('2d');
+      ctx.font = fontsize + "px Arial";
 
-        // after setting the canvas width/height we have to re-set font to apply!?! looks like ctx reset
-        ctx.font = fontsize + "px Arial";        
-        ctx.fillStyle = "rgba(255,0,0,1)";
-        ctx.fillText(message, 0, fontsize);
+      // setting canvas width/height before ctx draw, else canvas is empty
+      canvas.width = ctx.measureText(message).width;
+      canvas.height = fontsize * 2; // fontsize * 1.5
 
-        texture = new THREE.Texture(canvas);
-        texture.minFilter = THREE.LinearFilter; // NearestFilter;
-        texture.needsUpdate = true;
+      // after setting the canvas width/height we have to re-set font to apply!?! looks like ctx reset
+      ctx.font = fontsize + "px Arial";
+      ctx.fillStyle = "rgba(255,0,0,1)";
+      ctx.fillText(message, 0, fontsize);
 
-        spriteMaterial = new THREE.SpriteMaterial({map : texture});
-        sprite = new THREE.Sprite(spriteMaterial);
-        return sprite;   
-    }
+      texture = new THREE.Texture(canvas);
+      texture.minFilter = THREE.LinearFilter; // NearestFilter;
+      texture.needsUpdate = true;
+
+      spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+      sprite = new THREE.Sprite(spriteMaterial);
+      return sprite;
+  };
+
+ 
 
   app.getList = function (xCor, yCor) {
       var d = new Date().getTime(); // for now
 
-          var host = "http://dawa.aws.dk";
-          var parametre = {};
-          var srid = "";
-          $.ajax({
-              url: "http://dawa.aws.dk/adgangsadresser/reverse?x=" + xCor + "&y=" + yCor + "&srid=25832",
-              dataType: "json",
-          })
-          .done(function (response) {
-              if (response.length === 0) {
-                  console.log("Bad stuff");
-              }
-              else {
-                  app.address = response.vejstykke.adresseringsnavn + " " + response.husnr;
-                  console.log("Good stuff");
+      var host = "http://dawa.aws.dk";
+      var parametre = {};
+      var srid = "";
+      $.ajax({
+          url: "http://dawa.aws.dk/adgangsadresser/reverse?x=" + xCor + "&y=" + yCor + "&srid=25832",
+          dataType: "json",
+      })
+      .done(function (response) {
+          if (response.length === 0) {
+              console.log("Bad stuff");
+          }
+          else {
+              app.address = response.vejstykke.adresseringsnavn + " " + response.husnr;
+              console.log("Good stuff");
 
-                  var n = new Date().getTime();
-                  var total = n - d;
-                  console.log("Time elapsed for DAWA Call: " + total);
-                       
-              }
-          })
-          .fail(function (jqXHR, textStatus, errorThrown) {
-              console.log("Failed jquery");
-          });
-          
-  }
+              var n = new Date().getTime();
+              var total = n - d;
+              console.log("Time elapsed for DAWA Call: " + total);
 
+          }
+      })
+      .fail(function (jqXHR, textStatus, errorThrown) {
+          console.log("Failed jquery");
+      });
+
+  };
+
+  app.searchBuilding = function (value) {
+      
+      var layertype = 1; //For polygons
+      var featuretype = 0; //for FOT_ID
+
+
+      for (var i = 0; i < app.project.layers[layertype].f.length; i++) {
+          if (app.project.layers[layertype].f[i].a[featuretype] == value) {
+              app.highlightFeature(layertype, i);
+              console.log("Highlighted building with FOT_ID: " + value);
+
+             app.project.layers[layertype].f[i].objs[0].geometry.computeBoundingBox();
+           
+             var boundingBox = app.project.layers[layertype].f[i].objs[0].geometry.boundingBox;
+
+             var position = new THREE.Vector3();
+             position.subVectors(boundingBox.max, boundingBox.min);
+             position.multiplyScalar(0.5);
+             position.add(boundingBox.min);
+
+             app.scene.updateMatrixWorld();
+             position.applyMatrix4(app.project.layers[layertype].f[i].objs[0].matrixWorld);
+
+             console.log(app.project.layers[layertype].f[i].objs[0].geometry);
+             app.camera.position.set(position.x, position.y, 10);
+             app.controls.target = position;
+          }
+      }
+  
+  };
   // Called from *Controls.js when canvas is clicked
   app.canvasClicked = function (e) {
     var canvasOffset = app._offset(app.renderer.domElement);
@@ -853,6 +885,7 @@ limitations:
       app.highlightFeature((layerId === undefined) ? null : layerId,
                             (featureId === undefined) ? null : featureId);
 
+      console.log(featureId);
       if (Q3D.Options.debugMode && object instanceof THREE.Mesh) {
         var face = obj.face,
             geom = object.geometry;

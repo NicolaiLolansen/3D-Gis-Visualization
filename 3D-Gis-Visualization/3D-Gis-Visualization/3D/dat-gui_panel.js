@@ -142,18 +142,21 @@ Q3D.gui = {
   addFunctionsFolder: function () {
       var parameters = this.parameters;
       var funcFolder = this.gui.addFolder('Functions');
-      funcFolder.add(this.parameters, 'FOTsearch').onFinishChange(
-          /*
+
+         /*
             This is where a search function should be called/added
             The user input for FOT-parameter can be accessed with: parameters.FOTsearch
             Right now a simple function has been made to print the FOT
             Should be a function call with parameters.FOTsearch as argument
-          */
-          function () {                            // I'm a
-              console.log(parameters.FOTsearch)    // temporary
-          }                                        // placeholder 
 
-          ).name('Search for FOT');
+            Jeg har ændret strukturen, det andet virkede ikke rigtigt (Har kopieret den fra wireframe mode, og nu virker det)
+          */
+
+      funcFolder.add(this.parameters, 'FOTsearch').name('Search for FOT').onFinishChange(function (value) {
+          Q3D.application.searchBuilding(value); //Kalder til qgis2threejs.js med værdien fra feltet
+      });
+          
+
   },
 
   addHelpButton: function () {
