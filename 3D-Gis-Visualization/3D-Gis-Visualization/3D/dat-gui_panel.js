@@ -25,9 +25,24 @@ Q3D.gui = {
     if (setupDefaultItems === undefined || setupDefaultItems == true) {
       this.addLayersFolder();
       this.addCustomPlaneFolder();
+      this.addLoadingButtons();
       if (Q3D.isTouchDevice) this.addCommandsFolder();
       this.addHelpButton();
     }
+  },
+
+  addLoadingButtons: function () {
+      var dataFolder = this.gui.addFolder('Data Management');
+      dataFolder.add('Load');
+      /*
+      dataFolder.add(parameters.lyr[i], 'Load').name('Load').onChange(function (value) {
+          var file = File("./randdata.csv");
+          Papa.parse(file, {
+              complete: function (results) {
+                  console.log(results);
+              }
+          });
+      }); */
   },
 
   addLayersFolder: function () {
