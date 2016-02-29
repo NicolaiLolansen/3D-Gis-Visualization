@@ -17,7 +17,7 @@ Q3D.Options = {
   frame: {color: 0, bottomZ: -1.5},
   label: {visible: true, connectorColor: 0xc0c0d0, autoSize: false, minFontSize: 10},
   qmarker: {r: 0.25, c: 0xffff00, o: 0.8},
-  debugMode: true,
+  debugMode: false,
   exportMode: false,
   jsonLoader: "JSONLoader"  // JSONLoader or ObjectLoader
 };
@@ -37,7 +37,7 @@ Q3D.$ = function (elementId) {
 /*
 Q3D.Project - Project data holder
 
-ptrams: title, crs, proj, baseExtent, rotation, width, zExaggeration, zShift, wgs84Center
+params: title, crs, proj, baseExtent, rotation, width, zExaggeration, zShift, wgs84Center
 */
 Q3D.Project = function (params) {
   for (var k in params) {
@@ -168,7 +168,7 @@ limitations:
 
     // WebGLRenderer
     var bgcolor = Q3D.Options.bgcolor;
-    app.renderer = new THREE.WebGLRenderer({alpha: true, antialias: true});
+    app.renderer = new THREE.WebGLRenderer({alpha: true});
     app.renderer.setSize(app.width, app.height);
     app.renderer.setClearColor(bgcolor || 0, (bgcolor === null) ? 0 : 1);
     app.container.appendChild(app.renderer.domElement);
@@ -176,16 +176,10 @@ limitations:
     // scene
     app.scene = new THREE.Scene();
     app.scene.autoUpdate = true;
-    app.scene.fog = new THREE.Fog(0x005C7A, 10, 50);
-    app.scene.fog.color.setHSL( 1, 1, 1);
+
     app._queryableObjects = [];
     app.queryObjNeedsUpdate = true;
 
-    var geometry = new THREE.SphereGeometry( 50, 32, 32); 
-    var material = new THREE.MeshBasicMaterial( {color: 0x3000ff} ); 
-    material.side = THREE.BackSide;
-    var sphere = new THREE.Mesh( geometry, material ); 
-    app.scene.add( sphere );
     // label
     app.labelVisibility = Q3D.Options.label.visible;
     app.labelConnectorGroup = new THREE.Group();
@@ -353,7 +347,7 @@ limitations:
 
   app.buildDefaultCamera = function () {
     app.camera = new THREE.PerspectiveCamera(45, app.width / app.height, 0.1, 1000);
-    app.camera.position.set(0, -5, 10);
+    app.camera.position.set(0, 0, 10);
   };
 
   app.currentViewUrl = function () {
@@ -586,43 +580,10 @@ limitations:
       r.push("</table>");
     }
 
-  console.log(layer.f[2].objs[0].material.color);
-
-    console.log(app.scene.children);
-    
-
-    for( var i = 0; i <= layer.f.length-10; i++){ 
-      
-      //layer.f[i].objs[0].scale.set(1,1,1);
-      var clone = layer.f[i].objs[0].clone();
-      var material = new THREE.MeshBasicMaterial( {color: 0x3000ff * Math.random()} ); 
-      var geometry = clone.geometry;
-      var newMesh = new THREE.Mesh( geometry, material );
-      newMesh.scale.set(1,1,5);
-      app.scene.add(newMesh);
-    }
-
-
-    for (var i = 6; i < app.scene.children.length; i++) {
-      for (var j = 0; j < app.scene.children[i].geometry.faces.length; j++) {
-        app.scene.children[i].geometry.faces[j].color.setRGB(0,0,255*Math.random());
-      };
-    };
-    for (var i = 6; i < app.scene.children.length; i++) {
-      app.scene.remove(app.scene.children[i]);
-    };
-
-    app.scene.remove(app.scene.children[4]);
-
-    for (var i = 5; i < app.scene.children.length; i++) {
-      app.scene.remove(app.scene.children[i]);
-    };
-    console.log(app.scene.children);
-    console.log(clone.geometry.faces.length);
-    console.log(layer);
-
     // clicked coordinates
     var pt = app.project.toMapCoordinates(point.x, point.y, point.z);
+    console.log(point.x + " " + point.y);
+    
     r.push('<table class="coords">');
     r.push("<caption>Clicked coordinates</caption>");
     r.push("<tr><td>");
@@ -631,7 +592,9 @@ limitations:
     else {
       var lonLat = proj4(app.project.proj).inverse([pt.x, pt.y]);
       r.push(Q3D.Utils.convertToDMS(lonLat[1], lonLat[0]) + ", Elev. " + pt.z.toFixed(2));
+      
     }
+    app.getList(pt.x.toFixed(2), pt.y.toFixed(2));
 
     r.push("</td></tr></table>");
 
@@ -642,9 +605,6 @@ limitations:
       var f = layer.f[featureId];
       for (var i = 0, l = layer.a.length; i < l; i++) {
         r.push("<tr><td>" + layer.a[i] + "</td><td>" + f.a[i] + "</td></tr>");
-        if(layer.a[i] == "FOT_ID"){
-          console.log("Det her er fot_ID " + f.a[i]);
-        }
       }
       r.push("</table>");
     }
@@ -746,7 +706,6 @@ limitations:
   };
 
   app.highlightFeature = function (layerId, featureId) {
-
     if (app.highlightObject) {
       // remove highlight object from the scene
       app.scene.remove(app.highlightObject);
@@ -769,50 +728,145 @@ limitations:
       obj.material = high_mat;
     };
 
+ 
     // create a highlight object (if layer type is Point, slightly bigger than the object)
     var highlightObject = new THREE.Group();
     var clone, s = (layer.type == Q3D.LayerType.Point) ? 1.01 : 1;
+    var sprite = app.makeTextSprite(app.address, 24);
 
     for (var i = 0, l = f.objs.length; i < l; i++) {
       clone = f.objs[i].clone();
-      var material = new THREE.MeshBasicMaterial( {color: 0x3000ff} ); 
-      var geometry = clone.geometry;
-      var newMesh = new THREE.Mesh( geometry, material );
-      newMesh.scale.set(2,2,5);
-      app.scene.add(newMesh);
-      console.log(clone);
-      console.log(newMesh);
+      console.log(clone.matrixWorld);
+      clone.traverse(setMaterial);
+      if (s != 1) clone.scale.set(clone.scale.x * s, clone.scale.y * s, clone.scale.z * s);
+
+
+      highlightObject.add(clone);
     }
 
+      //Calculates the position of the cloned object in world coordinates
+    clone.geometry.computeBoundingBox();
+    var boundingBox = clone.geometry.boundingBox;
 
-    highlightObject.traverse(function(child) {
-    child.scale.set(1,1,5);
-    });
+    var position = new THREE.Vector3();
+    position.subVectors(boundingBox.max, boundingBox.min);
+    position.multiplyScalar(0.5);
+    position.add(boundingBox.min);
 
-    
-    
-    console.log(highlightObject);
+    position.applyMatrix4(clone.matrixWorld);
+    sprite.position.set(position.x, position.y, 1.2);
     // add the highlight object to the scene
     app.scene.add(highlightObject);
-
-
+    app.scene.updateMatrixWorld(true);
+    app.scene.add(sprite);
+      /*
+      Makeshift method to iterate over all buildings in the scene
+      */
+     // for (var i = 0; i <= layer.f.length - 10; i++) {
+     //   console.log(layer.f[i].a[0]);
+     // }
     app.selectedLayerId = layerId;
     app.selectedFeatureId = featureId;
     app.highlightObject = highlightObject;
   };
 
+  app.makeTextSprite = function (message, fontsize) {
+      var ctx, texture, sprite, spriteMaterial,
+          canvas = document.createElement('canvas');
+      ctx = canvas.getContext('2d');
+      ctx.font = fontsize + "px Arial";
+
+      // setting canvas width/height before ctx draw, else canvas is empty
+      canvas.width = ctx.measureText(message).width;
+      canvas.height = fontsize * 2; // fontsize * 1.5
+
+      // after setting the canvas width/height we have to re-set font to apply!?! looks like ctx reset
+      ctx.font = fontsize + "px Arial";
+      ctx.fillStyle = "rgba(255,0,0,1)";
+      ctx.fillText(message, 0, fontsize);
+
+      texture = new THREE.Texture(canvas);
+      texture.minFilter = THREE.LinearFilter; // NearestFilter;
+      texture.needsUpdate = true;
+
+      spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+      sprite = new THREE.Sprite(spriteMaterial);
+      return sprite;
+  };
+
+ 
+
+  app.getList = function (xCor, yCor) {
+      var d = new Date().getTime(); // for now
+
+      var host = "http://dawa.aws.dk";
+      var parametre = {};
+      var srid = "";
+      $.ajax({
+          url: "http://dawa.aws.dk/adgangsadresser/reverse?x=" + xCor + "&y=" + yCor + "&srid=25832",
+          dataType: "json",
+      })
+      .done(function (response) {
+          if (response.length === 0) {
+              console.log("Bad stuff");
+          }
+          else {
+              app.address = response.vejstykke.adresseringsnavn + " " + response.husnr;
+              console.log("Good stuff");
+
+              var n = new Date().getTime();
+              var total = n - d;
+              console.log("Time elapsed for DAWA Call: " + total);
+
+          }
+      })
+      .fail(function (jqXHR, textStatus, errorThrown) {
+          console.log("Failed jquery");
+      });
+
+  };
+
+  app.searchBuilding = function (value) {
+      
+      var layertype = 1; //For polygons
+      var featuretype = 0; //for FOT_ID
+
+
+      for (var i = 0; i < app.project.layers[layertype].f.length; i++) {
+          if (app.project.layers[layertype].f[i].a[featuretype] == value) {
+              app.highlightFeature(layertype, i);
+              console.log("Highlighted building with FOT_ID: " + value);
+
+             app.project.layers[layertype].f[i].objs[0].geometry.computeBoundingBox();
+           
+             var boundingBox = app.project.layers[layertype].f[i].objs[0].geometry.boundingBox;
+
+             var position = new THREE.Vector3();
+             position.subVectors(boundingBox.max, boundingBox.min);
+             position.multiplyScalar(0.5);
+             position.add(boundingBox.min);
+
+             app.scene.updateMatrixWorld();
+             position.applyMatrix4(app.project.layers[layertype].f[i].objs[0].matrixWorld);
+
+             console.log(app.project.layers[layertype].f[i].objs[0].geometry);
+             app.camera.position.set(position.x, position.y, 10);
+             app.controls.target = position;
+          }
+      }
+  
+  };
   // Called from *Controls.js when canvas is clicked
   app.canvasClicked = function (e) {
     var canvasOffset = app._offset(app.renderer.domElement);
     var objs = app.intersectObjects(e.clientX - canvasOffset.left, e.clientY - canvasOffset.top);
-
     for (var i = 0, l = objs.length; i < l; i++) {
       var obj = objs[i];
       if (!obj.object.visible) continue;
 
       // query marker
       app.queryMarker.position.set(obj.point.x, obj.point.y, obj.point.z);
-      app.queryMarker.visible = false;
+      app.queryMarker.visible = true;
       app.queryMarker.updateMatrixWorld();
 
       // get layerId and featureId of clicked object
@@ -825,13 +879,13 @@ limitations:
       }
 
       
-      // highlight clicked object
+      app.showQueryResult(obj.point, layerId, featureId);
+
+        // highlight clicked object
       app.highlightFeature((layerId === undefined) ? null : layerId,
                             (featureId === undefined) ? null : featureId);
 
       console.log(featureId);
-      app.showQueryResult(obj.point, layerId, featureId);
-
       if (Q3D.Options.debugMode && object instanceof THREE.Mesh) {
         var face = obj.face,
             geom = object.geometry;
@@ -1289,6 +1343,7 @@ Q3D.MapLayer.prototype = {
     var mat, sum_opacity = 0;
     for (var i = 0, l = this.m.length; i < l; i++) {
       var m = this.m[i];
+
       var opt = {};
       if (m.ds && !Q3D.isIE) opt.side = THREE.DoubleSide;
       if (m.flat) opt.shading = THREE.FlatShading;
@@ -1651,9 +1706,6 @@ Q3D.VectorLayer.prototype.buildLabels = function (parent, parentElement, getPoin
       var conn = new THREE.Line(geom, line_mat);
       conn.userData.layerId = this.index;
       conn.userData.featureId = i;
-
-
-      
       this.labelConnectorGroup.add(conn);
 
       f.aElems.push(e);
@@ -1728,6 +1780,7 @@ Q3D.PointLayer.prototype.build = function (parent) {
       if (scaleZ != 1) mesh.scale.z = scaleZ;
       mesh.userData.layerId = this.index;
       mesh.userData.featureId = fid;
+
       this.addObject(mesh);
       f.objs.push(mesh);
     }
@@ -1992,41 +2045,29 @@ Q3D.PolygonLayer = function (params) {
 Q3D.PolygonLayer.prototype = Object.create(Q3D.VectorLayer.prototype);
 Q3D.PolygonLayer.prototype.constructor = Q3D.PolygonLayer;
 
-var randomFunc = function(){
-      return Math.random();
-    };
-
 Q3D.PolygonLayer.prototype.build = function (parent) {
   var materials = this.materials,
       project = this.project;
 
   if (this.objType == "Extruded") {
-    var createSubObject = function (f, polygon, z, r) {
+    var createSubObject = function (f, polygon, z) {
       var shape = new THREE.Shape(Q3D.Utils.arrayToVec2Array(polygon[0]));
       for (var i = 1, l = polygon.length; i < l; i++) {
         shape.holes.push(new THREE.Path(Q3D.Utils.arrayToVec2Array(polygon[i])));
-
       }
       var geom = new THREE.ExtrudeGeometry(shape, {bevelEnabled: false, amount: f.h});
       var mesh = new THREE.Mesh(geom, materials[f.m].m);
-    
-      //mesh.material.color.setRGB(r,r*100,r*100);
-      //console.log(mesh.material.color);
       mesh.position.z = z;
       return mesh;
     };
-
-    
 
     var createObject = function (f) {
       if (f.polygons.length == 1) return createSubObject(f, f.polygons[0], f.zs[0]);
 
       var group = new THREE.Group();
       for (var i = 0, l = f.polygons.length; i < l; i++) {
-        group.add(createSubObject(f, f.polygons[i], f.zs[i], randomFunc()));
-        console.log("I was added!");
+        group.add(createSubObject(f, f.polygons[i], f.zs[i]));
       }
-      console.log(group);
       return group;
     };
   }
@@ -2169,11 +2210,8 @@ Q3D.ModelBuilder.Base.prototype = {
 
       f.objs = [];
       for (var i = 0, l = f.pts.length; i < l; i++) {
-        i
         var pt = f.pts[i],
             mesh = this.cloneObject(fet.layerId);
-
-
 
         // rotation
         if (f.rotateX) mesh.applyMatrix(m.makeRotationX(f.rotateX * deg2rad));
