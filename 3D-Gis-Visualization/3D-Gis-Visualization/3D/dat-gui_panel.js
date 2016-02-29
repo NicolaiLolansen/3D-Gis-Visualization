@@ -15,7 +15,8 @@ Q3D.gui = {
       wf: false    // wireframe mode
     },
     i: Q3D.application.showInfo,
-    FOTsearch: '0000000000'
+    FOTsearch: '0000000000',
+    Source: 'https://dl.dropboxusercontent.com/s/wk7gzls6arms9x2/randdata.csv?dl=1'
   },
 
   // initialize gui
@@ -27,7 +28,6 @@ Q3D.gui = {
       this.addLayersFolder();
       this.addCustomPlaneFolder();
       this.addFunctionsFolder();
-      this.addLoadingButtons();
       if (Q3D.isTouchDevice) this.addCommandsFolder();
       this.addHelpButton();
     }
@@ -170,7 +170,15 @@ Q3D.gui = {
       funcFolder.add(this.parameters, 'FOTsearch').name('Search for FOT').onFinishChange(function (value) {
           Q3D.application.searchBuilding(value); //Kalder til qgis2threejs.js med værdien fra feltet
       });
-          
+      
+      funcFolder.add(this.parameters, 'Source').name('Select Data Source').onFinishChange(function (value) {
+          Papa.parse(value, {
+              download: true,
+              complete: function(results) {
+                console.log("Parsing complete:", results);
+              }
+          })
+      })
 
   },
 
