@@ -770,6 +770,92 @@ limitations:
     app.highlightObject = highlightObject;
   };
 
+  app.getbounds = function (url) {
+      //If projection = bla revert
+      console.log(app.project);
+
+     var xmin = app.project.baseExtent[0];
+     var ymin = app.project.baseExtent[1];
+     var xmax = app.project.baseExtent[2];
+     var ymax = app.project.baseExtent[3];
+
+     console.log(app.project.baseExtent[0]);
+     var bbox = "&Bbox=" + xmin + "," + ymin + "," + xmax + "," + ymax
+     console.log("&Bbox=" + xmin + "," + ymin + "," + xmax + "," + ymax);
+
+     console.log(url);
+
+     $.ajax({
+         url: url,
+         dataType: "json",
+     })
+    .success(function (response) {
+        console.log(response);
+
+         for (var i = 0; i < response.features.length; i++) {
+                //Determine geometry type
+         if(response.features[i].geometry.type == "Point") {
+        //If point, create a point object. 
+        //Point object is defined as a yellow sphere for simplicity
+
+             var geometry = new THREE.SphereGeometry(5, 32, 32);
+             var material = new THREE.MeshBasicMaterial({
+                 color: 0xffff00
+             });
+             var sphere = new THREE.Mesh(geometry, material);
+             var x = response.features[i].geometry.coordinates[0];
+             var y = response.features[i].geometry.coordinates[1];
+             var z = 1;
+
+             //Okay we have the width and height, plus the bounding box
+             //Figure out how to calculate mapcoordinates to project coordinates.
+
+             //In each direction
+             var widthP = app.project.width;
+             var heightP = app.project.height;
+
+            var widthM = xmax - xmin;
+            var heightM = ymax - ymin;
+
+            var factorX = widthP / widthM;
+            var factorY = heightP / heightM;
+            
+            console.log("Factors: X " + factorX + " Y: " + factorY);
+
+            var ptx = widthP/2 - ((xmax - x) * factorX);
+            var pty = heightP/2 - ((ymax - y) * factorY);
+
+            // var pt = app.project.toMapCoordinates(x, y, z);
+
+             sphere.position.set(ptx,pty,0);
+             console.log("Sphere was added with coordinates: " + ptx + " " + pty);
+             sphere.scale.set(0.2, 0.2, 0.2);
+             app.scene.add(sphere);
+
+         }
+         else if (response.features[i].geometry.type == "Polygon") {
+
+         }
+        }
+
+
+    })
+    .fail(function (jqXHR, textStatus, errorThrown) {
+        console.log("Failed jquery");
+    });
+    
+      /*
+     Test to build the features 
+       */
+      //WFS contains:
+      //Crs - properties - code (EPSG)
+      //features - objects - geometry - coordinates - 0 1
+      //                              - type (point, polygon etc)
+
+ 
+    
+
+  };
   app.makeTextSprite = function (message, fontsize) {
       var ctx, texture, sprite, spriteMaterial,
           canvas = document.createElement('canvas');
