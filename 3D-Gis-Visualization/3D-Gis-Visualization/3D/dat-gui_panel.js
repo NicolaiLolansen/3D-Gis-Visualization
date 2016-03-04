@@ -16,7 +16,7 @@ Q3D.gui = {
     },
     i: Q3D.application.showInfo,
     FOTsearch: '0000000000',
-    Source: 'https://dl.dropboxusercontent.com/s/wk7gzls6arms9x2/randdata.csv?dl=1'
+    Source: 'https://dl.dropboxusercontent.com/s/8qyigf5hvqmty0z/csvtest1.csv?dl=1'
   },
 
   // initialize gui
@@ -174,8 +174,10 @@ Q3D.gui = {
       funcFolder.add(this.parameters, 'Source').name('Select Data Source').onFinishChange(function (value) {
           Papa.parse(value, {
               download: true,
+              header: true,
               complete: function(results) {
-                console.log("Parsing complete:", results);
+                  console.log("Parsing complete:", results);
+                  Q3D.application.csvResults = results;
               }
           })
       })
