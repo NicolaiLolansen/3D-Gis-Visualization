@@ -17,7 +17,7 @@ Q3D.gui = {
     i: Q3D.application.showInfo,
     FOTsearch: '0000000000',
     Source: 'https://dl.dropboxusercontent.com/s/8qyigf5hvqmty0z/csvtest1.csv?dl=1',
-    getbounds: "http://wfs-kbhkort.kk.dk/k101/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=k101:erhv_gravetilladelser_aktiv&outputFormat=json"
+    getbounds: "http://wfs-kbhkort.kk.dk/k101/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=k101:storbyhaver&outputFormat=json"
   },
 
   // initialize gui

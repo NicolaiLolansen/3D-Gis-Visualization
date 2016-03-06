@@ -206,8 +206,9 @@ limitations:
   };
 
   app.loadProject = function (project) {
-    app.project = project;
-
+      app.project = project;
+      console.log("app.loadProject is called");
+    console.log(project);
     // light
     if (project.buildCustomLights) project.buildCustomLights(app.scene);
     else app.buildDefaultLights(app.scene);
@@ -470,7 +471,17 @@ limitations:
     if (app.queryObjNeedsUpdate) {
       app._queryableObjects = [];
       app.project.layers.forEach(function (layer) {
-        if (layer.visible && layer.queryableObjects.length) app._queryableObjects = app._queryableObjects.concat(layer.queryableObjects);
+          if (layer.visible && layer.queryableObjects.length) {
+              app._queryableObjects = app._queryableObjects.concat(layer.queryableObjects);
+              console.log("Added the queryable objects for normal layer");
+          }
+      });
+      //Custom WFS layer addition - Nicolai
+      app.project.WFSlayers.forEach(function (layer) {
+          if (layer.features.length) {
+              app._queryableObjects = app._queryableObjects.concat(layer.model);
+              console.log("Added the queryable Objects for WFS");
+          }
       });
     }
     return app._queryableObjects;
@@ -482,6 +493,7 @@ limitations:
     var vector = new THREE.Vector3(x, y, 1);
     vector.unproject(app.camera);
     var ray = new THREE.Raycaster(app.camera.position, vector.sub(app.camera.position).normalize());
+    console.log(app.queryableObjects());
     return ray.intersectObjects(app.queryableObjects());
   };
 
@@ -572,12 +584,23 @@ limitations:
   app.showQueryResult = function (point, layerId, featureId) {
     var layer, r = [];
     if (layerId !== undefined) {
-      // layer name
-      layer = app.project.layers[layerId];
-      r.push('<table class="layer">');
-      r.push("<caption>Layer name</caption>");
-      r.push("<tr><td>" + layer.name + "</td></tr>");
-      r.push("</table>");
+        //If layerId is WFS - Nicolai
+        if (layerId == 100) {
+            layer = app.project.WFSlayers[0];
+            r.push('<table class="layer">');
+            r.push("<caption>Layer name</caption>");
+            r.push("<tr><td>" + layer.type + "</td></tr>");
+            r.push("</table>");
+
+        } else {
+            // layer name
+            layer = app.project.layers[layerId];
+            r.push('<table class="layer">');
+            r.push("<caption>Layer name</caption>");
+            r.push("<tr><td>" + layer.name + "</td></tr>");
+            r.push("</table>");
+        }
+     
     }
 
     // clicked coordinates
@@ -602,11 +625,28 @@ limitations:
       // attributes
       r.push('<table class="attrs">');
       r.push("<caption>Attributes</caption>");
+      console.log(layerId);
+      var prop = [];
+
+      for (var proper in layer.a[0]) {
+          prop.push(proper);
+      }
+      console.log(prop);
+      if (layerId == 100) {
+              for (var prop in layer.a[featureId]) {
+                  if (layer.a[featureId].hasOwnProperty(prop)) {
+                     
+                      r.push("<tr><td>" + prop + "</td><td>" + layer.a[featureId][prop] + "</td></tr>");
+                  }
+              }
+      } else {
+
       var f = layer.f[featureId];
       for (var i = 0, l = layer.a.length; i < l; i++) {
         r.push("<tr><td>" + layer.a[i] + "</td><td>" + f.a[i] + "</td></tr>");
       }
       r.push("</table>");
+      }
     }
     app.popup.show(r.join(""));
   };
@@ -786,58 +826,80 @@ limitations:
      console.log(url);
 
      $.ajax({
-         url: url,
+         url: url + bbox,
          dataType: "json",
      })
     .success(function (response) {
         console.log(response);
+        console.log("Found: " + response.features.length + " Features");
 
-         for (var i = 0; i < response.features.length; i++) {
+        if (response.features.length > 0) {
+            if (project.WFSlayers == undefined) {
+                project.WFSlayers = [];
+            }
+            //Create a WFSLayer prototype TODO: change to prototype method
+            project.WFSlayers.push(response);
+            project.WFSlayers[0].model = [];
+            project.WFSlayers[0].a = [];
+            for (var i = 0; i < response.features.length; i++) {
                 //Determine geometry type
-         if(response.features[i].geometry.type == "Point") {
-        //If point, create a point object. 
-        //Point object is defined as a yellow sphere for simplicity
+                if (response.features[i].geometry.type == "Point" || response.features[i].geometry.type == "MultiPoint") {
+                    //If point, create a point object. 
+                    //Point object is defined as a yellow sphere for simplicity
 
-             var geometry = new THREE.SphereGeometry(5, 32, 32);
-             var material = new THREE.MeshBasicMaterial({
-                 color: 0xffff00
-             });
-             var sphere = new THREE.Mesh(geometry, material);
-             var x = response.features[i].geometry.coordinates[0];
-             var y = response.features[i].geometry.coordinates[1];
-             var z = 1;
+                    var geometry = new THREE.CylinderGeometry(5, 5, 20, 32);
+                    var material = new THREE.MeshLambertMaterial({
+                        color: 0xffaaaa
+                    });
+                    var sphere = new THREE.Mesh(geometry, material);
+                    sphere.rotation.x = Math.PI / 2;
+                    var x = response.features[i].geometry.coordinates[0];
+                    var y = response.features[i].geometry.coordinates[1];
+                    var z = 1;
 
-             //Okay we have the width and height, plus the bounding box
-             //Figure out how to calculate mapcoordinates to project coordinates.
+                    //Okay we have the width and height, plus the bounding box
+                    //Figure out how to calculate mapcoordinates to project coordinates.
 
-             //In each direction
-             var widthP = app.project.width;
-             var heightP = app.project.height;
+                    //In each direction
+                    var widthP = app.project.width;
+                    var heightP = app.project.height;
 
-            var widthM = xmax - xmin;
-            var heightM = ymax - ymin;
+                    var widthM = xmax - xmin;
+                    var heightM = ymax - ymin;
 
-            var factorX = widthP / widthM;
-            var factorY = heightP / heightM;
-            
-            console.log("Factors: X " + factorX + " Y: " + factorY);
+                    var factorX = widthP / widthM;
+                    var factorY = heightP / heightM;
 
-            var ptx = widthP/2 - ((xmax - x) * factorX);
-            var pty = heightP/2 - ((ymax - y) * factorY);
+                    console.log("Factors: X " + factorX + " Y: " + factorY);
 
-            // var pt = app.project.toMapCoordinates(x, y, z);
+                    var ptx = widthP / 2 - ((xmax - x) * factorX);
+                    var pty = heightP / 2 - ((ymax - y) * factorY);
 
-             sphere.position.set(ptx,pty,0);
-             console.log("Sphere was added with coordinates: " + ptx + " " + pty);
-             sphere.scale.set(0.2, 0.2, 0.2);
-             app.scene.add(sphere);
+                    // var pt = app.project.toMapCoordinates(x, y, z);
 
-         }
-         else if (response.features[i].geometry.type == "Polygon") {
 
-         }
+
+                    sphere.position.set(ptx, pty, 0.5);
+                    console.log("Sphere was added with coordinates: " + ptx + " " + pty);
+                    sphere.scale.set(0.05, 0.25, 0.05);
+                    //LayerID 100 until we figure out proper indentation - Nicolai
+                    sphere.userData.layerId = 100;
+                    sphere.userData.featureId = i;
+                    // app.scene.add(sphere);
+                    //Okay so instead of adding a sphere to the scene, we can add the sphere to our WFSLayer geometry
+
+                    //Todo create proper indexing somehow.
+                    project.WFSlayers[0].model[i] = sphere;
+                    project.WFSlayers[0].a[i] = project.WFSlayers[0].features[i].properties;
+
+                    app.scene.add(project.WFSlayers[0].model[i]);
+
+                }
+                else if (response.features[i].geometry.type == "Polygon") {
+
+                }
+            }
         }
-
 
     })
     .fail(function (jqXHR, textStatus, errorThrown) {
@@ -847,6 +909,7 @@ limitations:
       /*
      Test to build the features 
        */
+
       //WFS contains:
       //Crs - properties - code (EPSG)
       //features - objects - geometry - coordinates - 0 1
@@ -856,6 +919,9 @@ limitations:
     
 
   };
+
+
+    
   app.makeTextSprite = function (message, fontsize) {
       var ctx, texture, sprite, spriteMaterial,
           canvas = document.createElement('canvas');
@@ -948,8 +1014,8 @@ limitations:
     var objs = app.intersectObjects(e.clientX - canvasOffset.left, e.clientY - canvasOffset.top);
     for (var i = 0, l = objs.length; i < l; i++) {
       var obj = objs[i];
-      if (!obj.object.visible) continue;
-
+     // if (!obj.object.visible) continue;
+      console.log(obj);
       // query marker
       app.queryMarker.position.set(obj.point.x, obj.point.y, obj.point.z);
       app.queryMarker.visible = true;
@@ -957,6 +1023,7 @@ limitations:
 
       // get layerId and featureId of clicked object
       var object = obj.object, layerId, featureId;
+
       while (object) {
         layerId = object.userData.layerId,
         featureId = object.userData.featureId;
