@@ -171,7 +171,7 @@ Q3D.gui = {
       funcFolder.add(this.parameters, 'FOTsearch').name('Search for FOT').onFinishChange(function (value) {
           Q3D.application.searchBuilding(value); //Kalder til qgis2threejs.js med værdien fra feltet
       });
-
+      
       funcFolder.add(this.parameters, 'getbounds').name('Get Bounds!').onFinishChange(function (value) { Q3D.application.getbounds(value) }); //Kalder til qgis2threejs.js med værdien fra feltet
 
       
@@ -184,6 +184,7 @@ Q3D.gui = {
               },
               complete: function(results) {
                 console.log("Parsing complete:", results);
+                  Q3D.application.csvResults = results;
               }
           })
       })

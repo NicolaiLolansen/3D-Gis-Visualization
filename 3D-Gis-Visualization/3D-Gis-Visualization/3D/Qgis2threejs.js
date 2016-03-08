@@ -772,6 +772,8 @@ limitations:
     // create a highlight object (if layer type is Point, slightly bigger than the object)
     var highlightObject = new THREE.Group();
     var clone, s = (layer.type == Q3D.LayerType.Point) ? 1.01 : 1;
+
+    console.log("Trying to make sprite with this label: " + app.address);
     var sprite = app.makeTextSprite(app.address, 24);
 
     for (var i = 0, l = f.objs.length; i < l; i++) {
@@ -784,7 +786,7 @@ limitations:
       highlightObject.add(clone);
     }
 
-      //Calculates the position of the cloned object in world coordinates
+    //Calculates the position of the cloned object in world coordinates
     clone.geometry.computeBoundingBox();
     var boundingBox = clone.geometry.boundingBox;
 
@@ -794,6 +796,7 @@ limitations:
     position.add(boundingBox.min);
 
     position.applyMatrix4(clone.matrixWorld);
+
     sprite.position.set(position.x, position.y, 1.2);
     // add the highlight object to the scene
     app.scene.add(highlightObject);
@@ -802,9 +805,58 @@ limitations:
       /*
       Makeshift method to iterate over all buildings in the scene
       */
-     // for (var i = 0; i <= layer.f.length - 10; i++) {
-     //   console.log(layer.f[i].a[0]);
-     // }
+
+    var max = 0;
+    var min = 9999999;
+    
+    
+    if (app.rancsv == null) {
+
+    for (var i = 0; i < app.csvResults.data.length; i++) {
+        if (parseInt(app.csvResults.data[i].value) < min ){
+            min = parseInt(app.csvResults.data[i].value)
+        }
+        if (parseInt(app.csvResults.data[i].value) > max) {
+            max = parseInt(app.csvResults.data[i].value)
+            console.log("New max!" + " " + max);
+        }
+    }
+
+    for(var i = 0; i < app.csvResults.data.length; i++){
+        var temp = 0;
+        temp = (app.csvResults.data[i].value - min) / (max - min);
+        app.csvResults.data[i].value = temp;
+    }
+
+    console.log("CSV MIN: " + min + " CSV MAX: " + max)
+    console.log(app.csvResults.data);
+    console.log(app.csvResults.data.length);
+
+    console.log(layer.f);
+
+     for (var i = 0; i < layer.f.length; i++) {
+         for (var j = 0; j < app.csvResults.data.length; j++) {
+             if (layer.f[i].a[0] == app.csvResults.data[j].FOT) {
+                 layer.f[i].objs[0].scale.set(1, 1, app.csvResults.data[j].value*2);
+
+                 var redness = Math.round(app.csvResults.data[j].value * 255);
+                 var greenness = Math.round(255 - (Math.round(app.csvResults.data[j].value * 255)));
+
+                 console.log("rgb(" + redness + ", " + greenness + ", 0)");
+                 var material = new THREE.MeshBasicMaterial({ color: "rgb(" + redness + ", " + greenness + ", 0)", opacity: 1});
+                 layer.f[i].objs[0].material = material;
+             }
+         }
+     }
+     app.rancsv = true;
+     }
+  
+    console.log("Current CSV results: ");
+    console.log(app.csvResults);
+
+
+
+
     app.selectedLayerId = layerId;
     app.selectedFeatureId = featureId;
     app.highlightObject = highlightObject;
@@ -958,13 +1010,22 @@ limitations:
           url: "http://dawa.aws.dk/adgangsadresser/reverse?x=" + xCor + "&y=" + yCor + "&srid=25832",
           dataType: "json",
       })
-      .done(function (response) {
+      .success(function (response) {
           if (response.length === 0) {
               console.log("Bad stuff");
           }
           else {
               app.address = response.vejstykke.adresseringsnavn + " " + response.husnr;
-              console.log("Good stuff");
+              
+              /*
+              Makeshift method to iterate over all buildings in the scene
+              */
+              // for (var i = 0; i <= layer.f.length - 10; i++) {
+              //   console.log(layer.f[i].a[0]);
+              // }
+              //app.selectedLayerId = layerId;
+              //app.selectedFeatureId = featureId;
+           
 
               var n = new Date().getTime();
               var total = n - d;
