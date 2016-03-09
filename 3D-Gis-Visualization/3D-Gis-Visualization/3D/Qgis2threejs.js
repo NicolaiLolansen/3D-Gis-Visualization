@@ -862,10 +862,31 @@ limitations:
     app.highlightObject = highlightObject;
   };
 
+
+  app.calculatebbox = function (num) {
+      var xmin = parseFloat(app.project.baseExtent[0]);
+      var ymin = parseFloat(app.project.baseExtent[1]);
+      var xmax = parseFloat(app.project.baseExtent[2]);
+      var ymax = parseFloat(app.project.baseExtent[3]);
+
+      var tilex = parseFloat((xmax - xmin) / num);
+      var tiley = parseFloat((ymax - ymin) / num);
+
+      console.log(tilex + xmin);
+
+     var url = "http://kortforsyningen.kms.dk/service?servicename=orto_foraar&request=GetMap&service=WMS&version=1.1.1&LOGIN=Bydata&PASSWORD=Qby2016%21&layers=orto_foraar&width=780&height=330&format=image%2Fpng&srs=EPSG%3A25832"
+      for (var row = 0; row < num; row++) {
+          for (var column = 0; column < num; column++){
+              console.log("bbox=" + (xmin + (row * tilex)) + "," + (ymin + (column * tiley)) + "," + (xmin + ((row + 1) * tilex)) + "," + (ymin + ((column + 1) * tiley)));
+              console.log(url + "&bbox=" + (xmin + (row * tilex)) + "," + (ymin + (column * tiley)) + "," + (xmin + ((row + 1) * tilex)) + "," + (ymin + ((column + 1) * tiley)));
+          }
+      }
+  }
+
   app.getbounds = function (url) {
       //If projection = bla revert
       console.log(app.project);
-
+      app.calculatebbox(1);
      var xmin = app.project.baseExtent[0];
      var ymin = app.project.baseExtent[1];
      var xmax = app.project.baseExtent[2];
@@ -998,7 +1019,27 @@ limitations:
       return sprite;
   };
 
- 
+  app.mapTiles = function () {
+
+      var url = {}
+
+      url.site = "http://kortforsyningen.kms.dk/";
+      url.servicename = "/service?servicename=orto_foraar";
+      url.request = "request=GetMap";
+      url.service = "service=WMS";
+      url.version = "version=1.1.1";
+      url.login = "LOGIN=Bydata&PASSWORD=Qby2016!";
+      url.layers = "layers=orto_foraar";
+      url.format = "format=image%2Fpng"
+      url.crs = "srs=EPSG%3A25832";
+
+      
+      //Calculate bounding box
+      //Calculate dimensions of the image (Avoid resampling
+
+
+
+  }
 
   app.getList = function (xCor, yCor) {
       var d = new Date().getTime(); // for now
