@@ -17,6 +17,8 @@ Q3D.gui = {
     i: Q3D.application.showInfo,
     FOTsearch: '0000000000',
     Source: 'https://dl.dropboxusercontent.com/s/8qyigf5hvqmty0z/csvtest1.csv?dl=1',
+    getParseResult: getAllData,
+    getParseSources: getSources,
     getbounds: "http://wfs-kbhkort.kk.dk/k101/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=k101:storbyhaver&outputFormat=json"
   },
 
@@ -159,14 +161,6 @@ Q3D.gui = {
       var parameters = this.parameters;
       var funcFolder = this.gui.addFolder('Functions');
 
-         /*
-            This is where a search function should be called/added
-            The user input for FOT-parameter can be accessed with: parameters.FOTsearch
-            Right now a simple function has been made to print the FOT
-            Should be a function call with parameters.FOTsearch as argument
-
-            Jeg har ændret strukturen, det andet virkede ikke rigtigt (Har kopieret den fra wireframe mode, og nu virker det)
-          */
 
       funcFolder.add(this.parameters, 'FOTsearch').name('Search for FOT').onFinishChange(function (value) {
           Q3D.application.searchBuilding(value); //Kalder til qgis2threejs.js med værdien fra feltet
@@ -174,7 +168,7 @@ Q3D.gui = {
       
       funcFolder.add(this.parameters, 'getbounds').name('Get Bounds!').onFinishChange(function (value) { Q3D.application.getbounds(value) }); //Kalder til qgis2threejs.js med værdien fra feltet
 
-      
+      /*
       funcFolder.add(this.parameters, 'Source').name('Select Data Source').onFinishChange(function (value) {
           Papa.parse(value, {
               download: true,
@@ -188,7 +182,14 @@ Q3D.gui = {
               }
           })
       })
+      */
+      funcFolder.add(this.parameters, 'Source').name('Select Data Source').onFinishChange(function (value) {
+          addSource(value);
+          startParse();
+      }),
 
+      funcFolder.add(this.parameters, 'getParseResult').name('Retrieve Data');
+      funcFolder.add(this.parameters, 'getParseSources').name('Retrive Sources').onChange(function () {console.log(getSources())});
   },
 
   addHelpButton: function () {
