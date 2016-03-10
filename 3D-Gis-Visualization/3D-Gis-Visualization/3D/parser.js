@@ -35,7 +35,7 @@ function removeSource(url) {
 }
 
 function parseComplete(results) {
-    console.log(results);
+    console.log("Parse Complete");
     data.outputs.push(results.data);
 }
 
@@ -50,6 +50,7 @@ function singleParse(source){
 }
 
 function getAllData() {
+    console.log(data.outputs);
     return data.outputs;
 }
 
