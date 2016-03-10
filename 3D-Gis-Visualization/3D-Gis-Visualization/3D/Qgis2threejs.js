@@ -206,8 +206,9 @@ limitations:
   };
 
   app.loadProject = function (project) {
-    app.project = project;
-
+      app.project = project;
+      console.log("app.loadProject is called");
+    console.log(project);
     // light
     if (project.buildCustomLights) project.buildCustomLights(app.scene);
     else app.buildDefaultLights(app.scene);
@@ -470,7 +471,17 @@ limitations:
     if (app.queryObjNeedsUpdate) {
       app._queryableObjects = [];
       app.project.layers.forEach(function (layer) {
-        if (layer.visible && layer.queryableObjects.length) app._queryableObjects = app._queryableObjects.concat(layer.queryableObjects);
+          if (layer.visible && layer.queryableObjects.length) {
+              app._queryableObjects = app._queryableObjects.concat(layer.queryableObjects);
+              console.log("Added the queryable objects for normal layer");
+          }
+      });
+      //Custom WFS layer addition - Nicolai
+      app.project.WFSlayers.forEach(function (layer) {
+          if (layer.features.length) {
+              app._queryableObjects = app._queryableObjects.concat(layer.model);
+              console.log("Added the queryable Objects for WFS");
+          }
       });
     }
     return app._queryableObjects;
@@ -482,6 +493,7 @@ limitations:
     var vector = new THREE.Vector3(x, y, 1);
     vector.unproject(app.camera);
     var ray = new THREE.Raycaster(app.camera.position, vector.sub(app.camera.position).normalize());
+    console.log(app.queryableObjects());
     return ray.intersectObjects(app.queryableObjects());
   };
 
@@ -572,12 +584,23 @@ limitations:
   app.showQueryResult = function (point, layerId, featureId) {
     var layer, r = [];
     if (layerId !== undefined) {
-      // layer name
-      layer = app.project.layers[layerId];
-      r.push('<table class="layer">');
-      r.push("<caption>Layer name</caption>");
-      r.push("<tr><td>" + layer.name + "</td></tr>");
-      r.push("</table>");
+        //If layerId is WFS - Nicolai
+        if (layerId == 100) {
+            layer = app.project.WFSlayers[0];
+            r.push('<table class="layer">');
+            r.push("<caption>Layer name</caption>");
+            r.push("<tr><td>" + layer.type + "</td></tr>");
+            r.push("</table>");
+
+        } else {
+            // layer name
+            layer = app.project.layers[layerId];
+            r.push('<table class="layer">');
+            r.push("<caption>Layer name</caption>");
+            r.push("<tr><td>" + layer.name + "</td></tr>");
+            r.push("</table>");
+        }
+     
     }
 
     // clicked coordinates
@@ -602,11 +625,28 @@ limitations:
       // attributes
       r.push('<table class="attrs">');
       r.push("<caption>Attributes</caption>");
+      console.log(layerId);
+      var prop = [];
+
+      for (var proper in layer.a[0]) {
+          prop.push(proper);
+      }
+      console.log(prop);
+      if (layerId == 100) {
+              for (var prop in layer.a[featureId]) {
+                  if (layer.a[featureId].hasOwnProperty(prop)) {
+                     
+                      r.push("<tr><td>" + prop + "</td><td>" + layer.a[featureId][prop] + "</td></tr>");
+                  }
+              }
+      } else {
+
       var f = layer.f[featureId];
       for (var i = 0, l = layer.a.length; i < l; i++) {
         r.push("<tr><td>" + layer.a[i] + "</td><td>" + f.a[i] + "</td></tr>");
       }
       r.push("</table>");
+      }
     }
     app.popup.show(r.join(""));
   };
@@ -732,6 +772,8 @@ limitations:
     // create a highlight object (if layer type is Point, slightly bigger than the object)
     var highlightObject = new THREE.Group();
     var clone, s = (layer.type == Q3D.LayerType.Point) ? 1.01 : 1;
+
+    console.log("Trying to make sprite with this label: " + app.address);
     var sprite = app.makeTextSprite(app.address, 24);
 
     for (var i = 0, l = f.objs.length; i < l; i++) {
@@ -744,7 +786,7 @@ limitations:
       highlightObject.add(clone);
     }
 
-      //Calculates the position of the cloned object in world coordinates
+    //Calculates the position of the cloned object in world coordinates
     clone.geometry.computeBoundingBox();
     var boundingBox = clone.geometry.boundingBox;
 
@@ -754,6 +796,7 @@ limitations:
     position.add(boundingBox.min);
 
     position.applyMatrix4(clone.matrixWorld);
+
     sprite.position.set(position.x, position.y, 1.2);
     // add the highlight object to the scene
     app.scene.add(highlightObject);
@@ -762,14 +805,196 @@ limitations:
       /*
       Makeshift method to iterate over all buildings in the scene
       */
-     // for (var i = 0; i <= layer.f.length - 10; i++) {
-     //   console.log(layer.f[i].a[0]);
-     // }
+
+    var max = 0;
+    var min = 9999999;
+    
+    
+    if (app.rancsv == null) {
+
+    for (var i = 0; i < app.csvResults.data.length; i++) {
+        if (parseInt(app.csvResults.data[i].value) < min ){
+            min = parseInt(app.csvResults.data[i].value)
+        }
+        if (parseInt(app.csvResults.data[i].value) > max) {
+            max = parseInt(app.csvResults.data[i].value)
+            console.log("New max!" + " " + max);
+        }
+    }
+
+    for(var i = 0; i < app.csvResults.data.length; i++){
+        var temp = 0;
+        temp = (app.csvResults.data[i].value - min) / (max - min);
+        app.csvResults.data[i].value = temp;
+    }
+
+    console.log("CSV MIN: " + min + " CSV MAX: " + max)
+    console.log(app.csvResults.data);
+    console.log(app.csvResults.data.length);
+
+    console.log(layer.f);
+
+     for (var i = 0; i < layer.f.length; i++) {
+         for (var j = 0; j < app.csvResults.data.length; j++) {
+             if (layer.f[i].a[0] == app.csvResults.data[j].FOT) {
+                 layer.f[i].objs[0].scale.set(1, 1, app.csvResults.data[j].value*2);
+
+                 var redness = Math.round(app.csvResults.data[j].value * 255);
+                 var greenness = Math.round(255 - (Math.round(app.csvResults.data[j].value * 255)));
+
+                 console.log("rgb(" + redness + ", " + greenness + ", 0)");
+                 var material = new THREE.MeshBasicMaterial({ color: "rgb(" + redness + ", " + greenness + ", 0)", opacity: 1});
+                 layer.f[i].objs[0].material = material;
+             }
+         }
+     }
+     app.rancsv = true;
+     }
+  
+    console.log("Current CSV results: ");
+    console.log(app.csvResults);
+
+
+
+
     app.selectedLayerId = layerId;
     app.selectedFeatureId = featureId;
     app.highlightObject = highlightObject;
   };
 
+
+  app.calculatebbox = function (num) {
+      var xmin = parseFloat(app.project.baseExtent[0]);
+      var ymin = parseFloat(app.project.baseExtent[1]);
+      var xmax = parseFloat(app.project.baseExtent[2]);
+      var ymax = parseFloat(app.project.baseExtent[3]);
+
+      var tilex = parseFloat((xmax - xmin) / num);
+      var tiley = parseFloat((ymax - ymin) / num);
+
+      console.log(tilex + xmin);
+
+     var url = "http://kortforsyningen.kms.dk/service?servicename=orto_foraar&request=GetMap&service=WMS&version=1.1.1&LOGIN=Bydata&PASSWORD=Qby2016%21&layers=orto_foraar&width=780&height=330&format=image%2Fpng&srs=EPSG%3A25832"
+      for (var row = 0; row < num; row++) {
+          for (var column = 0; column < num; column++){
+              console.log("bbox=" + (xmin + (row * tilex)) + "," + (ymin + (column * tiley)) + "," + (xmin + ((row + 1) * tilex)) + "," + (ymin + ((column + 1) * tiley)));
+              console.log(url + "&bbox=" + (xmin + (row * tilex)) + "," + (ymin + (column * tiley)) + "," + (xmin + ((row + 1) * tilex)) + "," + (ymin + ((column + 1) * tiley)));
+          }
+      }
+  }
+
+  app.getbounds = function (url) {
+      //If projection = bla revert
+      console.log(app.project);
+      app.calculatebbox(1);
+     var xmin = app.project.baseExtent[0];
+     var ymin = app.project.baseExtent[1];
+     var xmax = app.project.baseExtent[2];
+     var ymax = app.project.baseExtent[3];
+
+     console.log(app.project.baseExtent[0]);
+     var bbox = "&Bbox=" + xmin + "," + ymin + "," + xmax + "," + ymax
+     console.log("&Bbox=" + xmin + "," + ymin + "," + xmax + "," + ymax);
+
+     console.log(url);
+
+     $.ajax({
+         url: url + bbox,
+         dataType: "json",
+     })
+    .success(function (response) {
+        console.log(response);
+        console.log("Found: " + response.features.length + " Features");
+
+        if (response.features.length > 0) {
+            if (project.WFSlayers == undefined) {
+                project.WFSlayers = [];
+            }
+            //Create a WFSLayer prototype TODO: change to prototype method
+            project.WFSlayers.push(response);
+            project.WFSlayers[0].model = [];
+            project.WFSlayers[0].a = [];
+            for (var i = 0; i < response.features.length; i++) {
+                //Determine geometry type
+                if (response.features[i].geometry.type == "Point" || response.features[i].geometry.type == "MultiPoint") {
+                    //If point, create a point object. 
+                    //Point object is defined as a yellow sphere for simplicity
+
+                    var geometry = new THREE.CylinderGeometry(5, 5, 20, 32);
+                    var material = new THREE.MeshLambertMaterial({
+                        color: 0xffaaaa
+                    });
+                    var sphere = new THREE.Mesh(geometry, material);
+                    sphere.rotation.x = Math.PI / 2;
+                    var x = response.features[i].geometry.coordinates[0];
+                    var y = response.features[i].geometry.coordinates[1];
+                    var z = 1;
+
+                    //Okay we have the width and height, plus the bounding box
+                    //Figure out how to calculate mapcoordinates to project coordinates.
+
+                    //In each direction
+                    var widthP = app.project.width;
+                    var heightP = app.project.height;
+
+                    var widthM = xmax - xmin;
+                    var heightM = ymax - ymin;
+
+                    var factorX = widthP / widthM;
+                    var factorY = heightP / heightM;
+
+                    console.log("Factors: X " + factorX + " Y: " + factorY);
+
+                    var ptx = widthP / 2 - ((xmax - x) * factorX);
+                    var pty = heightP / 2 - ((ymax - y) * factorY);
+
+                    // var pt = app.project.toMapCoordinates(x, y, z);
+
+
+
+                    sphere.position.set(ptx, pty, 0.5);
+                    console.log("Sphere was added with coordinates: " + ptx + " " + pty);
+                    sphere.scale.set(0.05, 0.25, 0.05);
+                    //LayerID 100 until we figure out proper indentation - Nicolai
+                    sphere.userData.layerId = 100;
+                    sphere.userData.featureId = i;
+                    // app.scene.add(sphere);
+                    //Okay so instead of adding a sphere to the scene, we can add the sphere to our WFSLayer geometry
+
+                    //Todo create proper indexing somehow.
+                    project.WFSlayers[0].model[i] = sphere;
+                    project.WFSlayers[0].a[i] = project.WFSlayers[0].features[i].properties;
+
+                    app.scene.add(project.WFSlayers[0].model[i]);
+
+                }
+                else if (response.features[i].geometry.type == "Polygon") {
+
+                }
+            }
+        }
+
+    })
+    .fail(function (jqXHR, textStatus, errorThrown) {
+        console.log("Failed jquery");
+    });
+    
+      /*
+     Test to build the features 
+       */
+
+      //WFS contains:
+      //Crs - properties - code (EPSG)
+      //features - objects - geometry - coordinates - 0 1
+      //                              - type (point, polygon etc)
+
+ 
+    
+
+  };
+
+
+    
   app.makeTextSprite = function (message, fontsize) {
       var ctx, texture, sprite, spriteMaterial,
           canvas = document.createElement('canvas');
@@ -794,7 +1019,27 @@ limitations:
       return sprite;
   };
 
- 
+  app.mapTiles = function () {
+
+      var url = {}
+
+      url.site = "http://kortforsyningen.kms.dk/";
+      url.servicename = "/service?servicename=orto_foraar";
+      url.request = "request=GetMap";
+      url.service = "service=WMS";
+      url.version = "version=1.1.1";
+      url.login = "LOGIN=Bydata&PASSWORD=Qby2016!";
+      url.layers = "layers=orto_foraar";
+      url.format = "format=image%2Fpng"
+      url.crs = "srs=EPSG%3A25832";
+
+      
+      //Calculate bounding box
+      //Calculate dimensions of the image (Avoid resampling
+
+
+
+  }
 
   app.getList = function (xCor, yCor) {
       var d = new Date().getTime(); // for now
@@ -806,13 +1051,22 @@ limitations:
           url: "http://dawa.aws.dk/adgangsadresser/reverse?x=" + xCor + "&y=" + yCor + "&srid=25832",
           dataType: "json",
       })
-      .done(function (response) {
+      .success(function (response) {
           if (response.length === 0) {
               console.log("Bad stuff");
           }
           else {
               app.address = response.vejstykke.adresseringsnavn + " " + response.husnr;
-              console.log("Good stuff");
+              
+              /*
+              Makeshift method to iterate over all buildings in the scene
+              */
+              // for (var i = 0; i <= layer.f.length - 10; i++) {
+              //   console.log(layer.f[i].a[0]);
+              // }
+              //app.selectedLayerId = layerId;
+              //app.selectedFeatureId = featureId;
+           
 
               var n = new Date().getTime();
               var total = n - d;
@@ -862,8 +1116,8 @@ limitations:
     var objs = app.intersectObjects(e.clientX - canvasOffset.left, e.clientY - canvasOffset.top);
     for (var i = 0, l = objs.length; i < l; i++) {
       var obj = objs[i];
-      if (!obj.object.visible) continue;
-
+     // if (!obj.object.visible) continue;
+      console.log(obj);
       // query marker
       app.queryMarker.position.set(obj.point.x, obj.point.y, obj.point.z);
       app.queryMarker.visible = true;
@@ -871,6 +1125,7 @@ limitations:
 
       // get layerId and featureId of clicked object
       var object = obj.object, layerId, featureId;
+
       while (object) {
         layerId = object.userData.layerId,
         featureId = object.userData.featureId;
