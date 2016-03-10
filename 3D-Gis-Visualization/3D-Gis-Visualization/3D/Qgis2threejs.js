@@ -874,19 +874,62 @@ limitations:
 
       console.log(tilex + xmin);
 
-     var url = "http://kortforsyningen.kms.dk/service?servicename=orto_foraar&request=GetMap&service=WMS&version=1.1.1&LOGIN=Bydata&PASSWORD=Qby2016%21&layers=orto_foraar&width=780&height=330&format=image%2Fpng&srs=EPSG%3A25832"
-      for (var row = 0; row < num; row++) {
-          for (var column = 0; column < num; column++){
-              console.log("bbox=" + (xmin + (row * tilex)) + "," + (ymin + (column * tiley)) + "," + (xmin + ((row + 1) * tilex)) + "," + (ymin + ((column + 1) * tiley)));
-              console.log(url + "&bbox=" + (xmin + (row * tilex)) + "," + (ymin + (column * tiley)) + "," + (xmin + ((row + 1) * tilex)) + "," + (ymin + ((column + 1) * tiley)));
+     var url = "http://kortforsyningen.kms.dk/service?servicename=orto_foraar&request=GetMap&service=WMS&version=1.1.1&LOGIN=Bydata&PASSWORD=Qby2016%21&layers=orto_foraar&width=1024&height=512&format=image%2Fpng&srs=EPSG%3A25832"
+
+
+     //var plane = new THREE.Mesh(new THREE.PlaneGeometry(100, 50, num, num), material);
+     var plane = new THREE.PlaneGeometry(100, 50, num, num);
+     var materials = [];
+     for (var column = 0; column < num; column++) {
+          for (var row = 0; row < num; row++){
+              //console.log("bbox=" + (xmin + (row * tilex)) + "," + (ymin + (column * tiley)) + "," + (xmin + ((row + 1) * tilex)) + "," + (ymin + ((column + 1) * tiley)));
+              //console.log(url + "&bbox=" + (xmin + (row * tilex)) + "," + (ymin + (column * tiley)) + "," + (xmin + ((row + 1) * tilex)) + "," + (ymin + ((column + 1) * tiley)));
+
+              THREE.ImageUtils.crossOrigin = '';
+              var texture = THREE.ImageUtils.loadTexture(url + "&bbox=" + (xmin + (row * tilex)) + "," + (ymin + (column * tiley)) + "," + (xmin + ((row + 1) * tilex)) + "," + (ymin + ((column + 1) * tiley)));
+
+              texture.wrapS = THREE.RepeatWrapping;
+              texture.wrapT = THREE.RepeatWrapping;
+              texture.repeat.x = num;
+              texture.repeat.y = num;
+
+              var material = new THREE.MeshBasicMaterial({ map: texture });
+              materials.push(material);
+              
           }
-      }
+
+     }
+
+     var l = plane.faces.length / 2; // divided by 2 because each tile is two triangles, which is two faces.
+     console.log(plane.faces);
+     for (var i = 0; i < l; i++) {
+         //Make sure we texture in pairs (Dont want triangle tiles)
+         var j = 2 * i;
+         plane.faces[j].materialIndex = i % materials.length;
+         plane.faces[j + 1].materialIndex = i % materials.length;
+     }
+
+     console.log(plane);
+
+     var faceMaterial = new THREE.MeshFaceMaterial(materials);
+     console.log(faceMaterial);
+     var mesh = new THREE.Mesh(plane, faceMaterial);
+   //  var planemesh = THREE.SceneUtils.createMultiMaterialObject(plane, materials);
+     mesh.position.z = 2;
+    // planemesh.position.z = 3;
+     app.scene.add(mesh);
+     //app.scene.add(planemesh);
+     //console.log(planemesh);
+      //Test to create a mesh with the number of tiles as textures?
+
+      
+
   }
 
   app.getbounds = function (url) {
       //If projection = bla revert
       console.log(app.project);
-      app.calculatebbox(1);
+      app.calculatebbox(4);
      var xmin = app.project.baseExtent[0];
      var ymin = app.project.baseExtent[1];
      var xmax = app.project.baseExtent[2];
