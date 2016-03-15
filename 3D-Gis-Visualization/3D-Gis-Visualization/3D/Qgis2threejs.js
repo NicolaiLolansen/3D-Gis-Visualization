@@ -10,7 +10,7 @@ Q3D.Options = {
   light: {
     directional: {
       azimuth: 220,   // note: default light azimuth of gdaldem hillshade is 315.
-      altitude: 45    // altitude angle
+      altitude: 80    // altitude angle
     }
   },
   side: {color: 0xc7ac92, bottomZ: -1.5},
@@ -137,9 +137,24 @@ limitations:
   Q3D.application = app;
 
   app.init = function (container) {
+      //FPS Counter
+      app.stats = new Stats();
+      app.stats.setMode(0); // 0: fps, 1: ms, 2: mb
+
+      // align top-left
+      app.stats.domElement.style.position = 'absolute';
+      app.stats.domElement.style.left = '0px';
+      app.stats.domElement.style.top = '0px';
+
+      document.body.appendChild(app.stats.domElement);
+
+      app.INTERSECTED = null;
+      app.mouse = new THREE.Vector2();
+      app.raycaster = new THREE.Raycaster();
+
     app.container = container;
     app.running = false;
-
+    
     // URL parameters
     app.urlParams = app.parseUrlParameters();
     if ("popup" in app.urlParams) {
@@ -168,7 +183,8 @@ limitations:
 
     // WebGLRenderer
     var bgcolor = Q3D.Options.bgcolor;
-    app.renderer = new THREE.WebGLRenderer({alpha: true});
+    app.renderer = new THREE.WebGLRenderer({ alpha: true });
+    
     app.renderer.setSize(app.width, app.height);
     app.renderer.setClearColor(bgcolor || 0, (bgcolor === null) ? 0 : 1);
     app.container.appendChild(app.renderer.domElement);
@@ -177,6 +193,8 @@ limitations:
     app.scene = new THREE.Scene();
     app.scene.autoUpdate = true;
 
+    app.scene.fog = new THREE.Fog(0xffffff, 0.1, 300);
+    app.scene.fog.color.setHSL(1, 1, 1);
     app._queryableObjects = [];
     app.queryObjNeedsUpdate = true;
 
@@ -193,6 +211,9 @@ limitations:
 
     app.modelBuilders = [];
     app._wireframeMode = false;
+
+
+    
   };
 
   app.parseUrlParameters = function () {
@@ -280,11 +301,25 @@ limitations:
     app.selectedLayerId = null;
     app.selectedFeatureId = null;
     app.highlightObject = null;
+
+    //Generate Texture
+    app.calculatebbox(4);
+
+      //Generate Buildings
+   // app.getbounds("http://wfs-kbhkort.kk.dk/k101/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=k101:karre&outputFormat=json");
+
+      //Frustum
+    app.frustum = new THREE.Frustum();
+   
   };
 
   app.addEventListeners = function () {
     window.addEventListener("keydown", app.eventListener.keydown);
     window.addEventListener("resize", app.eventListener.resize);
+
+
+      //mouseEvent
+    window.addEventListener("mousemove",app.eventListener.onMouseMove, false );
 
     var e = Q3D.$("closebtn");
     if (e) e.addEventListener("click", app.closePopup);
@@ -309,7 +344,12 @@ limitations:
 
     resize: function () {
       if (app._fullWindow) app.setCanvasSize(window.innerWidth, window.innerHeight);
-    }
+    },
+
+    onMouseMove: function (){
+        app.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        app.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  }
 
   };
 
@@ -325,7 +365,7 @@ limitations:
     var deg2rad = Math.PI / 180;
 
     // ambient light
-    parent.add(new THREE.AmbientLight(0x999999));
+    parent.add(new THREE.AmbientLight(0x222222));
 
     // directional lights
     var opt = Q3D.Options.light.directional;
@@ -336,19 +376,19 @@ limitations:
         y = Math.cos(phi) * Math.sin(lambda),
         z = Math.sin(phi);
 
-    var light1 = new THREE.DirectionalLight(0xffffff, 0.5);
+    var light1 = new THREE.DirectionalLight(0xffffff, 1);
     light1.position.set(x, y, z);
     parent.add(light1);
 
     // thin light from the opposite direction
-    var light2 = new THREE.DirectionalLight(0xffffff, 0.1);
+    var light2 = new THREE.DirectionalLight(0xffffff, 1);
     light2.position.set(-x, -y, -z);
     parent.add(light2);
   };
 
   app.buildDefaultCamera = function () {
-    app.camera = new THREE.PerspectiveCamera(45, app.width / app.height, 0.1, 1000);
-    app.camera.position.set(0, 0, 10);
+    app.camera = new THREE.PerspectiveCamera(45, app.width / app.height, 0.1, 200);
+    app.camera.position.set(0, 0, 150);
   };
 
   app.currentViewUrl = function () {
@@ -373,9 +413,53 @@ limitations:
 
   // animation loop
   app.animate = function () {
+  
+
+      app.raycaster.setFromCamera(app.mouse, app.camera);
+      if (app.wmsready) {
+          //var intersects = app.raycaster.intersectObjects(app.project.WFSlayers[0].model);
+          //var ids = [];
+          //for (var i = 0; i < intersects.length; i++) {
+              //  console.log("Hit it");
+
+            //  intersects[i].object.scale.set(1, 1, 10);
+          //} 
+
+          // find intersections
+
+          var intersects = app.raycaster.intersectObjects(app.project.WFSlayers[0].model);
+      
+          if (intersects.length > 0) {
+
+              if (app.INTERSECTED != intersects[0].object) {
+
+                  if (app.INTERSECTED) app.INTERSECTED.material.emissive.setHex(app.INTERSECTED.currentHex);
+
+                  app.INTERSECTED = intersects[0].object;
+                  app.INTERSECTED.currentHex = app.INTERSECTED.material.emissive.getHex();
+                  app.INTERSECTED.material.emissive.setHex(0xffffff);
+              }
+          } else {
+              if (app.INTERSECTED) app.INTERSECTED.material.emissive.setHex(app.INTERSECTED.currentHex);
+              app.INTERSECTED = null;
+          }
+
+          //Frustum Culling - Increases performance by rendering objects inside the frustum
+          app.frustum.setFromMatrix(new THREE.Matrix4().multiplyMatrices(app.camera.projectionMatrix, app.camera.matrixWorldInverse));
+          for (var i = 0; i < app.project.WFSlayers[0].model.length; i++) {
+              app.project.WFSlayers[0].model[i].visible = app.frustum.intersectsObject(app.project.WFSlayers[0].model[i]);
+          }
+
+      }
+    app.stats.begin();
+      // monitored code goes here
+    app.render();
+
+    app.stats.end();
+
     if (app.running) requestAnimationFrame(app.animate);
     if (app.controls) app.controls.update();
-    app.render();
+    
   };
 
   app.render = function () {
@@ -476,13 +560,17 @@ limitations:
               console.log("Added the queryable objects for normal layer");
           }
       });
-      //Custom WFS layer addition - Nicolai
+        //Custom WFS layer addition - Nicolai
+      if (app.project.WFSlayers != undefined) {
+
+     
       app.project.WFSlayers.forEach(function (layer) {
           if (layer.features.length) {
               app._queryableObjects = app._queryableObjects.concat(layer.model);
               console.log("Added the queryable Objects for WFS");
           }
       });
+      }
     }
     return app._queryableObjects;
   };
@@ -864,6 +952,7 @@ limitations:
 
 
   app.calculatebbox = function (num) {
+      THREE.ImageUtils.crossOrigin = "";
       var xmin = parseFloat(app.project.baseExtent[0]);
       var ymin = parseFloat(app.project.baseExtent[1]);
       var xmax = parseFloat(app.project.baseExtent[2]);
@@ -874,34 +963,39 @@ limitations:
 
       console.log(tilex + xmin);
 
-     var url = "http://kortforsyningen.kms.dk/service?servicename=orto_foraar&request=GetMap&service=WMS&version=1.1.1&LOGIN=Bydata&PASSWORD=Qby2016%21&layers=orto_foraar&width=1024&height=512&format=image%2Fpng&srs=EPSG%3A25832"
+      var width = 256;
+      var height = 256;
+      var url = "http://kortforsyningen.kms.dk/service?servicename=orto_foraar&request=GetMap&service=WMS&version=1.1.1&LOGIN=Bydata&PASSWORD=Qby2016%21&layers=orto_foraar&width="+width+"&height="+height+"&format=image%2Fpng&srs=EPSG%3A25832";
+     // var url = "http://kortforsyningen.kms.dk/service?servicename=adm_500_2008_r&request=GetMap&service=WMS&version=1.1.1&LOGIN=Bydata&PASSWORD=Qby2016%21&layers=KOM500_2008&width=" + width + "&height=" + height + "&format=image%2Fpng&srs=EPSG%3A25832";
+     // var url = "http://kortforsyningen.kms.dk/service?servicename=topo4cm_1953_1976&request=GetMap&service=WMS&version=1.1.1&LOGIN=Bydata&PASSWORD=Qby2016!&layers=dtk_4cm_1953_1976&width=" + width + "&height=" + height + "&format=image%2Fpng&srs=EPSG%3A25832";
+
 
 
      //var plane = new THREE.Mesh(new THREE.PlaneGeometry(100, 50, num, num), material);
-     var plane = new THREE.PlaneGeometry(100, 50, num, num);
+     var plane = new THREE.PlaneGeometry(app.project.width, app.project.height, num, num);
      var materials = [];
-     for (var column = 0; column < num; column++) {
+     var loader = new THREE.TextureLoader();
+     var id = 0;
+     for (var column = num - 1; column >= 0; column--) {
           for (var row = 0; row < num; row++){
               //console.log("bbox=" + (xmin + (row * tilex)) + "," + (ymin + (column * tiley)) + "," + (xmin + ((row + 1) * tilex)) + "," + (ymin + ((column + 1) * tiley)));
-              //console.log(url + "&bbox=" + (xmin + (row * tilex)) + "," + (ymin + (column * tiley)) + "," + (xmin + ((row + 1) * tilex)) + "," + (ymin + ((column + 1) * tiley)));
-
+            //  console.log(url + "&bbox=" + (xmin + (row * tilex)) + "," + (ymin + (column * tiley)) + "," + (xmin + ((row + 1) * tilex)) + "," + (ymin + ((column + 1) * tiley)));
               THREE.ImageUtils.crossOrigin = '';
               var texture = THREE.ImageUtils.loadTexture(url + "&bbox=" + (xmin + (row * tilex)) + "," + (ymin + (column * tiley)) + "," + (xmin + ((row + 1) * tilex)) + "," + (ymin + ((column + 1) * tiley)));
-
               texture.wrapS = THREE.RepeatWrapping;
               texture.wrapT = THREE.RepeatWrapping;
               texture.repeat.x = num;
               texture.repeat.y = num;
 
-              var material = new THREE.MeshBasicMaterial({ map: texture });
-              materials.push(material);
-              
-          }
+              //texture.flipY = true;
 
-     }
+              var material = new THREE.MeshPhongMaterial({ map: texture });
+              material.url = url + "&bbox=" + (xmin + (row * tilex)) + "," + (ymin + (column * tiley)) + "," + (xmin + ((row + 1) * tilex)) + "," + (ymin + ((column + 1) * tiley));
+              materials.push(material);
+          }
+     } 
 
      var l = plane.faces.length / 2; // divided by 2 because each tile is two triangles, which is two faces.
-     console.log(plane.faces);
      for (var i = 0; i < l; i++) {
          //Make sure we texture in pairs (Dont want triangle tiles)
          var j = 2 * i;
@@ -909,27 +1003,101 @@ limitations:
          plane.faces[j + 1].materialIndex = i % materials.length;
      }
 
-     console.log(plane);
+   //  console.log(plane);
 
      var faceMaterial = new THREE.MeshFaceMaterial(materials);
-     console.log(faceMaterial);
+    // console.log(faceMaterial);
      var mesh = new THREE.Mesh(plane, faceMaterial);
    //  var planemesh = THREE.SceneUtils.createMultiMaterialObject(plane, materials);
-     mesh.position.z = 2;
-    // planemesh.position.z = 3;
-     app.scene.add(mesh);
-     //app.scene.add(planemesh);
-     //console.log(planemesh);
-      //Test to create a mesh with the number of tiles as textures?
+     mesh.position.z = 0.2;
+      // planemesh.position.z = 3;
 
+     app.project.plane = [];
+     app.project.plane.push(mesh);
+     app.scene.add(mesh);
+
+    
+    app.updateResolution(num, width, height);
+  }
+
+  app.updateResolution = function (num,width,height) {
+      var loader = new THREE.TextureLoader();
+      loader.crossOrigin = true;
+      var materials = [];
+      var loaded = 0;
+
+      //Basically asynchrounous loads in a synchronized loop is a terrible idea.
+      //We lose track of which material is which and what the url is
+    for (var i = 0; i < app.project.plane[0].material.materials.length; i++){
+          var temp = app.project.plane[0].material.materials[i];
+          var url = temp.url;
+            
+          var tempurl = "width=" + width + "&height=" + height + "&format=image%2Fpng&srs=EPSG%3A25832&";
+          url = url.replace(/width=.*&/, tempurl);
+          console.log("i: " + i + " " + "loaded: " + loaded);
+
+             loader.load(url, function (texture) {
+                  texture.wrapS = THREE.RepeatWrapping;
+                  texture.wrapT = THREE.RepeatWrapping;
+                  texture.repeat.x = num;
+                  texture.repeat.y = num;
+
+                  //texture.flipY = true;
+
+                  var material = new THREE.MeshPhongMaterial({ map: texture });
+
+
+               //   material.url = url;
+                //  materials.push(material);
+                  loaded += 1
+                  // app.project.plane[0].material.materials[i] = material;
+
+                  console.log("Updated Texture");
+
+                  if (loaded == app.project.plane[0].material.materials.length) {    //We loaded all the images
+                      // the default
+                      var faceMaterial = new THREE.MeshFaceMaterial(materials);
+                      app.project.plane[0].material = faceMaterial;
+                      console.log(materials);
+                      if (height < 2048) {
+                          app.updateResolution(num, width * 2, height * 2)
+                      }
+
+                  }
+              });
       
 
+              THREE.ImageUtils.crossOrigin = '';
+              var texture = THREE.ImageUtils.loadTexture(url);
+              texture.wrapS = THREE.RepeatWrapping;
+              texture.wrapT = THREE.RepeatWrapping;
+              texture.repeat.x = num;
+              texture.repeat.y = num;
+
+              //texture.flipY = true;
+
+              var material = new THREE.MeshPhongMaterial({ map: texture });
+              material.url = url;
+              materials.push(material);
+              if (loaded == app.project.plane[0].material.materials.length) {
+                  // the default
+                  var faceMaterial = new THREE.MeshFaceMaterial(materials);
+                  app.project.plane[0].material = faceMaterial;
+                  console.log(materials);
+                  if (height <= 2048) {
+                      app.updateResolution(num, width * 2, height * 2)
+                  }
+
+              }
+    }
   }
+
+
 
   app.getbounds = function (url) {
       //If projection = bla revert
       console.log(app.project);
-      app.calculatebbox(4);
+      
      var xmin = app.project.baseExtent[0];
      var ymin = app.project.baseExtent[1];
      var xmax = app.project.baseExtent[2];
@@ -957,6 +1125,9 @@ limitations:
             project.WFSlayers.push(response);
             project.WFSlayers[0].model = [];
             project.WFSlayers[0].a = [];
+
+
+            var points = [];
             for (var i = 0; i < response.features.length; i++) {
                 //Determine geometry type
                 if (response.features[i].geometry.type == "Point" || response.features[i].geometry.type == "MultiPoint") {
@@ -986,7 +1157,6 @@ limitations:
                     var factorX = widthP / widthM;
                     var factorY = heightP / heightM;
 
-                    console.log("Factors: X " + factorX + " Y: " + factorY);
 
                     var ptx = widthP / 2 - ((xmax - x) * factorX);
                     var pty = heightP / 2 - ((ymax - y) * factorY);
@@ -996,7 +1166,7 @@ limitations:
 
 
                     sphere.position.set(ptx, pty, 0.5);
-                    console.log("Sphere was added with coordinates: " + ptx + " " + pty);
+                   
                     sphere.scale.set(0.05, 0.25, 0.05);
                     //LayerID 100 until we figure out proper indentation - Nicolai
                     sphere.userData.layerId = 100;
@@ -1010,13 +1180,117 @@ limitations:
 
                     app.scene.add(project.WFSlayers[0].model[i]);
 
-                }
-                else if (response.features[i].geometry.type == "Polygon") {
 
+
+
+                }
+                else if (response.features[i].geometry.type == "Polygon" || response.features[i].geometry.type == "MultiPolygon") {
+
+                    //TODO - Nicolai
+                    //console.log(response);
+                    //get points from feature
+                    //console.log("There are this many coordinates in feature " + i + " " + response.features[i].geometry.coordinates[0][0].length);
+
+                    if (response.features[i].geometry.type == "Polygon") {
+                        var length = response.features[i].geometry.coordinates[0].length;
+                        var polygon = "Polygon";
+                    } else {
+                        var length = response.features[i].geometry.coordinates[0][0].length;
+                        var polygon = "MultiPolygon";
+                    }
+
+                    for (var j = 0; j < length; j++) {
+                        //  console.log(response.features[i].geometry.coordinates[0][0][j]);
+                        if (polygon == "MultiPolygon") {
+                            var x = response.features[i].geometry.coordinates[0][0][j][0];
+                            var y = response.features[i].geometry.coordinates[0][0][j][1];
+                        } else {
+                            var x = response.features[i].geometry.coordinates[0][j][0];
+                            var y = response.features[i].geometry.coordinates[0][j][1];
+                        }
+
+                        
+                        //Okay we have the width and height, plus the bounding box
+                        //Figure out how to calculate mapcoordinates to project coordinates.
+
+                        //In each direction
+                        var widthP = app.project.width;
+                        var heightP = app.project.height;
+
+                        var widthM = xmax - xmin;
+                        var heightM = ymax - ymin;
+
+                        var factorX = widthP / widthM;
+                        var factorY = heightP / heightM;
+
+                        var ptx = widthP / 2 - ((xmax - x) * factorX);
+                        var pty = heightP / 2 - ((ymax - y) * factorY);
+
+                        var point = new THREE.Vector2(ptx, pty);
+                        points.push(point);
+                    }
+
+                    var shape = new THREE.Shape(points);
+                    var extrudeSettings = {
+                        amount: 1.2,
+                        steps: 1,
+                        material: 0,
+                        extrudeMaterial: 1,
+                        bevelEnabled: false
+                    };
+
+                    //use points to build shape
+
+
+
+                    //build a geometry (ExtrudeGeometry) from the shape and extrude settings
+                    var geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+                    geometry.dynamic = true;
+
+                    var hex = 0xff0000;
+                    var hex2 = 0xaa0011;
+                    var hex3 = 0x990033;
+                    var color = 0xffffff;
+
+                    var colorlist = [hex,hex2,hex3];
+
+
+                  //  color = colorlist[Math.floor(Math.random() * colorlist.length)];
+
+                    var material = new THREE.MeshPhongMaterial({
+                        color: color
+                    });
+
+                    var mesh = new THREE.Mesh(geometry, material);
+                    mesh.scale.set(1, 1, 5 * Math.random());
+                    mesh.userData.layerId = 100;
+                    mesh.userData.featureId = i;
+                    // app.scene.add(sphere);
+                    //Okay so instead of adding a sphere to the scene, we can add the sphere to our WFSLayer geometry
+
+                    //Todo create proper indexing somehow.
+                    project.WFSlayers[0].model[i] = mesh;
+                    project.WFSlayers[0].a[i] = project.WFSlayers[0].features[i].properties;
+
+                    app.scene.add(project.WFSlayers[0].model[i]);
+                    //  app.render();
+                    points = [];
+                    // var polygon = new THREE.Mesh(geometry, material);
+
+                    // var x = response.features[i].geometry.coordinates[0];
+                    // var y = response.features[i].geometry.coordinates[1];
+                    // var z = 1;
+
+                    //Okay we have the width and height, plus the bounding box
+                    //Figure out how to calculate mapcoordinates to project coordinates.
+     
                 }
             }
+            
         }
+       
 
+        app.wmsready = true;
     })
     .fail(function (jqXHR, textStatus, errorThrown) {
         console.log("Failed jquery");
