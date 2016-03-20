@@ -193,8 +193,8 @@ limitations:
     app.scene = new THREE.Scene();
     app.scene.autoUpdate = true;
 
-    app.scene.fog = new THREE.Fog(0xffffff, 0.1, 300);
-    app.scene.fog.color.setHSL(1, 1, 1);
+  //  app.scene.fog = new THREE.Fog(0xffffff, 0.1, 300);
+  //  app.scene.fog.color.setHSL(1, 1, 1);
     app._queryableObjects = [];
     app.queryObjNeedsUpdate = true;
 
@@ -228,7 +228,7 @@ limitations:
 
   app.loadProject = function (project) {
       app.project = project;
-      console.log("app.loadProject is called");
+     // console.log("app.loadProject is called");
     console.log(project);
     // light
     if (project.buildCustomLights) project.buildCustomLights(app.scene);
@@ -303,7 +303,7 @@ limitations:
     app.highlightObject = null;
 
     //Generate Texture
-    app.calculatebbox(4);
+    app.calculatebbox(1);
 
       //Generate Buildings
    // app.getbounds("http://wfs-kbhkort.kk.dk/k101/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=k101:karre&outputFormat=json");
@@ -387,7 +387,7 @@ limitations:
   };
 
   app.buildDefaultCamera = function () {
-    app.camera = new THREE.PerspectiveCamera(45, app.width / app.height, 0.1, 200);
+    app.camera = new THREE.PerspectiveCamera(45, app.width / app.height, 0.1, 1000);
     app.camera.position.set(0, 0, 150);
   };
 
@@ -557,7 +557,7 @@ limitations:
       app.project.layers.forEach(function (layer) {
           if (layer.visible && layer.queryableObjects.length) {
               app._queryableObjects = app._queryableObjects.concat(layer.queryableObjects);
-              console.log("Added the queryable objects for normal layer");
+             // console.log("Added the queryable objects for normal layer");
           }
       });
         //Custom WFS layer addition - Nicolai
@@ -567,7 +567,7 @@ limitations:
       app.project.WFSlayers.forEach(function (layer) {
           if (layer.features.length) {
               app._queryableObjects = app._queryableObjects.concat(layer.model);
-              console.log("Added the queryable Objects for WFS");
+             // console.log("Added the queryable Objects for WFS");
           }
       });
       }
@@ -581,7 +581,7 @@ limitations:
     var vector = new THREE.Vector3(x, y, 1);
     vector.unproject(app.camera);
     var ray = new THREE.Raycaster(app.camera.position, vector.sub(app.camera.position).normalize());
-    console.log(app.queryableObjects());
+  //  console.log(app.queryableObjects());
     return ray.intersectObjects(app.queryableObjects());
   };
 
@@ -713,7 +713,7 @@ limitations:
       // attributes
       r.push('<table class="attrs">');
       r.push("<caption>Attributes</caption>");
-      console.log(layerId);
+   //   console.log(layerId);
       var prop = [];
 
       for (var proper in layer.a[0]) {
@@ -906,7 +906,6 @@ limitations:
         }
         if (parseInt(app.csvResults.data[i].value) > max) {
             max = parseInt(app.csvResults.data[i].value)
-            console.log("New max!" + " " + max);
         }
     }
 
@@ -916,11 +915,6 @@ limitations:
         app.csvResults.data[i].value = temp;
     }
 
-    console.log("CSV MIN: " + min + " CSV MAX: " + max)
-    console.log(app.csvResults.data);
-    console.log(app.csvResults.data.length);
-
-    console.log(layer.f);
 
      for (var i = 0; i < layer.f.length; i++) {
          for (var j = 0; j < app.csvResults.data.length; j++) {
@@ -930,7 +924,6 @@ limitations:
                  var redness = Math.round(app.csvResults.data[j].value * 255);
                  var greenness = Math.round(255 - (Math.round(app.csvResults.data[j].value * 255)));
 
-                 console.log("rgb(" + redness + ", " + greenness + ", 0)");
                  var material = new THREE.MeshBasicMaterial({ color: "rgb(" + redness + ", " + greenness + ", 0)", opacity: 1});
                  layer.f[i].objs[0].material = material;
              }
@@ -939,11 +932,6 @@ limitations:
      app.rancsv = true;
      }
   
-    console.log("Current CSV results: ");
-    console.log(app.csvResults);
-
-
-
 
     app.selectedLayerId = layerId;
     app.selectedFeatureId = featureId;
@@ -961,10 +949,9 @@ limitations:
       var tilex = parseFloat((xmax - xmin) / num);
       var tiley = parseFloat((ymax - ymin) / num);
 
-      console.log(tilex + xmin);
-
-      var width = 256;
-      var height = 256;
+  
+      var width = 512;
+      var height = 512;
       var url = "http://kortforsyningen.kms.dk/service?servicename=orto_foraar&request=GetMap&service=WMS&version=1.1.1&LOGIN=Bydata&PASSWORD=Qby2016%21&layers=orto_foraar&width="+width+"&height="+height+"&format=image%2Fpng&srs=EPSG%3A25832";
      // var url = "http://kortforsyningen.kms.dk/service?servicename=adm_500_2008_r&request=GetMap&service=WMS&version=1.1.1&LOGIN=Bydata&PASSWORD=Qby2016%21&layers=KOM500_2008&width=" + width + "&height=" + height + "&format=image%2Fpng&srs=EPSG%3A25832";
      // var url = "http://kortforsyningen.kms.dk/service?servicename=topo4cm_1953_1976&request=GetMap&service=WMS&version=1.1.1&LOGIN=Bydata&PASSWORD=Qby2016!&layers=dtk_4cm_1953_1976&width=" + width + "&height=" + height + "&format=image%2Fpng&srs=EPSG%3A25832";
@@ -991,6 +978,7 @@ limitations:
 
               var material = new THREE.MeshPhongMaterial({ map: texture });
               material.url = url + "&bbox=" + (xmin + (row * tilex)) + "," + (ymin + (column * tiley)) + "," + (xmin + ((row + 1) * tilex)) + "," + (ymin + ((column + 1) * tiley));
+              material.bbox = "&bbox=" + (xmin + (row * tilex)) + "," + (ymin + (column * tiley)) + "," + (xmin + ((row + 1) * tilex)) + "," + (ymin + ((column + 1) * tiley));
               materials.push(material);
           }
      } 
@@ -1016,8 +1004,11 @@ limitations:
      app.project.plane.push(mesh);
      app.scene.add(mesh);
 
+    //After we have the tiles, update the resolution
+     app.updateResolution(num, width, height);
+
+      //And create the terrain
     
-    app.updateResolution(num, width, height);
   }
 
   app.updateResolution = function (num,width,height) {
@@ -1026,15 +1017,13 @@ limitations:
       var materials = [];
       var loaded = 0;
 
-      //Basically asynchrounous loads in a synchronized loop is a terrible idea.
-      //We lose track of which material is which and what the url is
     for (var i = 0; i < app.project.plane[0].material.materials.length; i++){
           var temp = app.project.plane[0].material.materials[i];
           var url = temp.url;
             
           var tempurl = "width=" + width + "&height=" + height + "&format=image%2Fpng&srs=EPSG%3A25832&";
           url = url.replace(/width=.*&/, tempurl);
-          console.log("i: " + i + " " + "loaded: " + loaded);
+         // console.log("i: " + i + " " + "loaded: " + loaded);
 
              loader.load(url, function (texture) {
                   texture.wrapS = THREE.RepeatWrapping;
@@ -1052,17 +1041,15 @@ limitations:
                   loaded += 1
                   // app.project.plane[0].material.materials[i] = material;
 
-                  console.log("Updated Texture");
 
                   if (loaded == app.project.plane[0].material.materials.length) {    //We loaded all the images
                       // the default
                       var faceMaterial = new THREE.MeshFaceMaterial(materials);
                       app.project.plane[0].material = faceMaterial;
-                      console.log(materials);
-                      if (height < 2048) {
+                      if (height < 0) {
                           app.updateResolution(num, width * 2, height * 2)
                       }
-
+                      app.wmsTerrain(num, width, height);
                   }
               });
       
@@ -1078,14 +1065,14 @@ limitations:
 
               var material = new THREE.MeshPhongMaterial({ map: texture });
               material.url = url;
+              material.bbox = temp.bbox;
               materials.push(material);
               if (loaded == app.project.plane[0].material.materials.length) {
                   // the default
                   var faceMaterial = new THREE.MeshFaceMaterial(materials);
                   app.project.plane[0].material = faceMaterial;
-                  console.log(materials);
                   if (height <= 2048) {
-                      app.updateResolution(num, width * 2, height * 2)
+                      app.updateResolution(num, width * 2, height * 2);
                   }
 
               }
@@ -1311,6 +1298,79 @@ limitations:
   };
 
 
+  app.wmsTerrain = function (num, width, height) {
+      var url = "http://kortforsyningen.kms.dk/service?servicename=dhm&request=GetMap&service=WMS&version=1.1.1&LOGIN=Bydata&PASSWORD=Qby2016%21&layers=dtm_1_6m&width=" + width + "&height=" + height + "&format=image%2Fpng&srs=EPSG%3A25832";
+      var loader = new THREE.TextureLoader();
+      loader.crossOrigin = true;
+
+      //for (var i = 0; i < app.project.plane[0].material.materials.length; i++) {
+
+          var temp = app.project.plane[0].material.materials[0];
+          url = url + temp.bbox;
+          console.log(url);
+          //Get the height data from the terrain image
+          var img = new Image();
+          var canvas = document.createElement('canvas');
+          canvas.width = width - 1;
+          canvas.height = height - 1;
+          var context = canvas.getContext('2d');
+          var data = new Float32Array(0);
+          img.onload = function () {
+
+              var size = 0;
+              context.drawImage(img, 0, 0);
+              size = width * height;
+              data = new Float32Array(size);
+              
+             img.height = height;
+             img.width = width;
+              for (var i = 0; i < size; i++) {
+                  data[i] = 0
+              }
+
+          var imgd = context.getImageData(0, 0, width, height);
+          var pix = imgd.data;
+        
+          console.log("Pix length: " + pix.length);
+          console.log(pix);
+         var j = 0;
+          for (var i = 0; i < pix.length; i += 4) {
+              var all = pix[i] + pix[i + 1] + pix[i + 2];
+              data[j++] = all / 24;
+          }
+
+         // plane
+         // var geometry = app.project.plane[0].geometry;
+          console.log(this.width);
+          console.log(this.height);
+          var geometry = new THREE.PlaneGeometry(app.project.width, app.project.height, width - 1, height-1);
+
+          var texture = THREE.ImageUtils.loadTexture(url);
+          var material = new THREE.MeshLambertMaterial({ map: texture });
+         //aterial.wireframe = true;
+          var plane = new THREE.Mesh(geometry, material);
+          console.log("vertices: " + plane.geometry.vertices.length);
+          console.log("Data Length: " + data.length)
+              //set height of vertices
+          
+          for (var i = 0; i < plane.geometry.vertices.length; i++) {
+              plane.geometry.vertices[i].z = data[i];
+          }
+          geometry.verticesNeedUpdate = true;
+          plane.setWireframeMode = true;
+          app.project.plane[1] = plane;
+          plane.position.set(1, 1, 1.5);
+          app.scene.add(plane);
+          }
+          img.src = url;
+          img.crossOrigin = "Anonymous";
+         
+          
+    //  }
+
+
+
+  };
     
   app.makeTextSprite = function (message, fontsize) {
       var ctx, texture, sprite, spriteMaterial,
