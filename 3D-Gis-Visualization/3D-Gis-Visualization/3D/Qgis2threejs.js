@@ -1509,7 +1509,7 @@ limitations:
         if (layerId !== undefined) break;
         object = object.parent;
       }
-
+      
       
       app.showQueryResult(obj.point, layerId, featureId);
 
