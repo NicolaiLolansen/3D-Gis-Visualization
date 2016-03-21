@@ -306,7 +306,7 @@ limitations:
     app.calculatebbox(4);
 
       //Generate Buildings
-   // app.getbounds("http://wfs-kbhkort.kk.dk/k101/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=k101:karre&outputFormat=json");
+    app.getbounds("http://wfs-kbhkort.kk.dk/k101/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=k101:karre&outputFormat=json");
 
       //Frustum
     app.frustum = new THREE.Frustum();
@@ -979,7 +979,7 @@ limitations:
      for (var column = num - 1; column >= 0; column--) {
           for (var row = 0; row < num; row++){
               //console.log("bbox=" + (xmin + (row * tilex)) + "," + (ymin + (column * tiley)) + "," + (xmin + ((row + 1) * tilex)) + "," + (ymin + ((column + 1) * tiley)));
-            //  console.log(url + "&bbox=" + (xmin + (row * tilex)) + "," + (ymin + (column * tiley)) + "," + (xmin + ((row + 1) * tilex)) + "," + (ymin + ((column + 1) * tiley)));
+              console.log(url + "&bbox=" + (xmin + (row * tilex)) + "," + (ymin + (column * tiley)) + "," + (xmin + ((row + 1) * tilex)) + "," + (ymin + ((column + 1) * tiley)));
               THREE.ImageUtils.crossOrigin = '';
               var texture = THREE.ImageUtils.loadTexture(url + "&bbox=" + (xmin + (row * tilex)) + "," + (ymin + (column * tiley)) + "," + (xmin + ((row + 1) * tilex)) + "," + (ymin + ((column + 1) * tiley)));
               texture.wrapS = THREE.RepeatWrapping;
