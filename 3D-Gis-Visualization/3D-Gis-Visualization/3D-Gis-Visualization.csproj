@@ -66,10 +66,12 @@
     <Reference Include="System.EnterpriseServices" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="3D\csvAPI.js" />
     <Content Include="3D\DataFondler.js" />
     <Content Include="3D\parser.js" />
     <Content Include="packages.config" />
     <Content Include="3D\randdata.csv" />
+    <Content Include="3D\randdataBIG.csv" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -91,6 +93,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="3D\BabyParse\" />
     <Folder Include="3D\dat-gui\" />
     <Folder Include="3D\PapaParse-4.1.2\" />
     <Folder Include="3D\threejs\" />
