@@ -69,7 +69,7 @@
     <Content Include="3D\DataFondler.js" />
     <Content Include="3D\parser.js" />
     <Content Include="3D\stats\stats.min.js" />
-    <Content Include="3D\Test_bygning.js" />
+    <Content Include="3D\Test_bygninger.js" />
     <Content Include="3D\Test_dtu.js" />
     <Content Include="3D\Test.js" />
     <Content Include="packages.config" />
