@@ -176,8 +176,14 @@ THREE.OrbitControls = function ( object, domElement ) {
 			angle = getAutoRotationAngle();
 
 		}
+		
+		var te = this.object.matrix.elements;
 
-		phiDelta -= angle;
+		
+		if (te[14] - angle > 0) {
+		    phiDelta -= angle;
+		}
+		
 
 	};
 
@@ -188,10 +194,12 @@ THREE.OrbitControls = function ( object, domElement ) {
 	};
 
 	this.cameraRotateUp = function ( angle ) {
-
-		cameraPhiDelta -= angle;
-
+	
+	        cameraPhiDelta -= angle;
+	    
+		
 	};
+
 
 	// pass in distance in world space to move left
 	this.panLeft = function ( distance ) {
@@ -211,11 +219,17 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 		var te = this.object.matrix.elements;
 
+	
 		// get Y column of matrix
-		panOffset.set( te[ 4 ], te[ 5 ], te[ 6 ] );
+		panOffset.set(te[4], 0, te[14]);
+		panOffset.normalize();
 		panOffset.multiplyScalar( distance );
-		
-		pan.add( panOffset );
+	
+
+	 if (te[14]  > 15) {
+		    pan.add(panOffset);
+		}
+	
 
 	};
 	
