@@ -185,11 +185,10 @@ Q3D.gui = {
       */
       funcFolder.add(this.parameters, 'Source').name('Select Data Source').onFinishChange(function (value) {
           addSource(value);
-          startParse();
       }),
 
       funcFolder.add(this.parameters, 'getParseResult').name('Retrieve Data');
-      funcFolder.add(this.parameters, 'getParseSources').name('Retrive Sources').onChange(function () {console.log(getSources())});
+      funcFolder.add(this.parameters, 'getParseSources').name('Retrieve Sources').onChange(function () {console.log(getSources())});
   },
 
   addHelpButton: function () {
