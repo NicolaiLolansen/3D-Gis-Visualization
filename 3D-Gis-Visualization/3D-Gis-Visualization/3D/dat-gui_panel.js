@@ -19,6 +19,8 @@ Q3D.gui = {
     Source: 'https://dl.dropboxusercontent.com/s/8qyigf5hvqmty0z/csvtest1.csv?dl=1',
     getParseResult: getAllData,
     getParseSources: getSources,
+    getBuildings: true,
+
     getbounds: "http://wfs-kbhkort.kk.dk/k101/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=k101:storbyhaver&outputFormat=json"
   },
 
@@ -188,7 +190,8 @@ Q3D.gui = {
       }),
 
       funcFolder.add(this.parameters, 'getParseResult').name('Retrieve Data');
-      funcFolder.add(this.parameters, 'getParseSources').name('Retrieve Sources').onChange(function () {console.log(getSources())});
+      funcFolder.add(this.parameters, 'getParseSources').name('Retrieve Sources').onChange(function () { console.log(getSources()) });
+      funcFolder.add(this.parameters, 'getBuildings').name('Spawn GML Buildings').onFinishChange(function () { app.getBuildings(); });
   },
 
   addHelpButton: function () {

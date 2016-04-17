@@ -303,10 +303,10 @@ limitations:
     app.highlightObject = null;
 
     //Generate Texture
-    app.calculatebbox(1);
+    app.calculatebbox(8);
 
       //Generate Buildings
-    app.getbounds("http://wfs-kbhkort.kk.dk/k101/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=k101:karre&outputFormat=json");
+  //  app.getbounds("http://wfs-kbhkort.kk.dk/k101/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=k101:karre&outputFormat=json");
 
       //Frustum
     app.frustum = new THREE.Frustum();
@@ -940,6 +940,7 @@ limitations:
 
 
   app.calculatebbox = function (num) {
+      
       THREE.ImageUtils.crossOrigin = "";
       var xmin = parseFloat(app.project.baseExtent[0]);
       var ymin = parseFloat(app.project.baseExtent[1]);
@@ -950,9 +951,9 @@ limitations:
       var tiley = parseFloat((ymax - ymin) / num);
 
   
-      var width = 1024;
-      var height = 512;
-      var url = "http://kortforsyningen.kms.dk/service?servicename=orto_foraar&request=GetMap&service=WMS&version=1.1.1&LOGIN=Bydata&PASSWORD=Qby2016%21&layers=orto_foraar&width="+width+"&height="+height+"&format=image%2Fpng&srs=EPSG%3A25832";
+      var width = 32;
+      var height = 32;
+      var url = "http://kortforsyningen.kms.dk/service?servicename=orto_foraar&request=GetMap&service=WMS&version=1.1.1&LOGIN=Bydata&PASSWORD=Qby2016%21&layers=orto_foraar&width=" + width + "&height=" + height + "&format=image%2Fpng&srs=EPSG%3A25832&transparent=false&bgcolor=000000";
      // var url = "http://kortforsyningen.kms.dk/service?servicename=adm_500_2008_r&request=GetMap&service=WMS&version=1.1.1&LOGIN=Bydata&PASSWORD=Qby2016%21&layers=KOM500_2008&width=" + width + "&height=" + height + "&format=image%2Fpng&srs=EPSG%3A25832";
      // var url = "http://kortforsyningen.kms.dk/service?servicename=topo4cm_1953_1976&request=GetMap&service=WMS&version=1.1.1&LOGIN=Bydata&PASSWORD=Qby2016!&layers=dtk_4cm_1953_1976&width=" + width + "&height=" + height + "&format=image%2Fpng&srs=EPSG%3A25832";
 
@@ -973,7 +974,6 @@ limitations:
               texture.wrapT = THREE.RepeatWrapping;
               texture.repeat.x = num;
               texture.repeat.y = num;
-
               //texture.flipY = true;
                
               var material = new THREE.MeshPhongMaterial({ map: texture });
@@ -1006,9 +1006,6 @@ limitations:
 
     //After we have the tiles, update the resolution
      app.updateResolution(num, width, height);
-
-      //And create the terrain
-    
   }
 
   app.updateResolution = function (num,width,height) {
@@ -1034,22 +1031,23 @@ limitations:
                   //texture.flipY = true;
 
                   var material = new THREE.MeshPhongMaterial({ map: texture });
+                  material.overdraw = 0.5;
 
 
                //   material.url = url;
                 //  materials.push(material);
                   loaded += 1
                   // app.project.plane[0].material.materials[i] = material;
-
+                  
 
                   if (loaded == app.project.plane[0].material.materials.length) {    //We loaded all the images
                       // the default
                       var faceMaterial = new THREE.MeshFaceMaterial(materials);
                       app.project.plane[0].material = faceMaterial;
-                      if (height < 0) {
+                      if (height < 4096 / num) {
                           app.updateResolution(num, width * 2, height * 2)
                       }
-                      app.wmsTerrain(num, width, height);
+                      //app.wmsTerrain(num, width/8, height/8);
                   }
               });
       
@@ -1079,7 +1077,169 @@ limitations:
     }
   }
 
+  app.getBuildings = function () {
 
+      var xmin = app.project.baseExtent[0];
+      var ymin = app.project.baseExtent[1];
+      var xmax = app.project.baseExtent[2];
+      var ymax = app.project.baseExtent[3];
+
+      var bbox = "&Bbox=" + xmin + "," + ymin + "," + xmax + "," + ymax;
+      var url = "";
+      url = "http://services.kortforsyningen.dk/service?servicename=topo_geo_gml2&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=kms:Bygning&login=student134859&password=3dgis"
+      url = url + bbox;
+      $.ajax({
+          url: url + bbox,
+          dataType: "xml",
+      })
+   .success(function (response) {
+
+
+       var coordinates = response.getElementsByTagName("coordinates");
+      
+    
+       if (coordinates.length > 0) {
+           if (project.WFSlayers == undefined) {
+               project.WFSlayers = [];
+           }
+           project.WFSlayers = [];
+           project.WFSlayers[0] = {};
+           project.WFSlayers[0].model = [];
+           project.WFSlayers[0].a = [];
+
+           var widthP = app.project.width;
+           var heightP = app.project.height;
+
+           var widthM = xmax - xmin;
+           var heightM = ymax - ymin;
+
+           var factorX = widthP / widthM;
+           var factorY = heightP / heightM;
+
+
+           for (var i = 0; i < coordinates.length; i++) {
+               //For every collection of coordinates, we have to convert them to threejs points
+               var gmlPoints = new XMLSerializer().serializeToString(coordinates[i].childNodes[0]);
+               
+               var cords = gmlPoints.split(" ");
+        
+               var points = [];
+               for (var j = 0; j < cords.length; j++) {
+                  var xyz = cords[j].split(",");
+                  var x = xyz[0];
+                  var y = xyz[1];
+                  var z = xyz[2];
+
+                   var ptx = widthP / 2 - ((xmax - x) * factorX);
+                   var pty = heightP / 2 - ((ymax - y) * factorY);
+                   var point = new THREE.Vector3(ptx, pty,z);
+                   points.push(point);
+               }
+              
+               var shape = new THREE.Shape(points);
+               var extrudeSettings = {
+                   amount: 1.2,
+                   steps: 1,
+                   material: 0,
+                   extrudeMaterial: 1,
+                   bevelEnabled: false
+               };
+
+               //use points to build shape
+               //build a geometry (ExtrudeGeometry) from the shape and extrude settings
+               var geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+               geometry.dynamic = true;
+
+               var color = 0xffffff;
+               var material = new THREE.MeshPhongMaterial({
+                   color: color
+               });
+
+               var mesh = new THREE.Mesh(geometry, material);
+               mesh.scale.set(1, 1, z / 10);
+               mesh.userData.layerId = 100;
+               mesh.userData.featureId = i;
+               // app.scene.add(sphere);
+               //Okay so instead of adding a sphere to the scene, we can add the sphere to our WFSLayer geometry
+
+               //Todo create proper indexing somehow.
+               project.WFSlayers[0].model[i] = mesh;
+               project.WFSlayers[0].a[i] = 0;
+
+               app.scene.add(project.WFSlayers[0].model[i]);
+           }
+
+
+       }
+       /*
+         
+                   var shape = new THREE.Shape(points);
+                   var extrudeSettings = {
+                       amount: 1.2,
+                       steps: 1,
+                       material: 0,
+                       extrudeMaterial: 1,
+                       bevelEnabled: false
+                   };
+
+                   //use points to build shape
+
+
+
+                   //build a geometry (ExtrudeGeometry) from the shape and extrude settings
+                   var geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+                   geometry.dynamic = true;
+
+                   var hex = 0xff0000;
+                   var hex2 = 0xaa0011;
+                   var hex3 = 0x990033;
+                   var color = 0xffffff;
+
+                   var colorlist = [hex, hex2, hex3];
+
+
+                   //  color = colorlist[Math.floor(Math.random() * colorlist.length)];
+
+                   var material = new THREE.MeshPhongMaterial({
+                       color: color
+                   });
+
+                   var mesh = new THREE.Mesh(geometry, material);
+                   mesh.scale.set(1, 1, 5 * Math.random());
+                   mesh.userData.layerId = 100;
+                   mesh.userData.featureId = i;
+                   // app.scene.add(sphere);
+                   //Okay so instead of adding a sphere to the scene, we can add the sphere to our WFSLayer geometry
+
+                   //Todo create proper indexing somehow.
+                   project.WFSlayers[0].model[i] = mesh;
+                   project.WFSlayers[0].a[i] = project.WFSlayers[0].features[i].properties;
+
+                   app.scene.add(project.WFSlayers[0].model[i]);
+                   //  app.render();
+                   points = [];
+                   // var polygon = new THREE.Mesh(geometry, material);
+
+                   // var x = response.features[i].geometry.coordinates[0];
+                   // var y = response.features[i].geometry.coordinates[1];
+                   // var z = 1;
+
+                   //Okay we have the width and height, plus the bounding box
+                   //Figure out how to calculate mapcoordinates to project coordinates.
+
+               }
+           }
+
+       }
+
+       */
+       //app.wmsready = true;
+   })
+   .fail(function (jqXHR, textStatus, errorThrown) {
+       console.log("Failed jquery");
+   });
+      
+  } 
 
   app.getbounds = function (url) {
       //If projection = bla revert
@@ -1091,7 +1251,7 @@ limitations:
      var ymax = app.project.baseExtent[3];
 
      console.log(app.project.baseExtent[0]);
-     var bbox = "&Bbox=" + xmin + "," + ymin + "," + xmax + "," + ymax
+     var bbox = "&Bbox=" + xmin + "," + ymin + "," + xmax + "," + ymax;
      console.log("&Bbox=" + xmin + "," + ymin + "," + xmax + "," + ymax);
 
      console.log(url);
@@ -1291,32 +1451,27 @@ limitations:
       //Crs - properties - code (EPSG)
       //features - objects - geometry - coordinates - 0 1
       //                              - type (point, polygon etc)
-
- 
-    
-
   };
 
 
   app.wmsTerrain = function (num, width, height) {
       var url = "http://kortforsyningen.kms.dk/service?servicename=dhm&request=GetMap&service=WMS&version=1.1.1&LOGIN=Bydata&PASSWORD=Qby2016%21&layers=dtm_1_6m&width=" + width + "&height=" + height + "&format=image%2Fpng&srs=EPSG%3A25832";
-      var loader = new THREE.TextureLoader();
-      loader.crossOrigin = true;
-
+     
       //for (var i = 0; i < app.project.plane[0].material.materials.length; i++) {
 
           var temp = app.project.plane[0].material.materials[0];
           url = url + temp.bbox;
           console.log(url);
           //Get the height data from the terrain image
+          
           var img = new Image();
           var canvas = document.createElement('canvas');
           canvas.width = width - 1;
           canvas.height = height - 1;
           var context = canvas.getContext('2d');
           var data = new Float32Array(0);
-          img.onload = function () {
 
+          img.onload = function () {
               var size = 0;
               context.drawImage(img, 0, 0);
               size = width * height;
@@ -1324,8 +1479,9 @@ limitations:
               
              img.height = height;
              img.width = width;
+
               for (var i = 0; i < size; i++) {
-                  data[i] = 0
+                  data[i] = 0;
               }
 
           var imgd = context.getImageData(0, 0, width, height);
@@ -1333,7 +1489,7 @@ limitations:
         
           console.log("Pix length: " + pix.length);
           console.log(pix);
-         var j = 0;
+          var j = 0;
           for (var i = 0; i < pix.length; i += 4) {
               var all = pix[i] + pix[i + 1] + pix[i + 2];
               data[j++] = all / 24;
@@ -1341,25 +1497,21 @@ limitations:
 
          // plane
          // var geometry = app.project.plane[0].geometry;
-          console.log(this.width);
-          console.log(this.height);12
-          var geometry = new THREE.PlaneGeometry(app.project.width, app.project.height, width - 1, height-1);
+          var geometry = new THREE.PlaneGeometry(app.project.width, app.project.height, width - 1, height - 1);
 
-          var texture = THREE.ImageUtils.loadTexture(url);
+          var texture = THREE.ImageUtils.loadTexture(temp.url + temp.bbox);
           var material = new THREE.MeshLambertMaterial({ map: texture });
-         //aterial.wireframe = true;
+          // material.wireframe = true;
           var plane = new THREE.Mesh(geometry, material);
-          console.log("vertices: " + plane.geometry.vertices.length);
-          console.log("Data Length: " + data.length)
-              //set height of vertices
+          //set height of vertices
           
           for (var i = 0; i < plane.geometry.vertices.length; i++) {
               plane.geometry.vertices[i].z = data[i];
           }
+
           geometry.verticesNeedUpdate = true;
-          plane.setWireframeMode = true;
           app.project.plane[1] = plane;
-          plane.position.set(1, 1, 1.5);
+          plane.position.set(1, 1, -4);
           app.scene.add(plane);
           }
           img.src = url;
