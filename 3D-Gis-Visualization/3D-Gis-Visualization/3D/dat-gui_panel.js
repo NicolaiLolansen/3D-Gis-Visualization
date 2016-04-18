@@ -177,7 +177,7 @@ Q3D.gui = {
       
       funcFolder.add(this.parameters, 'getbounds').name('Get Bounds!').onFinishChange(function (value) { Q3D.application.getbounds(value) }); //Kalder til qgis2threejs.js med værdien fra feltet
 
-      /*
+      
       funcFolder.add(this.parameters, 'Source').name('Select Data Source').onFinishChange(function (value) {
           addSource(value);
             startParse();
