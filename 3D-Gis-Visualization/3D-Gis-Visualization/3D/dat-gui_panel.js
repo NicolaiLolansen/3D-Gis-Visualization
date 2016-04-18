@@ -19,14 +19,14 @@ Q3D.gui = {
     Source: 'https://dl.dropboxusercontent.com/s/8qyigf5hvqmty0z/csvtest1.csv',
     getParseResult: getAllData,
     getParseSources: getSources,
-        getbounds: "http://wfs-kbhkort.kk.dk/k101/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=k101:karre&outputFormat=json",
-        WFSlayers: [],
-        opacity: 1.0,
-        color: "#445566",
-        height: 5,
-        random: false,
-        getGML: false,
-        showColor: false
+    getbounds: "http://wfs-kbhkort.kk.dk/k101/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=k101:karre&outputFormat=json",
+    WFSlayers: [],
+    opacity: 1.0,
+    color: "#445566",
+    height: 5,
+    random: false,
+    getGML: false,
+    showColor: false
   },
 
   // initialize gui
@@ -184,8 +184,8 @@ Q3D.gui = {
       }),
 
       funcFolder.add(this.parameters, 'getParseResult').name('Retrieve Data');
-        funcFolder.add(this.parameters, 'getParseSources').name('Retrive Sources').onChange(function () { console.log(getSources()) });
-        funcFolder.add(this.parameters, 'getGML').name('Get FOT Buildings').onChange(function () { app.getBuildings()});
+      funcFolder.add(this.parameters, 'getParseSources').name('Retrive Sources').onChange(function () { console.log(getSources()) });
+      funcFolder.add(this.parameters, 'getGML').name('Get FOT Buildings').onChange(function () { app.getBuildings()});
     },
 
 
