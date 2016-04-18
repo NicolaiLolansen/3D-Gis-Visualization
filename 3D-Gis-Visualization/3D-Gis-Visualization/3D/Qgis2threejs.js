@@ -4,7 +4,7 @@
 // (C) 2014 Minoru Akagi | MIT License
 // https://github.com/minorua/Qgis2threejs
 
-var Q3D = {VERSION: "1.4"};
+var Q3D = { VERSION: "1.4" };
 Q3D.Options = {
   bgcolor: null,
   light: {
@@ -13,18 +13,18 @@ Q3D.Options = {
       altitude: 80    // altitude angle
     }
   },
-  side: {color: 0xc7ac92, bottomZ: -1.5},
-  frame: {color: 0, bottomZ: -1.5},
-  label: {visible: true, connectorColor: 0xc0c0d0, autoSize: false, minFontSize: 10},
-  qmarker: {r: 0.25, c: 0xffff00, o: 0.8},
+    side: { color: 0xc7ac92, bottomZ: -1.5 },
+    frame: { color: 0, bottomZ: -1.5 },
+    label: { visible: true, connectorColor: 0xc0c0d0, autoSize: false, minFontSize: 10 },
+    qmarker: { r: 0.25, c: 0xffff00, o: 0.8 },
   debugMode: false,
   exportMode: false,
   jsonLoader: "JSONLoader"  // JSONLoader or ObjectLoader
 };
 
-Q3D.LayerType = {DEM: "dem", Point: "point", Line: "line", Polygon: "polygon"};
-Q3D.MaterialType = {MeshLambert: 0, MeshPhong: 1, LineBasic: 2, Sprite: 3, Unknown: -1};
-Q3D.uv = {i: new THREE.Vector3(1, 0, 0), j: new THREE.Vector3(0, 1, 0), k: new THREE.Vector3(0, 0, 1)};
+Q3D.LayerType = { DEM: "dem", Point: "point", Line: "line", Polygon: "polygon" };
+Q3D.MaterialType = { MeshLambert: 0, MeshPhong: 1, LineBasic: 2, Sprite: 3, Unknown: -1 };
+Q3D.uv = { i: new THREE.Vector3(1, 0, 0), j: new THREE.Vector3(0, 1, 0), k: new THREE.Vector3(0, 0, 1) };
 
 Q3D.ua = window.navigator.userAgent.toLowerCase();
 Q3D.isIE = (Q3D.ua.indexOf("msie") != -1 || Q3D.ua.indexOf("trident") != -1);
@@ -51,9 +51,11 @@ Q3D.Project = function (params) {
   this.scale = this.width / w;
   this.zScale = this.scale * this.zExaggeration;
 
-  this.origin = {x: this.baseExtent[0] + w / 2,
+    this.origin = {
+        x: this.baseExtent[0] + w / 2,
                  y: this.baseExtent[1] + h / 2,
-                 z: -this.zShift};
+        z: -this.zShift
+    };
 
   this.layers = [];
   this.models = [];
@@ -104,18 +106,20 @@ Q3D.Project.prototype = {
       xd += origin.x;
       yd += origin.y;
     }
-    return {x: xd, y: yd};
+        return { x: xd, y: yd };
   },
 
   toMapCoordinates: function (x, y, z) {
     if (this.rotation) {
-      var pt = this._rotatePoint({x: x, y: y}, this.rotation);
+            var pt = this._rotatePoint({ x: x, y: y }, this.rotation);
       x = pt.x;
       y = pt.y;
     }
-    return {x: x / this.scale + this.origin.x,
+        return {
+            x: x / this.scale + this.origin.x,
             y: y / this.scale + this.origin.y,
-            z: z / this.zScale + this.origin.z};
+            z: z / this.zScale + this.origin.z
+        };
   }
 
   // buildCustomLights: function (parent) {},
@@ -137,6 +141,8 @@ limitations:
   Q3D.application = app;
 
   app.init = function (container) {
+        
+       
       //FPS Counter
       app.stats = new Stats();
       app.stats.setMode(0); // 0: fps, 1: ms, 2: mb
@@ -150,8 +156,7 @@ limitations:
 
       app.INTERSECTED = null;
       app.mouse = new THREE.Vector2();
-      app.raycaster = new THREE.Raycaster();
-
+    
     app.container = container;
     app.running = false;
     
@@ -212,8 +217,6 @@ limitations:
     app.modelBuilders = [];
     app._wireframeMode = false;
 
-
-    
   };
 
   app.parseUrlParameters = function () {
@@ -227,16 +230,34 @@ limitations:
   };
 
   app.loadProject = function (project) {
-      app.project = project;
-     // console.log("app.loadProject is called");
+    app.project = project;
     console.log(project);
     // light
+        console.log(app.scene);
     if (project.buildCustomLights) project.buildCustomLights(app.scene);
     else app.buildDefaultLights(app.scene);
 
     // camera
     if (project.buildCustomCamera) project.buildCustomCamera();
     else app.buildDefaultCamera();
+
+    app.raycaster = new THREE.Raycaster();
+
+    app.octree = new THREE.Octree({
+        // uncomment below to see the octree (may kill the fps)
+        //scene: app.scene,
+        // when undeferred = true, objects are inserted immediately
+        // instead of being deferred until next octree.update() call
+        // this may decrease performance as it forces a matrix update
+        undeferred: false,
+        // set the max depth of tree
+        depthMax: 50,
+        // max number of objects before nodes split or merge
+        objectsThreshold: 32,
+        // percent between 0 and 1 that nodes will overlap each other
+        // helps insert objects that lie over more than one node
+        overlapPct: 0.15
+    });
 
     // restore view (camera position and its target) from URL parameters
     var vars = app.urlParams;
@@ -288,14 +309,14 @@ limitations:
     // create a marker for queried point
     var opt = Q3D.Options.qmarker;
     app.queryMarker = new THREE.Mesh(new THREE.SphereGeometry(opt.r),
-                                      new THREE.MeshLambertMaterial({color: opt.c, ambient: opt.c, opacity: opt.o, transparent: (opt.o < 1)}));
+                                          new THREE.MeshLambertMaterial({ color: opt.c, ambient: opt.c, opacity: opt.o, transparent: (opt.o < 1) }));
     app.queryMarker.visible = false;
     app.scene.add(app.queryMarker);
 
     // update matrix world here
     app.scene.updateMatrixWorld();
 
-    app.highlightMaterial = new THREE.MeshLambertMaterial({emissive: 0x999900, transparent: true, opacity: 0.5});
+        app.highlightMaterial = new THREE.MeshLambertMaterial({ emissive: 0x999900, transparent: true, opacity: 0.5 });
     if (!Q3D.isIE) app.highlightMaterial.side = THREE.DoubleSide;    // Shader compilation error occurs with double sided material on IE11
 
     app.selectedLayerId = null;
@@ -303,14 +324,16 @@ limitations:
     app.highlightObject = null;
 
     //Generate Texture
-    app.calculatebbox(1);
+    app.calculatebbox(2);
 
       //Generate Buildings
-    app.getbounds("http://wfs-kbhkort.kk.dk/k101/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=k101:karre&outputFormat=json");
+      // app.getbounds("http://wfs-kbhkort.kk.dk/k101/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=k101:karre&outputFormat=json");
+       // var request = "Bygning_BBR_P";
+       // var url = "http://services.kortforsyningen.dk/service?servicename=topo_geo_gml2&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=kms:Navnefortidsminde&maxfeatures=3&login=student134859&password=3dgis&outputFormat=json";
+        // app.getbounds(url);
 
       //Frustum
     app.frustum = new THREE.Frustum();
-   
   };
 
   app.addEventListeners = function () {
@@ -319,7 +342,7 @@ limitations:
 
 
       //mouseEvent
-    window.addEventListener("mousemove",app.eventListener.onMouseMove, false );
+        window.addEventListener("mousemove", app.eventListener.onMouseMove, false);
 
     var e = Q3D.$("closebtn");
     if (e) e.addEventListener("click", app.closePopup);
@@ -346,7 +369,7 @@ limitations:
       if (app._fullWindow) app.setCanvasSize(window.innerWidth, window.innerHeight);
     },
 
-    onMouseMove: function (){
+        onMouseMove: function () {
         app.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         app.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
   }
@@ -365,7 +388,7 @@ limitations:
     var deg2rad = Math.PI / 180;
 
     // ambient light
-    parent.add(new THREE.AmbientLight(0x222222));
+        //parent.add(new THREE.AmbientLight(0x111111));
 
     // directional lights
     var opt = Q3D.Options.light.directional;
@@ -376,12 +399,12 @@ limitations:
         y = Math.cos(phi) * Math.sin(lambda),
         z = Math.sin(phi);
 
-    var light1 = new THREE.DirectionalLight(0xffffff, 1);
+        var light1 = new THREE.DirectionalLight(0xffffff, 0.8);
     light1.position.set(x, y, z);
     parent.add(light1);
 
     // thin light from the opposite direction
-    var light2 = new THREE.DirectionalLight(0xffffff, 1);
+        var light2 = new THREE.DirectionalLight(0xffffff, 0.1);
     light2.position.set(-x, -y, -z);
     parent.add(light2);
   };
@@ -413,24 +436,29 @@ limitations:
 
   // animation loop
   app.animate = function () {
-  
-
       app.raycaster.setFromCamera(app.mouse, app.camera);
-      if (app.wmsready) {
-          //var intersects = app.raycaster.intersectObjects(app.project.WFSlayers[0].model);
-          //var ids = [];
-          //for (var i = 0; i < intersects.length; i++) {
-              //  console.log("Hit it");
-
-            //  intersects[i].object.scale.set(1, 1, 10);
-          //} 
-
-          // find intersections
-
-          var intersects = app.raycaster.intersectObjects(app.project.WFSlayers[0].model);
       
-          if (intersects.length > 0) {
+      app.vector = new THREE.Vector3( 0, 0, - 1 );
+      app.vector.applyQuaternion(app.camera.quaternion);
 
+      if (app.wmsready) {
+      app.octreeObjects = app.octree.search(app.raycaster.ray.origin, 100, true, app.vector);
+      var intersections = app.raycaster.intersectOctreeObjects(app.octreeObjects,true);
+      
+          if (app.octreeObjects.length > 0) {
+              app.removeLayer(110);
+              for (var i = 0; i < app.octreeObjects.length; i++) {
+                  // app.octreeObjects[i].object.material.color.setHex(0xff0000);
+                  app.scene.add(app.octreeObjects[i].object);
+              }
+          }
+      }
+      //console.log(app.raycaster.ray.direction);
+      if (app.wmsready) {
+          // find intersections
+          if (app.project.WFSlayers != undefined) {
+             var intersects = app.raycaster.intersectObjects(app.project.WFSlayers[0].model);
+          if (intersects.length > 0) {
               if (app.INTERSECTED != intersects[0].object) {
 
                   if (app.INTERSECTED) app.INTERSECTED.material.emissive.setHex(app.INTERSECTED.currentHex);
@@ -438,18 +466,21 @@ limitations:
                   app.INTERSECTED = intersects[0].object;
                   app.INTERSECTED.currentHex = app.INTERSECTED.material.emissive.getHex();
                   app.INTERSECTED.material.emissive.setHex(0xffffff);
-              }
+          }
           } else {
               if (app.INTERSECTED) app.INTERSECTED.material.emissive.setHex(app.INTERSECTED.currentHex);
               app.INTERSECTED = null;
           }
 
+          
+         
           //Frustum Culling - Increases performance by rendering objects inside the frustum
-          app.frustum.setFromMatrix(new THREE.Matrix4().multiplyMatrices(app.camera.projectionMatrix, app.camera.matrixWorldInverse));
-          for (var i = 0; i < app.project.WFSlayers[0].model.length; i++) {
-              app.project.WFSlayers[0].model[i].visible = app.frustum.intersectsObject(app.project.WFSlayers[0].model[i]);
-          }
+       //   app.frustum.setFromMatrix(new THREE.Matrix4().multiplyMatrices(app.camera.projectionMatrix, app.camera.matrixWorldInverse));
+         // for (var i = 0; i < app.project.WFSlayers[0].model.length; i++) {
+        //      app.project.WFSlayers[0].model[i].visible = app.frustum.intersectsObject(app.project.WFSlayers[0].model[i]);
+        //  }
 
+          }
       }
     app.stats.begin();
       // monitored code goes here
@@ -565,7 +596,7 @@ limitations:
 
      
       app.project.WFSlayers.forEach(function (layer) {
-          if (layer.features.length) {
+          if (layer.model.length) {
               app._queryableObjects = app._queryableObjects.concat(layer.model);
              // console.log("Added the queryable Objects for WFS");
           }
@@ -580,7 +611,7 @@ limitations:
     var y = -(offsetY / app.height) * 2 + 1;
     var vector = new THREE.Vector3(x, y, 1);
     vector.unproject(app.camera);
-    var ray = new THREE.Raycaster(app.camera.position, vector.sub(app.camera.position).normalize());
+    var ray = new THREE.Raycaster(app.camera.position, vector.sub(app.camera.position).normalize(),0,50);
   //  console.log(app.queryableObjects());
     return ray.intersectObjects(app.queryableObjects());
   };
@@ -590,7 +621,7 @@ limitations:
     do {
       top += elm.offsetTop || 0; left += elm.offsetLeft || 0; elm = elm.offsetParent;
     } while (elm);
-    return {top: top, left: left};
+        return { top: top, left: left };
   };
 
   app.help = function () {
@@ -673,7 +704,7 @@ limitations:
     var layer, r = [];
     if (layerId !== undefined) {
         //If layerId is WFS - Nicolai
-        if (layerId == 100) {
+        if (layerId == 100 || layerId == 110) {
             layer = app.project.WFSlayers[0];
             r.push('<table class="layer">');
             r.push("<caption>Layer name</caption>");
@@ -741,7 +772,7 @@ limitations:
 
   app.showPrintDialog = function () {
 
-    function e (tagName, parent, innerHTML) {
+        function e(tagName, parent, innerHTML) {
       var elem = document.createElement(tagName);
       if (parent) parent.appendChild(elem);
       if (innerHTML) elem.innerHTML = innerHTML;
@@ -901,7 +932,7 @@ limitations:
     if (app.rancsv == null) {
 
     for (var i = 0; i < app.csvResults.data.length; i++) {
-        if (parseInt(app.csvResults.data[i].value) < min ){
+                if (parseInt(app.csvResults.data[i].value) < min) {
             min = parseInt(app.csvResults.data[i].value)
         }
         if (parseInt(app.csvResults.data[i].value) > max) {
@@ -909,7 +940,7 @@ limitations:
         }
     }
 
-    for(var i = 0; i < app.csvResults.data.length; i++){
+            for (var i = 0; i < app.csvResults.data.length; i++) {
         var temp = 0;
         temp = (app.csvResults.data[i].value - min) / (max - min);
         app.csvResults.data[i].value = temp;
@@ -919,12 +950,12 @@ limitations:
      for (var i = 0; i < layer.f.length; i++) {
          for (var j = 0; j < app.csvResults.data.length; j++) {
              if (layer.f[i].a[0] == app.csvResults.data[j].FOT) {
-                 layer.f[i].objs[0].scale.set(1, 1, app.csvResults.data[j].value*2);
+                        layer.f[i].objs[0].scale.set(1, 1, app.csvResults.data[j].value * 2);
 
                  var redness = Math.round(app.csvResults.data[j].value * 255);
                  var greenness = Math.round(255 - (Math.round(app.csvResults.data[j].value * 255)));
 
-                 var material = new THREE.MeshBasicMaterial({ color: "rgb(" + redness + ", " + greenness + ", 0)", opacity: 1});
+                        var material = new THREE.MeshBasicMaterial({ color: "rgb(" + redness + ", " + greenness + ", 0)", opacity: 1 });
                  layer.f[i].objs[0].material = material;
              }
          }
@@ -937,122 +968,262 @@ limitations:
     app.selectedFeatureId = featureId;
     app.highlightObject = highlightObject;
   };
+  app.getBuildings = function () {
+
+      var xmin = app.project.baseExtent[0];
+      var ymin = app.project.baseExtent[1];
+      var xmax = app.project.baseExtent[2];
+      var ymax = app.project.baseExtent[3];
+
+      var bbox = "&Bbox=" + xmin + "," + ymin + "," + xmax + "," + ymax;
+      var url = "";
+      url = "http://services.kortforsyningen.dk/service?servicename=topo_geo_gml2&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=kms:Bygning&login=student134859&password=3dgis"
+      url = url + bbox;
+      app.wmsready = false;
+      app.removeLayer(100);
+      app.removeLayer(110);
+      $.ajax({
+          url: url + bbox,
+          dataType: "xml",
+      })
+     .success(function (response) {
+     
+         var coordinates = response.getElementsByTagName("coordinates");
+         var attributes = response.getElementsByTagName("Bygning");
+         console.log(attributes);
+       if (coordinates.length > 0) {
+           if (project.WFSlayers == undefined) {
+               project.WFSlayers = [];
+           }
+           project.WFSlayers = [];
+           project.WFSlayers[0] = {};
+           project.WFSlayers[0].model = [];
+           project.WFSlayers[0].a = [];
+
+           var widthP = app.project.width;
+           var heightP = app.project.height;
+
+           var widthM = xmax - xmin;
+           var heightM = ymax - ymin;
+
+           var factorX = widthP / widthM;
+           var factorY = heightP / heightM;
 
 
-  app.calculatebbox = function (num) {
-      THREE.ImageUtils.crossOrigin = "";
-      var xmin = parseFloat(app.project.baseExtent[0]);
-      var ymin = parseFloat(app.project.baseExtent[1]);
-      var xmax = parseFloat(app.project.baseExtent[2]);
-      var ymax = parseFloat(app.project.baseExtent[3]);
+           for (var i = 0; i < coordinates.length; i++) {
+               //For every collection of coordinates, we have to convert them to threejs points
+               var gmlPoints = new XMLSerializer().serializeToString(coordinates[i].childNodes[0]);
+               var cords = gmlPoints.split(" ");
 
-      var tilex = parseFloat((xmax - xmin) / num);
-      var tiley = parseFloat((ymax - ymin) / num);
+               var points = [];
+               for (var j = 0; j < cords.length; j++) {
+                   var xyz = cords[j].split(",");
+                   var x = xyz[0];
+                   var y = xyz[1];
+                   var z = xyz[2];
 
+                   var ptx = widthP / 2 - ((xmax - x) * factorX);
+                   var pty = heightP / 2 - ((ymax - y) * factorY);
+                   var point = new THREE.Vector3(ptx, pty, z);
+                   points.push(point);
+               }
+               var gmlAttributes = new XMLSerializer().serializeToString(attributes[i].childNodes);
+               console.log(gmlAttributes);
+
+               var shape = new THREE.Shape(points);
+               var extrudeSettings = {
+                   amount: 1.2,
+                   steps: 1,
+                   material: 0,
+                   extrudeMaterial: 1,
+                   bevelEnabled: false
+               };
+
+               //use points to build shape
+               //build a geometry (ExtrudeGeometry) from the shape and extrude settings
+               var geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+               geometry.dynamic = true;
+
+               var color = 0xffffff;
+               var material = new THREE.MeshPhongMaterial({
+                   color: color
+               });
+
+               var mesh = new THREE.Mesh(geometry, material);
+               if (z > 0) {
+                   mesh.scale.set(1, 1, z / 15);
+               } else {
+                   mesh.scale.set(1, 1, 1);
+               }
+               
+               mesh.userData.layerId = 110;
+               mesh.userData.featureId = i;
+               // app.scene.add(sphere);
+               //Okay so instead of adding a sphere to the scene, we can add the sphere to our WFSLayer geometry
+
+               //Todo create proper indexing somehow.
+               project.WFSlayers[0].model[i] = mesh;
+               project.WFSlayers[0].a[i] = 0;
+
+               app.octree.add(project.WFSlayers[0].model[i]);
+               //app.scene.add(project.WFSlayers[0].model[i]);
+               
+           }
+       }
+       app.wmsready = true
+       Q3D.gui.addCustomLayers(project.WFSlayers[0]);
+   })
+   .fail(function (jqXHR, textStatus, errorThrown) {
+       console.log("Failed jquery");
+   });
+
+  }
+    app.generateTerrain = function (url, height, width) {
+
+        var img = new Image();
+        var canvas = document.createElement('canvas');
+        canvas.width = width - 1;
+        canvas.height = height - 1;
+        var context = canvas.getContext('2d');
+        var data = new Float32Array(0);
+
+
+
+        img.onload = function () {
   
-      var width = 1024;
+      var width = 512;
       var height = 512;
       var url = "http://kortforsyningen.kms.dk/service?servicename=orto_foraar&request=GetMap&service=WMS&version=1.1.1&LOGIN=Bydata&PASSWORD=Qby2016%21&layers=orto_foraar&width="+width+"&height="+height+"&format=image%2Fpng&srs=EPSG%3A25832";
      // var url = "http://kortforsyningen.kms.dk/service?servicename=adm_500_2008_r&request=GetMap&service=WMS&version=1.1.1&LOGIN=Bydata&PASSWORD=Qby2016%21&layers=KOM500_2008&width=" + width + "&height=" + height + "&format=image%2Fpng&srs=EPSG%3A25832";
      // var url = "http://kortforsyningen.kms.dk/service?servicename=topo4cm_1953_1976&request=GetMap&service=WMS&version=1.1.1&LOGIN=Bydata&PASSWORD=Qby2016!&layers=dtk_4cm_1953_1976&width=" + width + "&height=" + height + "&format=image%2Fpng&srs=EPSG%3A25832";
 
+            img.height = height;
+            img.width = width;
+            for (var i = 0; i < size; i++) {
+                data[i] = 0
+            }
 
+            var imgd = context.getImageData(0, 0, width, height);
+            var pix = imgd.data;
 
-     //var plane = new THREE.Mesh(new THREE.PlaneGeometry(100, 50, num, num), material);
-     var plane = new THREE.PlaneGeometry(app.project.width, app.project.height, num, num);
-     var materials = [];
-     var loader = new THREE.TextureLoader();
-     var id = 0;
-     for (var column = num - 1; column >= 0; column--) {
-          for (var row = 0; row < num; row++){
-              //console.log("bbox=" + (xmin + (row * tilex)) + "," + (ymin + (column * tiley)) + "," + (xmin + ((row + 1) * tilex)) + "," + (ymin + ((column + 1) * tiley)));
-              console.log(url + "&bbox=" + (xmin + (row * tilex)) + "," + (ymin + (column * tiley)) + "," + (xmin + ((row + 1) * tilex)) + "," + (ymin + ((column + 1) * tiley)));
-              THREE.ImageUtils.crossOrigin = '';
-              var texture = THREE.ImageUtils.loadTexture(url + "&bbox=" + (xmin + (row * tilex)) + "," + (ymin + (column * tiley)) + "," + (xmin + ((row + 1) * tilex)) + "," + (ymin + ((column + 1) * tiley)));
-              texture.wrapS = THREE.RepeatWrapping;
-              texture.wrapT = THREE.RepeatWrapping;
-              texture.repeat.x = num;
-              texture.repeat.y = num;
+            var j = 0;
+            for (var i = 0; i < pix.length; i += 4) {
+                var all = pix[i] + pix[i + 1] + pix[i + 2];
+                data[j++] = all / 24;
+            }
 
-              //texture.flipY = true;
-               
-              var material = new THREE.MeshPhongMaterial({ map: texture });
-              material.url = url + "&bbox=" + (xmin + (row * tilex)) + "," + (ymin + (column * tiley)) + "," + (xmin + ((row + 1) * tilex)) + "," + (ymin + ((column + 1) * tiley));
-              material.bbox = "&bbox=" + (xmin + (row * tilex)) + "," + (ymin + (column * tiley)) + "," + (xmin + ((row + 1) * tilex)) + "," + (ymin + ((column + 1) * tiley));
-              materials.push(material);
-          }
-     } 
+            var geometry = new THREE.PlaneGeometry(app.project.width, app.project.height, width - 1, height - 1);
+            var texture = THREE.ImageUtils.loadTexture(url);
+            var material = new THREE.MeshLambertMaterial({ map: texture });
 
-     var l = plane.faces.length / 2; // divided by 2 because each tile is two triangles, which is two faces.
-     for (var i = 0; i < l; i++) {
-         //Make sure we texture in pairs (Dont want triangle tiles)
-         var j = 2 * i;
-         plane.faces[j].materialIndex = i % materials.length;
-         plane.faces[j + 1].materialIndex = i % materials.length;
-     }
+            var plane = new THREE.Mesh(geometry, material);
+            console.log("vertices: " + plane.geometry.vertices.length);
+            console.log("Data Length: " + data.length)
 
-   //  console.log(plane);
+            //set height of vertices
+            for (var i = 0; i < plane.geometry.vertices.length; i++) {
+                plane.geometry.vertices[i].z = data[i];
+            }
+            geometry.verticesNeedUpdate = true;
+            app.project.layers[0].setVisible(false);
+            app.project.plane = [];
+            app.project.plane[0] = plane;
+            console.log(app.project.plane[0]);
+            console.log("Adding plane!");
+            app.scene.add(app.project.plane[0]);
+        }
+        img.src = url;
+        img.crossOrigin = "Anonymous";
 
-     var faceMaterial = new THREE.MeshFaceMaterial(materials);
-    // console.log(faceMaterial);
-     var mesh = new THREE.Mesh(plane, faceMaterial);
-   //  var planemesh = THREE.SceneUtils.createMultiMaterialObject(plane, materials);
-     mesh.position.z = 0.2;
-      // planemesh.position.z = 3;
+    }
+    app.calculatebbox = function (num) {
+  
+        THREE.ImageUtils.crossOrigin = ""; //Allows us to avoid CORS problems for textures
+        //Gets the extent of the project plane
+        var xmin = parseFloat(app.project.baseExtent[0]);
+        var ymin = parseFloat(app.project.baseExtent[1]);
+        var xmax = parseFloat(app.project.baseExtent[2]);
+        var ymax = parseFloat(app.project.baseExtent[3]);
 
-     app.project.plane = [];
-     app.project.plane.push(mesh);
-     app.scene.add(mesh);
+        //The length of a tile in spatial reference notation
+        var tilex = parseFloat((xmax - xmin) / num);
+        var tiley = parseFloat((ymax - ymin) / num);
 
-    //After we have the tiles, update the resolution
-     app.updateResolution(num, width, height);
-
-      //And create the terrain
+        //Tile pixel dimensions (Higher is more detailed)
+        var width = 32;
+        var height = 32;
     
-  }
+        //The service URL for the layer we are using for map (Here orto photos from kortforsyningen)
+        var url = "http://kortforsyningen.kms.dk/service?servicename=orto_foraar&request=GetMap&service=WMS&version=1.1.1&LOGIN=student134859&PASSWORD=3dgis&layers=orto_foraar&width=" + (width) + "&height=" + (height) + "&format=image%2Fpng&srs=EPSG%3A25832";
 
-  app.updateResolution = function (num,width,height) {
-      var loader = new THREE.TextureLoader();
-      loader.crossOrigin = true;
-      var materials = [];
-      var loaded = 0;
-
-    for (var i = 0; i < app.project.plane[0].material.materials.length; i++){
-          var temp = app.project.plane[0].material.materials[i];
-          var url = temp.url;
+        var materials = []; //Array to hold our tiled images
+        var loader = new THREE.TextureLoader();
+        loader.crossOrigin = true;
+        //
+        // BLOCK
+        //
+        //For each tile, generate that plane, and place them next to each other.
             
-          var tempurl = "width=" + width + "&height=" + height + "&format=image%2Fpng&srs=EPSG%3A25832&";
-          url = url.replace(/width=.*&/, tempurl);
-         // console.log("i: " + i + " " + "loaded: " + loaded);
+        // var urlTerrain = "http://kortforsyningen.kms.dk/service?servicename=dhm&request=GetMap&service=WMS&version=1.1.1&LOGIN=student134859&PASSWORD=3dgis&layers=dtm_1_6m&width=" + width + "&height=" + height + "&format=image%2Fpng&srs=EPSG%3A25832";
+        // urlTerrain = urlTerrain + "&bbox=" + xmin + "," + ymin + "," + xmax + "," + ymax;
+        //app.generateTerrain(urlTerrain, height, width);
 
-             loader.load(url, function (texture) {
+        //Create the proper materials, we dont care to wait until they are loaded
+        for (var column = num - 1; column >= 0; column--) {
+            for (var row = 0; row < num; row++) {
+                THREE.ImageUtils.crossOrigin = '';
+                var texture = THREE.ImageUtils.loadTexture(url + "&bbox=" + (xmin + (row * tilex)+2) + "," + (ymin + (column * tiley)-2) + "," + (xmin + ((row + 1) * tilex)) + "," + (ymin + ((column + 1) * tiley)));
                   texture.wrapS = THREE.RepeatWrapping;
                   texture.wrapT = THREE.RepeatWrapping;
                   texture.repeat.x = num;
                   texture.repeat.y = num;
 
-                  //texture.flipY = true;
-
                   var material = new THREE.MeshPhongMaterial({ map: texture });
+                material.url = url + "&bbox=" + (xmin + (row * tilex)) + "," + (ymin + (column * tiley)) + "," + (xmin + ((row + 1) * tilex)) + "," + (ymin + ((column + 1) * tiley));
+                material.bbox = "&bbox=" + (xmin + (row * tilex)) + "," + (ymin + (column * tiley)) + "," + (xmin + ((row + 1) * tilex)) + "," + (ymin + ((column + 1) * tiley));
+                materials.push(material);
+            }
+        }
+        //Create a dummy plane with the exact number of revelations the terrain would have:
+        var geometry = new THREE.PlaneGeometry(app.project.width, app.project.height,num,num);
+     // var texture = THREE.ImageUtils.loadTexture(url + materials[0].bbox);
+        geometry.materials = materials;
+        console.log(materials.length);
+        console.log(geometry.faces.length);
+        var l = geometry.faces.length / 2; // divided by 2 because each tile consists two triangles, which is two faces.
 
+        //i % materials.length assigns each face with the next material in the list
+        //Works because each face is one texture
 
-               //   material.url = url;
-                //  materials.push(material);
-                  loaded += 1
-                  // app.project.plane[0].material.materials[i] = material;
+        //Figure out how faces are assigned, is it per row or per column?
+                for (var i = 0; i < l; i++) {
+                    //Make sure we texture in pairs (Dont want triangle tiles)
+                        var j = i*2
+                        geometry.faces[j].materialIndex = i % materials.length;
+                        geometry.faces[j + 1].materialIndex = i % materials.length;
+                    }
 
+        var material = new THREE.MeshFaceMaterial(materials);
+        var plane = new THREE.Mesh(geometry, material);
+        plane.position.z = 0.2;
+        app.project.plane = [];
+        app.project.plane.push(plane);
+        app.scene.add(plane);
+        app.updateResolution(num, width, height);
+    }
 
-                  if (loaded == app.project.plane[0].material.materials.length) {    //We loaded all the images
-                      // the default
-                      var faceMaterial = new THREE.MeshFaceMaterial(materials);
-                      app.project.plane[0].material = faceMaterial;
-                      if (height < 0) {
-                          app.updateResolution(num, width * 2, height * 2)
-                      }
-                      app.wmsTerrain(num, width, height);
-                  }
-              });
+    app.updateResolution = function (num, width, height) {
+        var loader = new THREE.TextureLoader();
+        loader.crossOrigin = true;
+        var materials = [];
+        var loaded = 0;
+
+        for (var i = 0; i < app.project.plane[0].material.materials.length; i++) {
+            var temp = app.project.plane[0].material.materials[i];
+            var url = temp.url;
       
+            var tempurl = "width=" + width + "&height=" + height + "&format=image%2Fpng&srs=EPSG%3A25832&";
+            url = url.replace(/width=.*&/, tempurl);
 
               THREE.ImageUtils.crossOrigin = '';
               var texture = THREE.ImageUtils.loadTexture(url);
@@ -1061,25 +1232,46 @@ limitations:
               texture.repeat.x = num;
               texture.repeat.y = num;
 
-              //texture.flipY = true;
-
               var material = new THREE.MeshPhongMaterial({ map: texture });
               material.url = url;
               material.bbox = temp.bbox;
               materials.push(material);
-              if (loaded == app.project.plane[0].material.materials.length) {
+            loader.load(url, function (texture) {
+                loaded += 1
+
+                if (loaded == app.project.plane[0].material.materials.length) {    //We loaded all the images
                   // the default
                   var faceMaterial = new THREE.MeshFaceMaterial(materials);
                   app.project.plane[0].material = faceMaterial;
-                  if (height <= 2048) {
-                      app.updateResolution(num, width * 2, height * 2);
-                  }
 
+                       if (height <= 1024) {
+                        app.updateResolution(num, width * 2, height * 2)
+
+                  }
+                    //           app.wmsTerrain(num,width,height);
               }
+            });
     }
   }
 
+    app.removeLayer = function (id) {
+      //  app.wmsready = false;
+        for (var i = 0; i < 10; i++) {
+            app.scene.children.forEach(function (child) {
+                if (child.userData.layerId == id) {
+                    if (id != 110) {
+                        app.octree.remove(child);
+                    }
+                    app.scene.remove(child);
+                    
+                    child = null;
+                   
+                }
 
+            });
+        }
+      
+    }
 
   app.getbounds = function (url) {
       //If projection = bla revert
@@ -1095,7 +1287,9 @@ limitations:
      console.log("&Bbox=" + xmin + "," + ymin + "," + xmax + "," + ymax);
 
      console.log(url);
-
+     app.wmsready = false;
+     app.removeLayer(100);
+     app.removeLayer(110);
      $.ajax({
          url: url + bbox,
          dataType: "json",
@@ -1105,14 +1299,12 @@ limitations:
         console.log("Found: " + response.features.length + " Features");
 
         if (response.features.length > 0) {
-            if (project.WFSlayers == undefined) {
-                project.WFSlayers = [];
-            }
+            
+            project.WFSlayers = [];
             //Create a WFSLayer prototype TODO: change to prototype method
             project.WFSlayers.push(response);
             project.WFSlayers[0].model = [];
             project.WFSlayers[0].a = [];
-
 
             var points = [];
             for (var i = 0; i < response.features.length; i++) {
@@ -1164,11 +1356,8 @@ limitations:
                     //Todo create proper indexing somehow.
                     project.WFSlayers[0].model[i] = sphere;
                     project.WFSlayers[0].a[i] = project.WFSlayers[0].features[i].properties;
-
+                    app.octree.add(project.WFSlayers[0].model[i]);
                     app.scene.add(project.WFSlayers[0].model[i]);
-
-
-
 
                 }
                 else if (response.features[i].geometry.type == "Polygon" || response.features[i].geometry.type == "MultiPolygon") {
@@ -1239,7 +1428,7 @@ limitations:
                     var hex3 = 0x990033;
                     var color = 0xffffff;
 
-                    var colorlist = [hex,hex2,hex3];
+                       var colorlist = [hex, hex2, hex3];
 
 
                   //  color = colorlist[Math.floor(Math.random() * colorlist.length)];
@@ -1258,8 +1447,8 @@ limitations:
                     //Todo create proper indexing somehow.
                     project.WFSlayers[0].model[i] = mesh;
                     project.WFSlayers[0].a[i] = project.WFSlayers[0].features[i].properties;
-
-                    app.scene.add(project.WFSlayers[0].model[i]);
+                    app.octree.add(project.WFSlayers[0].model[i]);
+                   // app.scene.add(project.WFSlayers[0].model[i]);
                     //  app.render();
                     points = [];
                     // var polygon = new THREE.Mesh(geometry, material);
@@ -1278,6 +1467,7 @@ limitations:
        
 
         app.wmsready = true;
+        Q3D.gui.addCustomLayers(project.WFSlayers[0]);
     })
     .fail(function (jqXHR, textStatus, errorThrown) {
         console.log("Failed jquery");
@@ -1299,7 +1489,7 @@ limitations:
 
 
   app.wmsTerrain = function (num, width, height) {
-      var url = "http://kortforsyningen.kms.dk/service?servicename=dhm&request=GetMap&service=WMS&version=1.1.1&LOGIN=Bydata&PASSWORD=Qby2016%21&layers=dtm_1_6m&width=" + width + "&height=" + height + "&format=image%2Fpng&srs=EPSG%3A25832";
+        var url = "http://kortforsyningen.kms.dk/service?servicename=dhm&request=GetMap&service=WMS&version=1.1.1&LOGIN=student134859&PASSWORD=3dgis&layers=dtm_1_6m&width=" + width + "&height=" + height + "&format=image%2Fpng&srs=EPSG%3A25832";
       var loader = new THREE.TextureLoader();
       loader.crossOrigin = true;
 
@@ -1336,17 +1526,18 @@ limitations:
          var j = 0;
           for (var i = 0; i < pix.length; i += 4) {
               var all = pix[i] + pix[i + 1] + pix[i + 2];
-              data[j++] = all / 24;
+                data[j++] = all / 12;
           }
 
          // plane
          // var geometry = app.project.plane[0].geometry;
           console.log(this.width);
-          console.log(this.height);12
+          console.log(this.height);
           var geometry = new THREE.PlaneGeometry(app.project.width, app.project.height, width - 1, height-1);
 
           var texture = THREE.ImageUtils.loadTexture(url);
           var material = new THREE.MeshLambertMaterial({ map: texture });
+
          //aterial.wireframe = true;
           var plane = new THREE.Mesh(geometry, material);
           console.log("vertices: " + plane.geometry.vertices.length);
@@ -1360,7 +1551,9 @@ limitations:
           plane.setWireframeMode = true;
           app.project.plane[1] = plane;
           plane.position.set(1, 1, 1.5);
-          app.scene.add(plane);
+
+            return plane;
+            // app.scene.add(plane);
           }
           img.src = url;
           img.crossOrigin = "Anonymous";
@@ -1509,7 +1702,7 @@ limitations:
         if (layerId !== undefined) break;
         object = object.parent;
       }
-      
+
       
       app.showQueryResult(obj.point, layerId, featureId);
 
@@ -1585,7 +1778,7 @@ limitations:
           arr[i] = binStr.charCodeAt(i);
         }
 
-        saveBlob(new Blob([arr], {type: "image/png"}));
+                saveBlob(new Blob([arr], { type: "image/png" }));
       }
     };
 
@@ -1886,7 +2079,7 @@ Q3D.ClippedDEMBlock.prototype = {
     // make back-side material for bottom
     var mat_back = material.clone();
     mat_back.side = THREE.BackSide;
-    layer.materials.push({type: Q3D.MaterialType.MeshLambert, m: mat_back});
+        layer.materials.push({ type: Q3D.MaterialType.MeshLambert, m: mat_back });
 
     var geom, mesh, shape, vertices;
     for (var i = 0, l = polygons.length; i < l; i++) {
@@ -2082,11 +2275,13 @@ Q3D.DEMLayer.prototype.build = function (parent) {
       // material
       var opacity = this.materials[block.m].o;
       if (opacity === undefined) opacity = 1;
-      var mat = new THREE.MeshLambertMaterial({color: opt.side.color,
+            var mat = new THREE.MeshLambertMaterial({
+                color: opt.side.color,
                                                ambient: opt.side.color,
                                                opacity: opacity,
-                                               transparent: (opacity < 1)});
-      this.materials.push({type: Q3D.MaterialType.MeshLambert, m: mat});
+                transparent: (opacity < 1)
+            });
+            this.materials.push({ type: Q3D.MaterialType.MeshLambert, m: mat });
 
       block.buildSides(this, mat, opt.side.bottomZ);
       this.sideVisible = true;
@@ -2104,10 +2299,12 @@ Q3D.DEMLayer.prototype.buildFrame = function (block, color, z0) {
   var dem = block;
   var opacity = this.materials[block.m].o;
   if (opacity === undefined) opacity = 1;
-  var mat = new THREE.LineBasicMaterial({color: color,
+    var mat = new THREE.LineBasicMaterial({
+        color: color,
                                          opacity: opacity,
-                                         transparent: (opacity < 1)});
-  this.materials.push({type: Q3D.MaterialType.LineBasic, m: mat});
+        transparent: (opacity < 1)
+    });
+    this.materials.push({ type: Q3D.MaterialType.LineBasic, m: mat });
 
   // horizontal rectangle at bottom
   var hw = dem.plane.width / 2, hh = dem.plane.height / 2;
@@ -2278,7 +2475,7 @@ Q3D.VectorLayer = function (params) {
 Q3D.VectorLayer.prototype = Object.create(Q3D.MapLayer.prototype);
 Q3D.VectorLayer.prototype.constructor = Q3D.VectorLayer;
 
-Q3D.VectorLayer.prototype.build = function (parent) {};
+Q3D.VectorLayer.prototype.build = function (parent) { };
 
 Q3D.VectorLayer.prototype.buildLabels = function (parent, parentElement, getPointsFunc, zFunc) {
   // Layer must belong to a project
@@ -2302,7 +2499,7 @@ Q3D.VectorLayer.prototype.buildLabels = function (parent, parentElement, getPoin
     return [z0, z0 + label.v];
   };
 
-  var line_mat = new THREE.LineBasicMaterial({color: Q3D.Options.label.connectorColor});
+    var line_mat = new THREE.LineBasicMaterial({ color: Q3D.Options.label.connectorColor });
   this.labelConnectorGroup = new THREE.Group();
   this.labelConnectorGroup.userData.layerId = this.index;
   if (parent) parent.add(this.labelConnectorGroup);
@@ -2342,7 +2539,7 @@ Q3D.VectorLayer.prototype.buildLabels = function (parent, parentElement, getPoin
 
       f.aElems.push(e);
       f.aObjs.push(conn);
-      this.labels.push({e: e, obj: conn, pt: pt1});
+            this.labels.push({ e: e, obj: conn, pt: pt1 });
     }
   }
 };
@@ -2687,7 +2884,7 @@ Q3D.PolygonLayer.prototype.build = function (parent) {
       for (var i = 1, l = polygon.length; i < l; i++) {
         shape.holes.push(new THREE.Path(Q3D.Utils.arrayToVec2Array(polygon[i])));
       }
-      var geom = new THREE.ExtrudeGeometry(shape, {bevelEnabled: false, amount: f.h});
+            var geom = new THREE.ExtrudeGeometry(shape, { bevelEnabled: false, amount: f.h });
       var mesh = new THREE.Mesh(geom, materials[f.m].m);
       mesh.position.z = z;
       return mesh;
@@ -2826,7 +3023,7 @@ Q3D.ModelBuilder.Base.prototype = {
   constructor: Q3D.ModelBuilder.Base,
 
   addFeature: function (layerId, featureId) {
-    this.features.push({layerId: layerId, featureId: featureId});
+        this.features.push({ layerId: layerId, featureId: featureId });
     this.buildObjects();
   },
 
@@ -2884,14 +3081,14 @@ Q3D.ModelBuilder.Base.prototype = {
       object.traverse(function (obj) {
         if (obj instanceof THREE.Mesh === false) return;
         obj.material = obj.material.clone();
-        layer.materials.push({type: Q3D.MaterialType.Unknown, m: obj.material});
+                layer.materials.push({ type: Q3D.MaterialType.Unknown, m: obj.material });
       });
     }
     else {
       // if this is the first, append original materials to material list of the layer
       object.traverse(function (obj) {
         if (obj instanceof THREE.Mesh === false) return;
-        layer.materials.push({type: Q3D.MaterialType.Unknown, m: obj.material});
+                layer.materials.push({ type: Q3D.MaterialType.Unknown, m: obj.material });
       });
     }
     this._objects[layerId] = object;
@@ -3015,7 +3212,7 @@ Q3D.Utils.loadTextureData = function (imageData) {
 
 // Put a stick to given position (for debug)
 Q3D.Utils.putStick = function (x, y, zFunc, h) {
-  if (Q3D.Utils._stick_mat === undefined) Q3D.Utils._stick_mat = new THREE.LineBasicMaterial({color: 0xff0000});
+    if (Q3D.Utils._stick_mat === undefined) Q3D.Utils._stick_mat = new THREE.LineBasicMaterial({ color: 0xff0000 });
   if (h === undefined) h = 0.2;
   if (zFunc === undefined) {
     zFunc = function (x, y) { return Q3D.application.project.layers[0].getZ(x, y); }
@@ -3030,7 +3227,7 @@ Q3D.Utils.putStick = function (x, y, zFunc, h) {
 // convert latitude and longitude in degrees to the following format
 // Ndd°mm′ss.ss″, Eddd°mm′ss.ss″
 Q3D.Utils.convertToDMS = function (lat, lon) {
-  function toDMS (degrees) {
+    function toDMS(degrees) {
     var deg = Math.floor(degrees),
         m = (degrees - deg) * 60,
         min = Math.floor(m),
@@ -3058,7 +3255,7 @@ Q3D.Utils.createWallGeometry = function (vertices, bzFunc) {
   else {
     geom = new THREE.PlaneBufferGeometry(0, 0, vertices.length - 1, 1);
     v = geom.attributes.position.array;
-    for (var i = 0, k = 0, l = vertices.length, l3 = l * 3; i < l; i++, k+=3) {
+        for (var i = 0, k = 0, l = vertices.length, l3 = l * 3; i < l; i++, k += 3) {
       pt = vertices[i];
       v[k] = v[k + l3] = pt.x;
       v[k + 1] = v[k + l3 + 1] = pt.y;
