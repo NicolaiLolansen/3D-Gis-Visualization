@@ -142,7 +142,6 @@ limitations:
 
   app.init = function (container) {
         
-       
       //FPS Counter
       app.stats = new Stats();
       app.stats.setMode(0); // 0: fps, 1: ms, 2: mb
@@ -251,12 +250,12 @@ limitations:
         // this may decrease performance as it forces a matrix update
         undeferred: false,
         // set the max depth of tree
-        depthMax: 50,
+        depthMax: 8,
         // max number of objects before nodes split or merge
-        objectsThreshold: 32,
+        objectsThreshold: 128,
         // percent between 0 and 1 that nodes will overlap each other
         // helps insert objects that lie over more than one node
-        overlapPct: 0.15
+        overlapPct: 0.10
     });
 
     // restore view (camera position and its target) from URL parameters
@@ -437,14 +436,29 @@ limitations:
   // animation loop
   app.animate = function () {
       app.raycaster.setFromCamera(app.mouse, app.camera);
-      
-      app.vector = new THREE.Vector3( 0, 0, - 1 );
-      app.vector.applyQuaternion(app.camera.quaternion);
+     
+      //If we changed the active octree update
+      if (app.octreeNeedsUpdate) {
+          app.octree.update();
+      }
+      //If the camera lookat has changed, search the octree
+      var vector = new THREE.Vector3(0, 0, -1);
+      vector.applyQuaternion(app.camera.quaternion);
+      if (app.vector == undefined) {
+          app.vector = vector;
+      }
+      if (app.lastposition == undefined) {
+          console.log("updated lastposition to");
+          app.lastposition = $.extend(true, {}, app.camera.position);
+      }
 
-      if (app.wmsready) {
+      if (app.wmsready && ((vector.x != app.vector.x && vector.y != app.vector.y && vector.z != app.vector.z) || app.lastposition.x != app.camera.position.x)) {
+          console.log("Searching Octree");
+         // console.log(app.lastposition != app.camera.position);
+      app.vector = vector; //Re-assign the current camera position
+      app.lastposition = $.extend(true, {}, app.camera.position);
       app.octreeObjects = app.octree.search(app.raycaster.ray.origin, 100, true, app.vector);
-      var intersections = app.raycaster.intersectOctreeObjects(app.octreeObjects,true);
-      
+     // var intersections = app.raycaster.intersectOctreeObjects(app.octreeObjects,true);
           if (app.octreeObjects.length > 0) {
               app.removeLayer(110);
               for (var i = 0; i < app.octreeObjects.length; i++) {
@@ -751,11 +765,13 @@ limitations:
           prop.push(proper);
       }
       console.log(prop);
-      if (layerId == 100) {
+      if (layerId == 100 || layerId == 110) {
               for (var prop in layer.a[featureId]) {
                   if (layer.a[featureId].hasOwnProperty(prop)) {
-                     
-                      r.push("<tr><td>" + prop + "</td><td>" + layer.a[featureId][prop] + "</td></tr>");
+                      if (String(prop) != "Polygon" && String(prop) != "geometri" && String(prop) != "outerBoundaryIs" && String(prop) != "LinearRing" && String(prop) != "coordinates") {
+                      
+                          r.push("<tr><td>" + prop + "</td><td>" + layer.a[featureId][prop] + "</td></tr>");
+                      }
                   }
               }
       } else {
@@ -990,7 +1006,7 @@ limitations:
      
          var coordinates = response.getElementsByTagName("coordinates");
          var attributes = response.getElementsByTagName("Bygning");
-         console.log(attributes);
+         //console.log(attributes);
        if (coordinates.length > 0) {
            if (project.WFSlayers == undefined) {
                project.WFSlayers = [];
@@ -1009,7 +1025,6 @@ limitations:
            var factorX = widthP / widthM;
            var factorY = heightP / heightM;
 
-
            for (var i = 0; i < coordinates.length; i++) {
                //For every collection of coordinates, we have to convert them to threejs points
                var gmlPoints = new XMLSerializer().serializeToString(coordinates[i].childNodes[0]);
@@ -1027,8 +1042,17 @@ limitations:
                    var point = new THREE.Vector3(ptx, pty, z);
                    points.push(point);
                }
-               var gmlAttributes = new XMLSerializer().serializeToString(attributes[i].childNodes);
-               console.log(gmlAttributes);
+               if (attributes[i] != undefined) {
+                   var gmlAttributes = attributes[i].getElementsByTagName("*");
+                   project.WFSlayers[0].a[i] = {};
+                   for (var k = 0; k < gmlAttributes.length; k++) {
+                       var key = String(gmlAttributes[k].nodeName);
+                       var key = key.replace(/kms:|gml:/gi, "");
+                       var value = gmlAttributes[k].innerHTML;
+                       project.WFSlayers[0].a[i][key] = value;
+                       }
+               }
+               
 
                var shape = new THREE.Shape(points);
                var extrudeSettings = {
@@ -1063,15 +1087,19 @@ limitations:
 
                //Todo create proper indexing somehow.
                project.WFSlayers[0].model[i] = mesh;
-               project.WFSlayers[0].a[i] = 0;
-
+              
                app.octree.add(project.WFSlayers[0].model[i]);
                //app.scene.add(project.WFSlayers[0].model[i]);
                
            }
+           app.octreeNeedsUpdate = true;
+           console.log(app.octreeNeedsUpdate);
+           app.wmsready = true;
+           Q3D.gui.addCustomLayers(project.WFSlayers[0]);
        }
-       app.wmsready = true
-       Q3D.gui.addCustomLayers(project.WFSlayers[0]);
+      
+       
+     
    })
    .fail(function (jqXHR, textStatus, errorThrown) {
        console.log("Failed jquery");
@@ -1651,19 +1679,20 @@ limitations:
   };
 
   app.searchBuilding = function (value) {
-      
-      var layertype = 1; //For polygons
+      console.log("Search buildign is called");
+      var layertype = 0; //For polygons
       var featuretype = 0; //for FOT_ID
 
 
-      for (var i = 0; i < app.project.layers[layertype].f.length; i++) {
-          if (app.project.layers[layertype].f[i].a[featuretype] == value) {
-              app.highlightFeature(layertype, i);
+      for (var i = 0; i < app.project.WFSlayers[layertype].a.length; i++) {
+          //console.log(app.project.WFSlayers[layertype].a[1]);
+          if (app.project.WFSlayers[layertype].a[i]["FOTID"] == value) {
+             // app.highlightFeature(layertype, i);
               console.log("Highlighted building with FOT_ID: " + value);
 
-             app.project.layers[layertype].f[i].objs[0].geometry.computeBoundingBox();
+             app.project.WFSlayers[layertype].model[i].geometry.computeBoundingBox();
            
-             var boundingBox = app.project.layers[layertype].f[i].objs[0].geometry.boundingBox;
+             var boundingBox = app.project.WFSlayers[layertype].model[i].geometry.boundingBox;
 
              var position = new THREE.Vector3();
              position.subVectors(boundingBox.max, boundingBox.min);
@@ -1671,9 +1700,8 @@ limitations:
              position.add(boundingBox.min);
 
              app.scene.updateMatrixWorld();
-             position.applyMatrix4(app.project.layers[layertype].f[i].objs[0].matrixWorld);
+             position.applyMatrix4(app.project.WFSlayers[layertype].model[i].matrixWorld);
 
-             console.log(app.project.layers[layertype].f[i].objs[0].geometry);
              app.camera.position.set(position.x, position.y, 10);
              app.controls.target = position;
           }

@@ -232,7 +232,7 @@ Q3D.gui = {
         wfsFolder.add(parameters, 'random').name('Random Height').onChange(function () {
 
             for (var i = 0; i < parameters.WFSlayers.model.length; i++) {
-                parameters.WFSlayers.model[i].scale.set(1, 1, 10 * Math.random() + 20);
+                parameters.WFSlayers.model[i].scale.set(1, 1, 2 * Math.random() + 1);
             }
         });
 
