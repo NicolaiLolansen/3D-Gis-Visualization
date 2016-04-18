@@ -19,8 +19,14 @@ Q3D.gui = {
     Source: 'https://dl.dropboxusercontent.com/s/8qyigf5hvqmty0z/csvtest1.csv',
     getParseResult: getAllData,
     getParseSources: getSources,
-    getbounds: "http://wfs-kbhkort.kk.dk/k101/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=k101:storbyhaver&outputFormat=json",
-    showColor: false
+        getbounds: "http://wfs-kbhkort.kk.dk/k101/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=k101:karre&outputFormat=json",
+        WFSlayers: [],
+        opacity: 1.0,
+        color: "#445566",
+        height: 5,
+        random: false,
+        getGML: false,
+        showColor: false
   },
 
   // initialize gui
@@ -32,6 +38,7 @@ Q3D.gui = {
       this.addLayersFolder();
       this.addCustomPlaneFolder();
       this.addFunctionsFolder();
+            this.addCustomLayers();
       if (Q3D.isTouchDevice) this.addCommandsFolder();
       this.addHelpButton();
     }
@@ -60,7 +67,7 @@ Q3D.gui = {
     var sideVisibleChanged = function (value) { project.layers[this.object.i].setSideVisibility(value); };
 
     project.layers.forEach(function (layer, i) {
-      parameters.lyr[i] = {i: i, v: layer.visible, o: layer.opacity};
+            parameters.lyr[i] = { i: i, v: layer.visible, o: layer.opacity };
       var folder = layersFolder.addFolder(layer.name);
       folder.add(parameters.lyr[i], 'v').name('Visible').onChange(visibleChanged);
 
@@ -92,10 +99,11 @@ Q3D.gui = {
             project.layers[this.object.i].setSideVisibility(value);
           });
           break;
-        }   
+        }
       }
 
       folder.add(parameters.lyr[i], 'o').min(0).max(1).name('Opacity').onChange(opacityChanged);
+
     });
   },
 
@@ -105,7 +113,7 @@ Q3D.gui = {
     var addPlane = function (color) {
       // Add a new plane in the current scene
       var geometry = new THREE.PlaneBufferGeometry(project.width, project.height, 1, 1),
-          material = new THREE.MeshLambertMaterial({color: color, transparent: true});
+                material = new THREE.MeshLambertMaterial({ color: color, transparent: true });
       if (!Q3D.isIE) material.side = THREE.DoubleSide;
       customPlane = new THREE.Mesh(geometry, material);
       Q3D.application.scene.add(customPlane);
@@ -169,18 +177,70 @@ Q3D.gui = {
       
       funcFolder.add(this.parameters, 'getbounds').name('Get Bounds!').onFinishChange(function (value) { Q3D.application.getbounds(value) }); //Kalder til qgis2threejs.js med værdien fra feltet
 
+      /*
       funcFolder.add(this.parameters, 'Source').name('Select Data Source').onFinishChange(function (value) {
           addSource(value);
+            startParse();
       }),
 
       funcFolder.add(this.parameters, 'getParseResult').name('Retrieve Data');
-      funcFolder.add(this.parameters, 'getParseSources').name('Retrieve Sources').onChange(function () { console.log(getSources()) });
-      funcFolder.add(this.parameters, 'showColor').name('Visualise Using Color').onChange(function () {
-          test();
-      });
+        funcFolder.add(this.parameters, 'getParseSources').name('Retrive Sources').onChange(function () { console.log(getSources()) });
+        funcFolder.add(this.parameters, 'getGML').name('Get FOT Buildings').onChange(function () { app.getBuildings()});
+    },
+
+
+
+    addCustomLayers: function (layer) {
+        var parameters = this.parameters;
+        parameters.WFSlayers = layer;
+        console.log(parameters.WFSlayers);
+        console.log("called");
+        var wfsFolder = this.gui.addFolder('WFS Layers');
+      
+       
+       
+
+        //Change Opacity
+        wfsFolder.add(parameters, 'opacity').name('Show Layer').min(0).max(1).name('Opacity (0-1)').onChange(function (opacityValue) {
+
+            for (var i = 0; i < parameters.WFSlayers.model.length; i++) {
+                console.log("Setting invisible");
+                parameters.WFSlayers.model[i].material.transparent = true;
+                parameters.WFSlayers.model[i].material.opacity = opacityValue;
+            }
+        });
+        //Change Color
+        wfsFolder.addColor(parameters, 'color').name('Color').onChange(function (color) {
+            console.log(color);
+            console.log(parameters.WFSlayer);
+            for (var i = 0; i < parameters.WFSlayers.model.length; i++) {
+                console.log("Setting invisible");
+                color = color.replace('#', '0x');
+                parameters.WFSlayers.model[i].material.color.setHex(color);
+
+            }
+        });
+        //Change height
+        wfsFolder.add(parameters, 'height').name('Height').min(1).max(15).onChange(function (height) {
+
+            for (var i = 0; i < parameters.WFSlayers.model.length; i++) {
+                parameters.WFSlayers.model[i].scale.set(1, 1, height);
+            }
+        });
+
+        //Change Randomize Height
+        wfsFolder.add(parameters, 'random').name('Random Height').onChange(function () {
+
+            for (var i = 0; i < parameters.WFSlayers.model.length; i++) {
+                parameters.WFSlayers.model[i].scale.set(1, 1, 10 * Math.random() + 20);
+            }
+        });
+
   },
 
   addHelpButton: function () {
     this.gui.add(this.parameters, 'i').name('Help');
   }
+
+
 };
