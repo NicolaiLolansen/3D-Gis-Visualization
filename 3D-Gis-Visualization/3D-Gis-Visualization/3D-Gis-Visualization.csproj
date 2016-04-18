@@ -68,14 +68,14 @@
   <ItemGroup>
     <Content Include="3D\csvAPI.js" />
     <Content Include="3D\DataFondler.js" />
+    <Content Include="3D\Octree.js" />
     <Content Include="3D\parser.js" />
     <Content Include="3D\stats\stats.min.js" />
+    <Content Include="3D\test.js" />
     <Content Include="3D\Test_bygninger.js" />
     <Content Include="3D\Test_dtu.js" />
-    <Content Include="3D\Test.js" />
     <Content Include="packages.config" />
     <Content Include="3D\randdata.csv" />
-    <Content Include="3D\randdataBIG.csv" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -91,6 +91,16 @@
     <Content Include="3D\Qgis2threejs.js" />
     <Content Include="3D\Qgis2threejsOld.js" />
     <Content Include="3D\Test_old.js" />
+    <Content Include="RefactorTest\dat-gui_panel.js" />
+    <Content Include="RefactorTest\index.html" />
+    <Content Include="RefactorTest\index.js" />
+    <Content Include="RefactorTest\jquery-2.2.0.js" />
+    <Content Include="RefactorTest\parser.js" />
+    <Content Include="RefactorTest\Qgis2threejs.css" />
+    <Content Include="RefactorTest\Qgis2threejs.js" />
+    <Content Include="RefactorTest\Test.js" />
+    <Content Include="RefactorTest\Test_bygninger.js" />
+    <Content Include="RefactorTest\Test_dtu.js" />
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
@@ -101,6 +111,10 @@
     <Folder Include="3D\dat-gui\" />
     <Folder Include="3D\PapaParse-4.1.2\" />
     <Folder Include="3D\threejs\" />
+    <Folder Include="RefactorTest\dat-gui\" />
+    <Folder Include="RefactorTest\PapaParse-4.1.2\" />
+    <Folder Include="RefactorTest\stats\" />
+    <Folder Include="RefactorTest\threejs\" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
