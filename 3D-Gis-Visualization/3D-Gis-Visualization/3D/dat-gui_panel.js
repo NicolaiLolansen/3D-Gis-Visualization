@@ -25,8 +25,11 @@ Q3D.gui = {
     color: "#445566",
     height: 5,
     random: false,
-    getGML: false,
-    showColor: false
+    getGML: function () { },
+    showColor: false,
+    addressWash: function () { },
+    colorBuilding: 'Åvej 9',
+    generateScene: 'Aavej 9',
   },
 
   // initialize gui
@@ -180,15 +183,75 @@ Q3D.gui = {
       
       funcFolder.add(this.parameters, 'Source').name('Select Data Source').onFinishChange(function (value) {
           addSource(value);
-            startParse();
+          startParse();
       }),
 
       funcFolder.add(this.parameters, 'getParseResult').name('Retrieve Data');
       funcFolder.add(this.parameters, 'getParseSources').name('Retrive Sources').onChange(function () { console.log(getSources()) });
-      funcFolder.add(this.parameters, 'getGML').name('Get FOT Buildings').onChange(function () { app.getBuildings()});
-    },
+      funcFolder.add(this.parameters, 'getGML').name('Get FOT Buildings').onChange(function () { app.getBuildings() });
+      funcFolder.add(this.parameters, 'addressWash').name('Build Address Entires').onChange(function () {
+          if (app.wmsready) {
+              console.log("Building those addresses!");
+              for (var i = 0; i < app.project.WFSlayers[0].model.length; i++) {
+                  
+                  app.getAddress(i);
+              }
+              console.log("Done building addresses");
+          }
+      });
 
 
+      //Color a building with the given address
+      funcFolder.add(parameters, 'colorBuilding').name('Color a building by address').onFinishChange(function (address) {
+
+          for (var i = 0; i < parameters.WFSlayers.model.length; i++) {
+              if (parameters.WFSlayers.a[i]["Adresse"] == address) {
+                  parameters.WFSlayers.model[i].material.color.setHex(0xff0000);
+              }
+              
+          }
+      });
+
+      //Rebuild the entire scene from the input address
+      funcFolder.add(parameters, 'generateScene').name('Generate a new scene area').onFinishChange(function (address) {
+          var url = "http://dawa.aws.dk/datavask/adresser?betegnelse=" + address;
+
+          $.ajax({
+              url: url,
+              dataType: "json",
+          }).success(function (response) {
+              console.log(response);
+              $.ajax({
+                  // url: "http://dawa.aws.dk/adresser/" + response.resultater[0].adresse.id,
+                  url: "http://dawa.aws.dk/adgangsadresser?id="+response.resultater[0].adresse.adgangsadresseid+"&srid=25832",
+                  dataType: "json",
+              }).success(function (response) {
+
+                  var x = response[0].adgangspunkt.koordinater[0];
+                  var y = response[0].adgangspunkt.koordinater[1];
+                  
+                  app.project.origin.x = x;
+                  app.project.origin.y = y;
+
+                  app.project.baseExtent[0] = x - 1250;
+                  app.project.baseExtent[1] = y - 750;
+                  app.project.baseExtent[2] = x + 750;
+                  app.project.baseExtent[3] = y + 750;
+
+              }).fail(function (error) {
+
+                  console.log(error);
+              })
+
+
+          }).fail(function(error){ 
+          
+          
+          });
+
+      });
+
+  },
 
     addCustomLayers: function (layer) {
         var parameters = this.parameters;
