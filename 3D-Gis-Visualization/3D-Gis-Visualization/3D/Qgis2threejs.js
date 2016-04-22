@@ -324,7 +324,7 @@ limitations:
     app.highlightObject = null;
 
     //Generate Texture
-    app.calculatebbox(4);
+    app.calculatebbox(1);
     app.getBuildings();
       //Generate Buildings
       // app.getbounds("http://wfs-kbhkort.kk.dk/k101/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=k101:karre&outputFormat=json");
@@ -441,6 +441,7 @@ limitations:
       //If we changed the active octree update
       if (app.octreeNeedsUpdate) {
           app.octree.update();
+          app.octreeObjects = app.octree.search(app.raycaster.ray.origin, 100, true, app.vector);
       }
       //If the camera lookat has changed, search the octree
       var vector = new THREE.Vector3(0, 0, -1);
@@ -453,7 +454,7 @@ limitations:
           app.lastposition = $.extend(true, {}, app.camera.position);
       }
 
-      if (app.wmsready && ((vector.x != app.vector.x && vector.y != app.vector.y && vector.z != app.vector.z) || app.lastposition.x != app.camera.position.x)) {
+      if ((app.wmsready && ((vector.x != app.vector.x && vector.y != app.vector.y && vector.z != app.vector.z) || app.lastposition.x != app.camera.position.x)) || app.octreeNeedsUpdate) {
           console.log("Searching Octree");
          // console.log(app.lastposition != app.camera.position);
       app.vector = vector; //Re-assign the current camera position
@@ -468,6 +469,7 @@ limitations:
               }
           }
       }
+      app.octreeNeedsUpdate = false;
       //console.log(app.raycaster.ray.direction);
       if (app.wmsready) {
           // find intersections
@@ -480,7 +482,9 @@ limitations:
 
                   app.INTERSECTED = intersects[0].object;
                   app.INTERSECTED.currentHex = app.INTERSECTED.material.emissive.getHex();
-                  app.INTERSECTED.material.emissive.setHex(0xffffff);
+                  app.INTERSECTED.material.emissive.setHex(0x00ff00);
+                //  app.INTERSECTED.scale.set(1.001, 1.001,1.5);
+                //  app.scene.add(app.INTERSECTED);
           }
           } else {
               if (app.INTERSECTED) app.INTERSECTED.material.emissive.setHex(app.INTERSECTED.currentHex);
@@ -626,7 +630,7 @@ limitations:
     var y = -(offsetY / app.height) * 2 + 1;
     var vector = new THREE.Vector3(x, y, 1);
     vector.unproject(app.camera);
-    var ray = new THREE.Raycaster(app.camera.position, vector.sub(app.camera.position).normalize(),0,50);
+    var ray = new THREE.Raycaster(app.camera.position, vector.sub(app.camera.position).normalize());
   //  console.log(app.queryableObjects());
     return ray.intersectObjects(app.queryableObjects());
   };
@@ -1086,20 +1090,21 @@ limitations:
 
                //use points to build shape
                //build a geometry (ExtrudeGeometry) from the shape and extrude settings
-               var geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-               geometry.dynamic = true;
-
+               
+            
                var color = 0xffffff;
                var material = new THREE.MeshPhongMaterial({
                    color: color,
                    shininess: 50,
                });
 
+
+               var geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
                var mesh = new THREE.Mesh(geometry, material);
                if (z > 0) {
-                   mesh.scale.set(1, 1, z * app.project.zScale);
+                   mesh.scale.set(1, 1, (z * app.project.zScale) / 2);
                } else {
-                   mesh.scale.set(1, 1, app.project.zScale * 10);
+                   mesh.scale.set(1, 1, app.project.zScale * 15);
                }
                
                //Compute the center coordinate of the box that bounds the object:
@@ -1121,13 +1126,19 @@ limitations:
                // app.scene.add(sphere);
                //Okay so instead of adding a sphere to the scene, we can add the sphere to our WFSLayer geometry
 
-               //Todo create proper indexing somehow.
+         
                project.WFSlayers[0].model[i] = mesh;
               
                app.octree.add(project.WFSlayers[0].model[i]);
+
+
+               
+
                //app.scene.add(project.WFSlayers[0].model[i]);
                
            }
+           
+           app.mergeBuildings();
            app.octreeNeedsUpdate = true;
            console.log(app.octreeNeedsUpdate);
            app.wmsready = true;
@@ -1140,6 +1151,31 @@ limitations:
    .fail(function (jqXHR, textStatus, errorThrown) {
        console.log("Failed jquery");
    });
+
+  }
+
+  app.mergeBuildings = function () {
+      var mergeGeometry = new THREE.Geometry();
+
+      for (var i = 0; i < app.project.WFSlayers[0].model.length; i++) {
+          app.project.WFSlayers[0].model[i].updateMatrix();
+
+          var geometry = app.project.WFSlayers[0].model[i].geometry;
+          var matrix = app.project.WFSlayers[0].model[i].matrix;
+
+          mergeGeometry.merge(geometry, matrix, i);
+          //app.project.WFSlayers[0].model.geometry
+      }
+      console.log(mergeGeometry);
+
+      mergeGeometry.dynamic = true;
+      var material = new THREE.MeshPhongMaterial({opacity: 0.4, transparent: true });
+      var mesh = new THREE.Mesh(mergeGeometry,material);
+
+      app.mergeMesh = mesh;
+      app.mergeMesh.userData.layerId = 100;
+      app.octree.add(mesh);
+      app.octreeNeedsUpdate = true;
 
   }
   app.generateTerrain = function (url, height, width) {
@@ -1215,12 +1251,12 @@ limitations:
         var tiley = parseFloat((ymax - ymin) / num);
 
         //Tile pixel dimensions (Higher is more detailed)
-        var width = 32;
-        var height = 32;
+        var width = 2048;
+        var height = 2048;
     
         //The service URL for the layer we are using for map (Here orto photos from kortforsyningen)
-       // var url = "http://kortforsyningen.kms.dk/service?servicename=orto_foraar&request=GetMap&service=WMS&version=1.1.1&LOGIN=student134859&PASSWORD=3dgis&layers=orto_foraar&width=" + (width) + "&height=" + (height) + "&format=image%2Fpng&srs=EPSG%3A25832";
-        var url = "http://kortforsyningen.kms.dk/service?servicename=topo_skaermkort&client=QGIS&request=GetMap&service=WMS&version=1.1.1&LOGIN=Bydata&PASSWORD=Qby2016%21&layers=dtk_skaermkort_07&width=" + width + "&height=" + height + "&format=image%2Fpng&srs=EPSG%3A25832";
+        var url = "http://kortforsyningen.kms.dk/service?servicename=orto_foraar&request=GetMap&service=WMS&version=1.1.1&LOGIN=student134859&PASSWORD=3dgis&layers=orto_foraar&width=" + (width) + "&height=" + (height) + "&format=image%2Fpng&srs=EPSG%3A25832";
+       // var url = "http://kortforsyningen.kms.dk/service?servicename=topo_skaermkort&client=QGIS&request=GetMap&service=WMS&version=1.1.1&LOGIN=Bydata&PASSWORD=Qby2016%21&layers=dtk_skaermkort_07&width=" + width + "&height=" + height + "&format=image%2Fpng&srs=EPSG%3A25832";
         var materials = []; //Array to hold our tiled images
         var loader = new THREE.TextureLoader();
         loader.crossOrigin = true;
@@ -1343,22 +1379,17 @@ limitations:
       
     }
   app.getbounds = function (url) {
-      //If projection = bla revert
-      console.log(app.project);
-      
+     
      var xmin = app.project.baseExtent[0];
      var ymin = app.project.baseExtent[1];
      var xmax = app.project.baseExtent[2];
      var ymax = app.project.baseExtent[3];
 
-     console.log(app.project.baseExtent[0]);
      var bbox = "&Bbox=" + xmin + "," + ymin + "," + xmax + "," + ymax
-     console.log("&Bbox=" + xmin + "," + ymin + "," + xmax + "," + ymax);
 
-     console.log(url);
      app.wmsready = false;
      app.removeLayer(100,true);
-     app.removeLayer(110,true);
+     //app.removeLayer(110,true);
      $.ajax({
          url: url + bbox,
          dataType: "json",
@@ -1369,8 +1400,8 @@ limitations:
 
         if (response.features.length > 0) {
             
-            project.WFSlayers = [];
-            //Create a WFSLayer prototype TODO: change to prototype method
+             project.WFSlayers = [];
+
             project.WFSlayers.push(response);
             project.WFSlayers[0].model = [];
             project.WFSlayers[0].a = [];
@@ -1713,7 +1744,7 @@ limitations:
       var host = "http://dawa.aws.dk";
       var parametre = {};
       var srid = "";
-        
+      
       var xCor = app.project.WFSlayers[0].model[index].mapcoords[0];
       var yCor = app.project.WFSlayers[0].model[index].mapcoords[1];
       $.ajax({
@@ -1727,11 +1758,23 @@ limitations:
           else {
               var address = response.vejstykke.adresseringsnavn + " " + response.husnr;
               app.project.WFSlayers[0].a[index]["Adresse"] = address;
-              app.project.WFSlayers[0].model[index].material.color.setHex(0xffffff);
-              var n = new Date().getTime();
-              var total = n - d;
+
+              if (index == 1) { console.log(response) };
+
+              if (response.adgangspunkt.nøjagtighed == "A") {
+                  app.project.WFSlayers[0].model[index].material.color.setHex(0x00ff00);
+              } else if (response.adgangspunkt.nøjagtighed == "B") {
+                  app.project.WFSlayers[0].model[index].material.color.setHex(0xffff00);
+              } else if (response.adgangspunkt.nøjagtighed == "C") {
+                  app.project.WFSlayers[0].model[index].material.color.setHex(0xff0000);
+              }
               
 
+
+
+              var n = new Date().getTime();
+              var total = n - d;
+             
           }
       })
       .fail(function (jqXHR, textStatus, errorThrown) {

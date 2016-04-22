@@ -196,6 +196,7 @@ Q3D.gui = {
                   
                   app.getAddress(i);
               }
+
               console.log("Done building addresses");
           }
       });
@@ -207,6 +208,7 @@ Q3D.gui = {
           for (var i = 0; i < parameters.WFSlayers.model.length; i++) {
               if (parameters.WFSlayers.a[i]["Adresse"] == address) {
                   parameters.WFSlayers.model[i].material.color.setHex(0xff0000);
+
               }
               
           }
@@ -237,7 +239,8 @@ Q3D.gui = {
                   app.project.baseExtent[1] = y - 750;
                   app.project.baseExtent[2] = x + 750;
                   app.project.baseExtent[3] = y + 750;
-
+                  app.calculatebbox(1);
+                  app.getBuildings();
               }).fail(function (error) {
 
                   console.log(error);
@@ -260,9 +263,7 @@ Q3D.gui = {
         console.log("called");
         var wfsFolder = this.gui.addFolder('WFS Layers');
       
-       
-       
-
+ 
         //Change Opacity
         wfsFolder.add(parameters, 'opacity').name('Show Layer').min(0).max(1).name('Opacity (0-1)').onChange(function (opacityValue) {
 
