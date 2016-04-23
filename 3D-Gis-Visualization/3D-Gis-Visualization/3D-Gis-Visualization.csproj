@@ -74,6 +74,9 @@
     <Content Include="3D\test.js" />
     <Content Include="3D\Test_bygninger.js" />
     <Content Include="3D\Test_dtu.js" />
+    <Content Include="3D\test_køge - Copy.js" />
+    <Content Include="3D\test_køge.js" />
+    <Content Include="3D\xml2json.js" />
     <Content Include="packages.config" />
     <Content Include="3D\randdata.csv" />
     <None Include="Web.Debug.config">
