@@ -16,7 +16,7 @@ Q3D.gui = {
     },
     i: Q3D.application.showInfo,
     FOTsearch: '0000000000',
-    Source: 'https://dl.dropboxusercontent.com/s/8qyigf5hvqmty0z/csvtest1.csv',
+    Source: 'https://dl.dropboxusercontent.com/s/88vgr6io5q63cjg/energimaerke.csv',
     getParseResult: getAllData,
     getParseSources: getSources,
     getbounds: "http://wfs-kbhkort.kk.dk/k101/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=k101:karre&outputFormat=json",
@@ -26,9 +26,10 @@ Q3D.gui = {
     height: 5,
     random: false,
     getGML: false,
-    showColor: false
+    showColor: false,
+    selected: '[Select Data Type]'
   },
-
+  dataLoaded: false,
   // initialize gui
   // - setupDefaultItems: default is true
   init: function (setupDefaultItems) {
@@ -179,15 +180,40 @@ Q3D.gui = {
 
       
       funcFolder.add(this.parameters, 'Source').name('Select Data Source').onFinishChange(function (value) {
-          addSource(value);
-            startParse();
+          $.getJSON({
+              type: 'GET',
+              url: 'http://localhost:8081/getData',
+              data: { 'targetURL': value },
+              contentType: "application/json; charset=utf-8",
+              header: { 'Access-Control-Allow-Origin': '*' },
+
+              success: function (jsonData) {
+                  var properties = jsonData.pop();
+                  var numAttribs = [];
+                  console.log(jsonData[0]);
+                  console.log(properties);
+                  for (var key in properties) {
+                      if (properties[key].property != null && properties[key].property != null) {
+                          numAttribs.push(properties[key].parameter);
+                      }
+                  }
+
+                  //var keys = Object.keys(jsonData[0]);
+                  funcFolder.add(parameters, 'selected', numAttribs).onChange(console.log(value));
+              },
+
+              error: function (error) {
+                  console.log(error);
+                  alert('Error loading source');
+              }
+          });
       }),
 
       funcFolder.add(this.parameters, 'getParseResult').name('Retrieve Data');
       funcFolder.add(this.parameters, 'getParseSources').name('Retrive Sources').onChange(function () { console.log(getSources()) });
-      funcFolder.add(this.parameters, 'getGML').name('Get FOT Buildings').onChange(function () { app.getBuildings()});
-    },
+      funcFolder.add(this.parameters, 'getGML').name('Get FOT Buildings').onChange(function () { app.getBuildings() });
 
+  },
 
 
     addCustomLayers: function (layer) {
@@ -244,3 +270,19 @@ Q3D.gui = {
 
 
 };
+
+//Extra functions. Refactor to seperate file.
+function colorAll(parameter){
+    console.log(color);
+    console.log(parameters.WFSlayer);
+    for (var i = 0; i < parameters.WFSlayers.model.length; i++) {
+        console.log("Setting invisible");
+        color = color.replace('#', '0x');
+        parameters.WFSlayers.model[i].material.color.setHex(color);
+
+    }
+}
+
+function add() {
+
+}
