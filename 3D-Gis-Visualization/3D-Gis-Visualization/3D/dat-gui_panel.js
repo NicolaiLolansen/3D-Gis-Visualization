@@ -194,10 +194,8 @@ Q3D.gui = {
               success: function (jsonData) {
                   var properties = jsonData.pop();
                   var numAttribs = [];
-                  console.log(jsonData[0]);
-                  console.log(properties);
                   for (var key in properties) {
-                      if (properties[key].property != null && properties[key].property != null) {
+                      if (properties[key].property != null) {
                           numAttribs.push(properties[key].parameter);
                       }
                   }
@@ -205,14 +203,40 @@ Q3D.gui = {
                   //var keys = Object.keys(jsonData[0]);
                   funcFolder.add(parameters, 'selected', numAttribs).onFinishChange(function (param) {
                       console.log(param);
+
+                      var hit = false;
+                      for (var i = 0; i < parameters.WFSlayers.model.length; i++) {
+                          for (var j = 0; j < jsonData.length; j++){
+                              if (parameters.WFSlayers.a[i]["Adresse"].toLowerCase() == jsonData[j].dawa.toLowerCase()) {
+                                  //Change structure of properties, temp hack solution:
+
+                                  var maxminObj;
+                                  for (var element in properties) {
+                                      if (properties[element].parameter == param){
+                                          maxminObj = properties[element];
+                                          break;
+                                      }
+                                  }
+                                  if (maxminObj != undefined){
+                                  var x = (jsonData[j][param] - maxminObj.min) / (maxminObj.min - maxminObj.max);
+                                  //console.log(x);
+                                  /*if (!hit) {
+                                    console.log(parameters.WFSlayers.a[i]["Adresse"]);
+                                    console.log(jsonData[j].dawa);
+                                    hit = true;
+                                } */
+
+                                  var rgb = canvas.getContext('2d').getImageData(((x * 100) | 0), 10, 1, 1).data; // [R, G, B, A]
+                                  console.log(rgb);
+                                  parameters.WFSlayers.model[i].material.color.setRGB(rgb[0], rgb[1], rgb[2]);
+                              }
+                              }
+                          }
+                      }
                       /*
                       for each building
                         if address match
-                            var x = (buildingparam[value] - properties[value].min) / (properties[value].min - properties[value].max)
-                            var color = canvas.getContext('2d').getImageData(10, 10, 1, 1).data); // [R, G, B, A]
                             
-
-                            parameters.WFSlayers.model[i].material.color.setHex(0xff0000);
 
                       */
                   });
@@ -243,7 +267,7 @@ Q3D.gui = {
 
       //Color a building with the given address
       funcFolder.add(parameters, 'colorBuilding').name('Color a building by address').onFinishChange(function (address) {
-          for (var i = 0; i < parameters.WFSlayers.model.length; i++) {
+          for (var i = 0; i < parameters.WFSlayers[0].model.length; i++) {
               if (parameters.WFSlayers.a[i]["Adresse"] == address) {
                   parameters.WFSlayers.model[i].material.color.setHex(0xff0000);
 

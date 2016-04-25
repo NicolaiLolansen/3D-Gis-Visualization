@@ -1756,7 +1756,7 @@ limitations:
               console.log("Bad stuff");
           }
           else {
-              var address = response.vejstykke.adresseringsnavn + " " + response.husnr;
+              var address = response.vejstykke.adresseringsnavn + " " + response.husnr + ", " + response.postnummer.nr;
               app.project.WFSlayers[0].a[index]["Adresse"] = address;
 
               if (index == 1) { console.log(response) };
