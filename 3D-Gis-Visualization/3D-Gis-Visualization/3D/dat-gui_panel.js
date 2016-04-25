@@ -31,7 +31,6 @@ Q3D.gui = {
     colorBuilding: 'Åvej 9',
     generateScene: 'Aavej 9',
     getGML: false,
-    showColor: false,
     selected: '[Select Data Type]'
   },
   dataLoaded: false,
@@ -204,7 +203,19 @@ Q3D.gui = {
                   }
 
                   //var keys = Object.keys(jsonData[0]);
-                  funcFolder.add(parameters, 'selected', numAttribs).onChange(console.log(value));
+                  funcFolder.add(parameters, 'selected', numAttribs).onFinishChange(function (param) {
+                      console.log(param);
+                      /*
+                      for each building
+                        if address match
+                            var x = (buildingparam[value] - properties[value].min) / (properties[value].min - properties[value].max)
+                            var color = canvas.getContext('2d').getImageData(10, 10, 1, 1).data); // [R, G, B, A]
+                            
+
+                            parameters.WFSlayers.model[i].material.color.setHex(0xff0000);
+
+                      */
+                  });
               },
 
               error: function (error) {
@@ -232,13 +243,11 @@ Q3D.gui = {
 
       //Color a building with the given address
       funcFolder.add(parameters, 'colorBuilding').name('Color a building by address').onFinishChange(function (address) {
-
           for (var i = 0; i < parameters.WFSlayers.model.length; i++) {
               if (parameters.WFSlayers.a[i]["Adresse"] == address) {
                   parameters.WFSlayers.model[i].material.color.setHex(0xff0000);
 
               }
-              
           }
       });
 
