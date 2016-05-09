@@ -28,8 +28,9 @@ Q3D.gui = {
     getGML: function () { },
     showColor: false,
     addressWash: function () { },
-    colorBuilding: 'Åvej 9',
+    colorBuilding: 'Aavej 9',
     generateScene: 'Aavej 9',
+    folderExists: false,
   },
 
   // initialize gui
@@ -39,9 +40,9 @@ Q3D.gui = {
     this.gui.domElement.parentElement.style.zIndex = 1000;   // display the panel on the front of labels
     if (setupDefaultItems === undefined || setupDefaultItems == true) {
       this.addLayersFolder();
-      this.addCustomPlaneFolder();
+      //this.addCustomPlaneFolder();
       this.addFunctionsFolder();
-            this.addCustomLayers();
+      //this.addCustomLayers();
       if (Q3D.isTouchDevice) this.addCommandsFolder();
       this.addHelpButton();
     }
@@ -70,7 +71,7 @@ Q3D.gui = {
     var sideVisibleChanged = function (value) { project.layers[this.object.i].setSideVisibility(value); };
 
     project.layers.forEach(function (layer, i) {
-            parameters.lyr[i] = { i: i, v: layer.visible, o: layer.opacity };
+      parameters.lyr[i] = { i: i, v: layer.visible, o: layer.opacity };
       var folder = layersFolder.addFolder(layer.name);
       folder.add(parameters.lyr[i], 'v').name('Visible').onChange(visibleChanged);
 
@@ -241,6 +242,7 @@ Q3D.gui = {
                   app.project.baseExtent[3] = y + 750;
                   app.calculatebbox(1);
                   app.getBuildings();
+                  app.removeLayer(110, true, true);
               }).fail(function (error) {
 
                   console.log(error);
@@ -261,44 +263,56 @@ Q3D.gui = {
         parameters.WFSlayers = layer;
         console.log(parameters.WFSlayers);
         console.log("called");
-        var wfsFolder = this.gui.addFolder('WFS Layers');
-      
+
+        //Check that the folder does not exist already
+        if (parameters.folderExists == false) {
+            var wfsFolder = this.gui.addFolder('Custom Layers');
+            parameters.folderExists = true;
+
+        }
+        
+        project.WFSlayers.forEach(function (layer, i) {
+
+            var folder = Q3D.gui.gui.__folders["Custom Layers"];
+
+            //Change Opacity
+            folder.add(parameters, 'opacity').name('Show Layer').min(0).max(1).name('Opacity (0-1)').onChange(function (opacityValue) {
+
+                for (var i = 0; i < parameters.WFSlayers.model.length; i++) {
+                    console.log("Setting invisible");
+                    parameters.WFSlayers.model[i].material.transparent = true;
+                    parameters.WFSlayers.model[i].material.opacity = opacityValue;
+                }
+            });
+            //Change Color
+            folder.addColor(parameters, 'color').name('Color').onChange(function (color) {
+                console.log(color);
+                console.log(parameters.WFSlayer);
+                for (var i = 0; i < parameters.WFSlayers.model.length; i++) {
+                    console.log("Setting invisible");
+                    color = color.replace('#', '0x');
+                    parameters.WFSlayers.model[i].material.color.setHex(color);
+
+                }
+            });
+            //Change height
+            folder.add(parameters, 'height').name('Height').min(1).max(15).onChange(function (height) {
+
+                for (var i = 0; i < parameters.WFSlayers.model.length; i++) {
+                    parameters.WFSlayers.model[i].scale.set(1, 1, height);
+                }
+            });
+
+            //Change Randomize Height
+            folder.add(parameters, 'random').name('Random Height').onChange(function () {
+
+                for (var i = 0; i < parameters.WFSlayers.model.length; i++) {
+                    parameters.WFSlayers.model[i].scale.set(1, 1, 2 * Math.random() + 1);
+                }
+            });
+        });
  
-        //Change Opacity
-        wfsFolder.add(parameters, 'opacity').name('Show Layer').min(0).max(1).name('Opacity (0-1)').onChange(function (opacityValue) {
-
-            for (var i = 0; i < parameters.WFSlayers.model.length; i++) {
-                console.log("Setting invisible");
-                parameters.WFSlayers.model[i].material.transparent = true;
-                parameters.WFSlayers.model[i].material.opacity = opacityValue;
-            }
-        });
-        //Change Color
-        wfsFolder.addColor(parameters, 'color').name('Color').onChange(function (color) {
-            console.log(color);
-            console.log(parameters.WFSlayer);
-            for (var i = 0; i < parameters.WFSlayers.model.length; i++) {
-                console.log("Setting invisible");
-                color = color.replace('#', '0x');
-                parameters.WFSlayers.model[i].material.color.setHex(color);
-
-            }
-        });
-        //Change height
-        wfsFolder.add(parameters, 'height').name('Height').min(1).max(15).onChange(function (height) {
-
-            for (var i = 0; i < parameters.WFSlayers.model.length; i++) {
-                parameters.WFSlayers.model[i].scale.set(1, 1, height);
-            }
-        });
-
-        //Change Randomize Height
-        wfsFolder.add(parameters, 'random').name('Random Height').onChange(function () {
-
-            for (var i = 0; i < parameters.WFSlayers.model.length; i++) {
-                parameters.WFSlayers.model[i].scale.set(1, 1, 2 * Math.random() + 1);
-            }
-        });
+       
 
   },
 
