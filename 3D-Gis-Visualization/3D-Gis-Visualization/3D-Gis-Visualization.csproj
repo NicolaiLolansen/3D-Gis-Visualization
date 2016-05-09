@@ -70,6 +70,7 @@
     <Content Include="3D\DataFondler.js" />
     <Content Include="3D\Octree.js" />
     <Content Include="3D\parser.js" />
+    <Content Include="3D\spectrum.png" />
     <Content Include="3D\stats\stats.min.js" />
     <Content Include="3D\test_køge - Copy.js" />
     <Content Include="packages.config" />

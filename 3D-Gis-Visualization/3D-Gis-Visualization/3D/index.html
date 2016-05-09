@@ -66,6 +66,16 @@ app.start();
 </script>
 <script src="./dat-gui/dat.gui.min.js"></script>
 <script src="./dat-gui_panel.js"></script>
+
+<img src="spectrum.png" id="spectrum"/>
+<script>
+    var img = document.getElementById('spectrum');
+    var canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    canvas.getContext('2d').drawImage(img, 0, 0, img.width, img.height);
+</script>
+
 <script>
 // initialize dat-gui panel
 Q3D.gui.init();

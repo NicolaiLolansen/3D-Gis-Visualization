@@ -16,7 +16,7 @@ Q3D.gui = {
     },
     i: Q3D.application.showInfo,
     FOTsearch: '0000000000',
-    Source: 'https://dl.dropboxusercontent.com/s/8qyigf5hvqmty0z/csvtest1.csv',
+    Source: 'https://dl.dropboxusercontent.com/s/88vgr6io5q63cjg/energimaerke.csv',
     getParseResult: getAllData,
     getParseSources: getSources,
     getbounds: "http://wfs-kbhkort.kk.dk/k101/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=k101:karre&outputFormat=json",
@@ -30,9 +30,10 @@ Q3D.gui = {
     addressWash: function () { },
     colorBuilding: 'Aavej 9',
     generateScene: 'Aavej 9',
-    folderExists: false,
+    selected: '[Select Data Type]',
+    dataLoaded: false,
   },
-
+  
   // initialize gui
   // - setupDefaultItems: default is true
   init: function (setupDefaultItems) {
@@ -71,7 +72,7 @@ Q3D.gui = {
     var sideVisibleChanged = function (value) { project.layers[this.object.i].setSideVisibility(value); };
 
     project.layers.forEach(function (layer, i) {
-      parameters.lyr[i] = { i: i, v: layer.visible, o: layer.opacity };
+            parameters.lyr[i] = { i: i, v: layer.visible, o: layer.opacity };
       var folder = layersFolder.addFolder(layer.name);
       folder.add(parameters.lyr[i], 'v').name('Visible').onChange(visibleChanged);
 
@@ -183,8 +184,69 @@ Q3D.gui = {
 
       
       funcFolder.add(this.parameters, 'Source').name('Select Data Source').onFinishChange(function (value) {
-          addSource(value);
-          startParse();
+          $.getJSON({
+              type: 'GET',
+              url: 'http://localhost:8081/getData',
+              data: { 'targetURL': value },
+              contentType: "application/json; charset=utf-8",
+              header: { 'Access-Control-Allow-Origin': '*' },
+
+              success: function (jsonData) {
+                  var properties = jsonData.pop();
+                  var numAttribs = [];
+                  for (var key in properties) {
+                      if (properties[key].property != null) {
+                          numAttribs.push(properties[key].parameter);
+                      }
+                  }
+
+                  //var keys = Object.keys(jsonData[0]);
+                  funcFolder.add(parameters, 'selected', numAttribs).onFinishChange(function (param) {
+                      console.log(param);
+
+                      var hit = false;
+                      for (var i = 0; i < parameters.WFSlayers.model.length; i++) {
+                          for (var j = 0; j < jsonData.length; j++){
+                              if (parameters.WFSlayers.a[i]["Adresse"].toLowerCase() == jsonData[j].dawa.toLowerCase()) {
+                                  //Change structure of properties, temp hack solution:
+
+                                  var maxminObj;
+                                  for (var element in properties) {
+                                      if (properties[element].parameter == param){
+                                          maxminObj = properties[element];
+                                          break;
+                                      }
+                                  }
+                                  if (maxminObj != undefined){
+                                  var x = (jsonData[j][param] - maxminObj.min) / (maxminObj.min - maxminObj.max);
+                                  //console.log(x);
+                                  /*if (!hit) {
+                                    console.log(parameters.WFSlayers.a[i]["Adresse"]);
+                                    console.log(jsonData[j].dawa);
+                                    hit = true;
+                                } */
+
+                                  var rgb = canvas.getContext('2d').getImageData(((x * 100) | 0), 10, 1, 1).data; // [R, G, B, A]
+                                  console.log(rgb);
+                                  parameters.WFSlayers.model[i].material.color.setRGB(rgb[0], rgb[1], rgb[2]);
+                              }
+                              }
+                          }
+                      }
+                      /*
+                      for each building
+                        if address match
+                            
+
+                      */
+                  });
+              },
+
+              error: function (error) {
+                  console.log(error);
+                  alert('Error loading source');
+              }
+          });
       }),
 
       funcFolder.add(this.parameters, 'getParseResult').name('Retrieve Data');
@@ -205,13 +267,11 @@ Q3D.gui = {
 
       //Color a building with the given address
       funcFolder.add(parameters, 'colorBuilding').name('Color a building by address').onFinishChange(function (address) {
-
-          for (var i = 0; i < parameters.WFSlayers.model.length; i++) {
+          for (var i = 0; i < parameters.WFSlayers[0].model.length; i++) {
               if (parameters.WFSlayers.a[i]["Adresse"] == address) {
                   parameters.WFSlayers.model[i].material.color.setHex(0xff0000);
 
               }
-              
           }
       });
 
@@ -272,46 +332,46 @@ Q3D.gui = {
         }
         
         project.WFSlayers.forEach(function (layer, i) {
-
+      
             var folder = Q3D.gui.gui.__folders["Custom Layers"];
-
-            //Change Opacity
+ 
+        //Change Opacity
             folder.add(parameters, 'opacity').name('Show Layer').min(0).max(1).name('Opacity (0-1)').onChange(function (opacityValue) {
 
-                for (var i = 0; i < parameters.WFSlayers.model.length; i++) {
-                    console.log("Setting invisible");
-                    parameters.WFSlayers.model[i].material.transparent = true;
-                    parameters.WFSlayers.model[i].material.opacity = opacityValue;
-                }
-            });
-            //Change Color
+            for (var i = 0; i < parameters.WFSlayers.model.length; i++) {
+                console.log("Setting invisible");
+                parameters.WFSlayers.model[i].material.transparent = true;
+                parameters.WFSlayers.model[i].material.opacity = opacityValue;
+            }
+        });
+        //Change Color
             folder.addColor(parameters, 'color').name('Color').onChange(function (color) {
-                console.log(color);
-                console.log(parameters.WFSlayer);
-                for (var i = 0; i < parameters.WFSlayers.model.length; i++) {
-                    console.log("Setting invisible");
-                    color = color.replace('#', '0x');
-                    parameters.WFSlayers.model[i].material.color.setHex(color);
+            console.log(color);
+            console.log(parameters.WFSlayer);
+            for (var i = 0; i < parameters.WFSlayers.model.length; i++) {
+                console.log("Setting invisible");
+                color = color.replace('#', '0x');
+                parameters.WFSlayers.model[i].material.color.setHex(color);
 
-                }
-            });
-            //Change height
+            }
+        });
+        //Change height
             folder.add(parameters, 'height').name('Height').min(1).max(15).onChange(function (height) {
 
-                for (var i = 0; i < parameters.WFSlayers.model.length; i++) {
-                    parameters.WFSlayers.model[i].scale.set(1, 1, height);
-                }
-            });
+            for (var i = 0; i < parameters.WFSlayers.model.length; i++) {
+                parameters.WFSlayers.model[i].scale.set(1, 1, height);
+            }
+        });
 
-            //Change Randomize Height
+        //Change Randomize Height
             folder.add(parameters, 'random').name('Random Height').onChange(function () {
 
-                for (var i = 0; i < parameters.WFSlayers.model.length; i++) {
-                    parameters.WFSlayers.model[i].scale.set(1, 1, 2 * Math.random() + 1);
-                }
-            });
+            for (var i = 0; i < parameters.WFSlayers.model.length; i++) {
+                parameters.WFSlayers.model[i].scale.set(1, 1, 2 * Math.random() + 1);
+            }
         });
- 
+        });
+
        
 
   },
@@ -322,3 +382,19 @@ Q3D.gui = {
 
 
 };
+
+//Extra functions. Refactor to seperate file.
+function colorAll(parameter){
+    console.log(color);
+    console.log(parameters.WFSlayer);
+    for (var i = 0; i < parameters.WFSlayers.model.length; i++) {
+        console.log("Setting invisible");
+        color = color.replace('#', '0x');
+        parameters.WFSlayers.model[i].material.color.setHex(color);
+
+    }
+}
+
+function add() {
+
+}
