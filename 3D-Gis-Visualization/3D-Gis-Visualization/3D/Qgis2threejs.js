@@ -185,7 +185,7 @@ limitations:
     // WebGLRendereraddcustom
     var bgcolor = Q3D.Options.bgcolor;
     app.renderer = new THREE.WebGLRenderer({ alpha: true , antialias: true});
-    
+    app.renderer.shadowMapEnabled = true;
     app.renderer.setSize(app.width, app.height);
     app.renderer.setClearColor(bgcolor || 0, (bgcolor === null) ? 0 : 1);
     app.container.appendChild(app.renderer.domElement);
@@ -200,6 +200,21 @@ limitations:
 
     app.modelBuilders = [];
     app._wireframeMode = false;
+
+      //create some logic that generalizes the process of creating the layers
+    var xmin = parseFloat(project.baseExtent[0]);
+    var ymin = parseFloat(project.baseExtent[1]);
+    var xmax = parseFloat(project.baseExtent[2]);
+    var ymax = parseFloat(project.baseExtent[3]);
+
+    var url = "http://services.kortforsyningen.dk/service?servicename=topo_geo_gml2&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=kms:Bygning&login=student134859&password=3dgis&maxfeatures=5000";
+    app.getBuildings(xmin, ymin, xmax, ymax, 0, 0, url, "FOT Buildings");
+      //Generate Buildings
+      // app.getbounds("http://wfs-kbhkort.kk.dk/k101/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=k101:karre&outputFormat=json");
+      // var request = "Bygning_BBR_P";
+      // var url = "http://services.kortforsyningen.dk/service?servicename=topo_geo_gml2&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=kms:Navnefortidsminde&maxfeatures=3&login=student134859&password=3dgis&outputFormat=json";
+      // app.getbounds(url);
+
   };
 
   app.parseUrlParameters = function () {
@@ -212,12 +227,92 @@ limitations:
     return vars;
   };
 
-  app.loadProject = function (project) {
+    /*
+    Saves the current active project to appropriately formated JSON containing all information nescessary to rebuild it
+    */
+  app.saveProject = function (name) {
+      var project = app.project;
+
+      //vanilla project without any layers.
+      var savedProject = {
+          title: name,
+          creator: "Builder",
+          layers: [],
+          crs: project.crs,
+          origin: project.origin,
+          baseExtent: project.baseExtent,
+          height: project.height,
+          width: project.width,
+          scale: project.scale,
+          zExaggeration: 1.5,
+          zScale: 0.0606550748079256,
+          zShift: 0,
+      };
+
+      /*
+      Save the layers
+      */
+      project.layers.forEach(function (layer) {
+          var models = [];
+          var a = [];
+          for (var i = 0; i < layer.model.length; i++) {
+
+              var geo = new THREE.Geometry();
+              geo.vertices = layer.model[i].geometry.vertices;
+              geo.faces = layer.model[i].geometry.faces;
+              layer.model[i].geometry = geo;
+              var result = layer.model[i].toJSON();
+              var resultJSON = JSON.stringify(result);
+              models.push(resultJSON);
+              a.push(layer.a[i]);
+          }
+          var layerJSON = { name: layer.name, type: layer.type, url: layer.url, model: models, a: a };
+          savedProject.layers.push(layerJSON);
+      });
+
+      //Test how it goes
+      var projectString = JSON.stringify(savedProject);
+      //console.log(projectString);
+      var projectParsed = JSON.parse(projectString);
+      console.log(projectParsed);
+      var projectJSON = projectParsed;
+      var project = new Q3D.Project({
+          crs: projectJSON.crs, title: projectJSON.title, baseExtent: projectJSON.baseExtent, rotation: projectJSON.rotation, zshift: projectJSON.zshift,
+          width: projectJSON.width, height: projectJSON.height, zExaggeration: projectJSON.zExaggeration, layers: projectJSON.layers
+      });
+      project.layers = projectJSON.layers;
+      console.log(project);
+      //Eventually when we are done, try to load the project (If done live, should just reload the entire scene correctly):
+      app.loadProject(projectParsed);
+  }
+    /*
+    Loads a project from a JSON formatted file (has to be called from saveProject) (Implement a verification method)
+    */
+  app.loadProject = function (projectJSON) {
       /*
             Rewrite this function to be able to load exported projects, and build the scene from that
             TODO 08-05-2016
             Nicolai
       */
+      console.log(projectJSON.layers);
+      var project = new Q3D.Project({
+          crs: projectJSON.crs, title: projectJSON.title, baseExtent: projectJSON.baseExtent, rotation: projectJSON.rotation, zshift: projectJSON.zshift,
+          width: projectJSON.width, height: projectJSON.height, zExaggeration: projectJSON.zExaggeration, layers: projectJSON.layers
+      });
+      project.layers = projectJSON.layers;
+      console.log(project);
+      //Since this method can be called again, we need to completely wipe the THREE.JS scene for any children, lights, cameras. as these will be set up
+      //We wipe clean, because it might be in a later version, that lights and camera settings can be included in the project
+
+
+      for (var i = 0; i < 10; i++) {
+          app.scene.children.forEach(function (child) {
+              app.octree.remove(child);
+              app.scene.remove(child);
+              child = null;
+          });
+      }
+
     app.project = project;
 
     // light
@@ -261,8 +356,8 @@ limitations:
       }
     }
 
-    // load models
-    if (project.models.length > 0) {
+    // load models (Experimental at this point)
+/*    if (project.models.length > 0) {
       project.models.forEach(function (model, index) {
         if (model.type == "COLLADA") {
           app.modelBuilders[index] = new Q3D.ModelBuilder.COLLADA(app.project, model);
@@ -274,15 +369,15 @@ limitations:
           app.modelBuilders[index] = new Q3D.ModelBuilder.JSON(app.project, model);
         }
       });
-    }
+    } */
 
-    // build models
-    project.layers.forEach(function (layer) {
+      // build models
+
+   /* project.layers.forEach(function (layer) {
       layer.initMaterials();
       layer.build(app.scene);
-
     });
-
+    */
     // wireframe mode setting
     if ("wireframe" in app.urlParams) app.setWireframeMode(true);
 
@@ -303,21 +398,26 @@ limitations:
     app.selectedFeatureId = null;
     app.highlightObject = null;
 
-    //Generate Texture
-    app.calculatebbox(1);
-    var xmin = parseFloat(app.project.baseExtent[0]);
-    var ymin = parseFloat(app.project.baseExtent[1]);
-    var xmax = parseFloat(app.project.baseExtent[2]);
-    var ymax = parseFloat(app.project.baseExtent[3]);
-   // app.getBuildings(xmin,ymin,xmax,ymax,0,0);
-      //Generate Buildings
-      // app.getbounds("http://wfs-kbhkort.kk.dk/k101/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=k101:karre&outputFormat=json");
-       // var request = "Bygning_BBR_P";
-       // var url = "http://services.kortforsyningen.dk/service?servicename=topo_geo_gml2&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=kms:Navnefortidsminde&maxfeatures=3&login=student134859&password=3dgis&outputFormat=json";
-        // app.getbounds(url);
 
-      //Frustum
-    app.frustum = new THREE.Frustum();
+    //Generate the plane
+    app.calculatebbox(1);
+
+    var loader = new THREE.ObjectLoader();
+   
+    project.layers.forEach(function (layer,i) {
+        var models = [];
+        layer.model.forEach(function (model) {
+            var loadedGeometry = JSON.parse(model);
+            var loadedMesh = loader.parse(loadedGeometry);
+            models.push(loadedMesh);
+        });
+        layer.model = models;
+        app.mergeLayer(layer);
+        project.layers[i] = layer;
+        app.scene.add(layer.mergeMesh);
+    });
+    //Frustum
+    app.frustum = new THREE.Frustum(); 
   };
 
   app.addEventListeners = function () {
@@ -382,12 +482,29 @@ limitations:
         z = Math.sin(phi);
 
         var light1 = new THREE.DirectionalLight(0xffffff, 0.8);
-    light1.position.set(x, y, z);
+        light1.position.set(0, 100, 500);
+      /*
+        light1.castShadow = true;
+        light1.shadowCameraVisible = true;
+        var d = 20;
+        light1.shadowMapWidth = 2048;
+        light1.shadowMapHeight = 2048;
+        light1.shadowCameraLeft = -d;
+        light1.shadowCameraRight = d;
+        light1.shadowCameraTop = d;
+        light1.shadowCameraBottom = -d;
+
+        light1.shadowCameraFar = 1000;
+        light1.shadowDarkness = 0.2; */
     parent.add(light1);
 
     // thin light from the opposite direction
         var light2 = new THREE.DirectionalLight(0xffffff, 0.1);
-    light2.position.set(-x, -y, -z);
+        light2.position.set(-x, -y, -z);
+        
+        light2.castShadow = true;
+        light2.shadowDarkness = 0.5;
+        light2.shadowCameraVisible = true;
     parent.add(light2);
   };
 
@@ -455,8 +572,8 @@ limitations:
 
       if (app.wmsready) {
           // find intersections
-          if (app.project.WFSlayers != undefined) {
-             var intersects = app.raycaster.intersectObjects(app.project.WFSlayers[0].model);
+    /*      if (app.project.layers != undefined && app.project.layers[0].model != undefined) {
+             var intersects = app.raycaster.intersectObjects(app.project.layers[0].model);
           if (intersects.length > 0) {
               if (app.INTERSECTED != intersects[0].object) {
 
@@ -470,7 +587,7 @@ limitations:
               if (app.INTERSECTED) app.INTERSECTED.material.emissive.setHex(app.INTERSECTED.currentHex);
               app.INTERSECTED = null;
           }
-          }
+          } */
       }
     
     app.render();
@@ -508,10 +625,10 @@ limitations:
           }
       });
         //Custom WFS layer addition - Nicolai
-      if (app.project.WFSlayers != undefined) {
+      if (app.project.layers != undefined) {
 
      
-      app.project.WFSlayers.forEach(function (layer) {
+      app.project.layers.forEach(function (layer) {
           if (layer.model.length) {
               app._queryableObjects = app._queryableObjects.concat(layer.model);
              // console.log("Added the queryable Objects for WFS");
@@ -620,7 +737,7 @@ limitations:
     if (layerId !== undefined) {
         //If layerId is WFS - Nicolai
         if (layerId == 100 || layerId == 110) {
-            layer = app.project.WFSlayers[0];
+            layer = app.project.layers[0];
             r.push('<table class="layer">');
             r.push("<caption>Layer name</caption>");
             r.push("<tr><td>" + layer.type + "</td></tr>");
@@ -885,8 +1002,7 @@ limitations:
   };
 
 
-
-  app.getBuildings = function (xmin,ymin,xmax,ymax,row,column) {
+  app.getBuildings = function (xmin,ymin,xmax,ymax,row,column,url,name) {
       if (row == 0) {
           row = 1;
       } else if (row < 0) {
@@ -913,8 +1029,6 @@ limitations:
    //   var ymax = app.project.baseExtent[3];
       
       var bbox = "&Bbox=" + xmin + "," + ymin + "," + xmax + "," + ymax;
-      var url = "";
-      url = "http://services.kortforsyningen.dk/service?servicename=topo_geo_gml2&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=kms:Bygning&login=student134859&password=3dgis&maxfeatures=1500";
       url = url + bbox;
       app.wmsready = false;
       app.removeLayer(100,true);
@@ -929,13 +1043,15 @@ limitations:
          var attributes = response.getElementsByTagName("Bygning");
         
        if (coordinates.length > 0) {
-           if (project.WFSlayers == undefined) {
-               project.WFSlayers = [];
+           if (app.project.layers == undefined) {
+               app.project.layers = [];
            }
-           project.WFSlayers[0] = {};
-           project.WFSlayers[0].model = [];
-           project.WFSlayers[0].a = [];
-           project.WFSlayers[0].name = "FOT10";
+           app.project.layers[0] = {};
+           app.project.layers[0].model = [];
+           app.project.layers[0].a = [];
+           app.project.layers[0].modelJSON = [];
+           app.project.layers[0].name = "FOT10";
+           var loader = new THREE.JSONLoader();
            var widthP = app.project.width;
            var heightP = app.project.height;
 
@@ -969,22 +1085,22 @@ limitations:
                }
                if (attributes[i] != undefined) {
                    var gmlAttributes = attributes[i].getElementsByTagName("*");
-                   project.WFSlayers[0].a[i] = {};
+                   app.project.layers[0].a[i] = {};
                    for (var k = 0; k < gmlAttributes.length; k++) {
                        var key = String(gmlAttributes[k].nodeName);
                        var key = key.replace(/kms:|gml:/gi, "");
                        var value = gmlAttributes[k].innerHTML;
-                       project.WFSlayers[0].a[i][key] = value;
+                       app.project.layers[0].a[i][key] = value;
                        }
                }
                
                var shape = new THREE.Shape(points);
                var extrudeSettings = {
-                   amount: 1.2,
+                   amount: 1,
                    steps: 1,
                    material: 0,
                    extrudeMaterial: 1,
-                   bevelEnabled: false
+                   bevelEnabled: false,
                };
 
                var color = 0xffffff;
@@ -1016,15 +1132,17 @@ limitations:
            
                mesh.userData.layerId = 110;
                mesh.userData.featureId = i;
-
-               project.WFSlayers[0].model[i] = mesh;
-            //   app.octree.add(project.WFSlayers[0].model[i]);
+               var meshString = JSON.stringify(mesh);
+               app.project.layers[0].modelJSON[i] = meshString;
+               app.project.layers[0].model[i] = mesh;
            }
-           
-           app.mergeLayer(project.WFSlayers[0]);
+           app.project.layers[0].url = url;
+           app.project.layers[0].name = name;
+           app.project.layers[0].type = "GML";
+           app.mergeLayer(app.project.layers[0]);
            app.octreeNeedsUpdate = true;
            app.wmsready = true;
-           Q3D.gui.addCustomLayers(project.WFSlayers[0]);
+           Q3D.gui.addCustomLayers(project.layers[0]);
        }
       
        
@@ -1057,7 +1175,8 @@ limitations:
 
       var material = new THREE.MeshPhongMaterial({opacity: 1, transparent: true, color: 0xffffff*Math.random() });
       var mesh = new THREE.Mesh(mergeGeometry,material);
-
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
       layer.mergeMesh = mesh;
       layer.mergeMesh.userData = {};
       layer.mergeMesh.userData.layerId = 110;
@@ -1202,7 +1321,7 @@ limitations:
 
 
         var dim = 0;
-        for (var column = -dim; column <= dim; column++) {
+     /*   for (var column = -dim; column <= dim; column++) {
             for (var row = -dim; row <= dim; row++) {
                 var tempPlane = plane.clone();
 
@@ -1224,12 +1343,12 @@ limitations:
                 
             }
 
-        }
-
+        }*/
+        plane.receiveShadow = true;
         app.project.plane = [];
+        //app.octree.add(plane);
         app.project.plane.push(plane);
         app.scene.add(app.project.plane[0]);
-
         app.updateResolution(num, width, height);
   }
 
@@ -1317,11 +1436,11 @@ limitations:
 
         if (response.features.length > 0) {
             
-             project.WFSlayers = [];
+            app.project.layers = [];
 
-            project.WFSlayers.push(response);
-            project.WFSlayers[0].model = [];
-            project.WFSlayers[0].a = [];
+            app.project.layers.push(response);
+            app.project.layers[0].model = [];
+            app.project.layers[0].a = [];
 
             var points = [];
             for (var i = 0; i < response.features.length; i++) {
@@ -1371,10 +1490,10 @@ limitations:
                     //Okay so instead of adding a sphere to the scene, we can add the sphere to our WFSLayer geometry
 
                     //Todo create proper indexing somehow.
-                    project.WFSlayers[0].model[i] = sphere;
-                    project.WFSlayers[0].a[i] = project.WFSlayers[0].features[i].properties;
-                    app.octree.add(project.WFSlayers[0].model[i]);
-                    app.scene.add(project.WFSlayers[0].model[i]);
+                    app.project.layers[0].model[i] = sphere;
+                    app.project.layers[0].a[i] = app.project.layers[0].features[i].properties;
+                    app.octree.add(project.layers[0].model[i]);
+                    app.scene.add(project.layers[0].model[i]);
 
                 }
                 else if (response.features[i].geometry.type == "Polygon" || response.features[i].geometry.type == "MultiPolygon") {
@@ -1462,10 +1581,10 @@ limitations:
                     //Okay so instead of adding a sphere to the scene, we can add the sphere to our WFSLayer geometry
 
                     //Todo create proper indexing somehow.
-                    project.WFSlayers[0].model[i] = mesh;
-                    project.WFSlayers[0].a[i] = project.WFSlayers[0].features[i].properties;
-                    app.octree.add(project.WFSlayers[0].model[i]);
-                   // app.scene.add(project.WFSlayers[0].model[i]);
+                    app.project.layers[0].model[i] = mesh;
+                    app.project.layers[0].a[i] = app.project.layers[0].features[i].properties;
+                    app.octree.add(project.layers[0].model[i]);
+                   // app.scene.add(project.layers[0].model[i]);
                     //  app.render();
                     points = [];
                     // var polygon = new THREE.Mesh(geometry, material);
@@ -1484,7 +1603,7 @@ limitations:
        
 
         app.wmsready = true;
-        Q3D.gui.addCustomLayers(project.WFSlayers[0]);
+        Q3D.gui.addCustomLayers(project.layers[0]);
     })
     .fail(function (jqXHR, textStatus, errorThrown) {
         console.log("Failed jquery");
@@ -1621,7 +1740,7 @@ limitations:
           else {
               app.address = response.vejstykke.adresseringsnavn + " " + response.husnr;
              
-              var clone = app.project.WFSlayers[0].model[0].clone();
+              var clone = app.project.layers[0].model[0].clone();
               clone.geometry.computeBoundingBox();
               var boundingBox = clone.geometry.boundingBox;
               var position = new THREE.Vector3();
@@ -1662,8 +1781,8 @@ limitations:
       var parametre = {};
       var srid = "";
       
-      var xCor = app.project.WFSlayers[0].model[index].mapcoords[0];
-      var yCor = app.project.WFSlayers[0].model[index].mapcoords[1];
+      var xCor = app.project.layers[0].model[index].mapcoords[0];
+      var yCor = app.project.layers[0].model[index].mapcoords[1];
       $.ajax({
           url: "http://dawa.aws.dk/adgangsadresser/reverse?x=" + xCor + "&y=" + yCor + "&srid=25832",
           dataType: "json",
@@ -1674,16 +1793,16 @@ limitations:
           }
           else {
               var address = response.vejstykke.adresseringsnavn + " " + response.husnr + ", " + response.postnummer.nr;
-              app.project.WFSlayers[0].a[index]["Adresse"] = address;
+              app.project.layers[0].a[index]["Adresse"] = address;
 
               if (index == 1) { console.log(response) };
 
               if (response.adgangspunkt.nøjagtighed == "A") {
-                  app.project.WFSlayers[0].model[index].material.color.setHex(0x00ff00);
+                  app.project.layers[0].model[index].material.color.setHex(0x00ff00);
               } else if (response.adgangspunkt.nøjagtighed == "B") {
-                  app.project.WFSlayers[0].model[index].material.color.setHex(0xffff00);
+                  app.project.layers[0].model[index].material.color.setHex(0xffff00);
               } else if (response.adgangspunkt.nøjagtighed == "C") {
-                  app.project.WFSlayers[0].model[index].material.color.setHex(0xff0000);
+                  app.project.layers[0].model[index].material.color.setHex(0xff0000);
               }
               
 
@@ -1705,15 +1824,15 @@ limitations:
       var featuretype = 0; //for FOT_ID
 
 
-      for (var i = 0; i < app.project.WFSlayers[layertype].a.length; i++) {
-          //console.log(app.project.WFSlayers[layertype].a[1]);
-          if (app.project.WFSlayers[layertype].a[i]["FOTID"] == value) {
+      for (var i = 0; i < app.project.layers[layertype].a.length; i++) {
+          //console.log(app.project.layers[layertype].a[1]);
+          if (app.project.layers[layertype].a[i]["FOTID"] == value) {
              // app.highlightFeature(layertype, i);
               console.log("Highlighted building with FOT_ID: " + value);
 
-             app.project.WFSlayers[layertype].model[i].geometry.computeBoundingBox();
+             app.project.layers[layertype].model[i].geometry.computeBoundingBox();
            
-             var boundingBox = app.project.WFSlayers[layertype].model[i].geometry.boundingBox;
+             var boundingBox = app.project.layers[layertype].model[i].geometry.boundingBox;
 
              var position = new THREE.Vector3();
              position.subVectors(boundingBox.max, boundingBox.min);
@@ -1721,7 +1840,7 @@ limitations:
              position.add(boundingBox.min);
 
              app.scene.updateMatrixWorld();
-             position.applyMatrix4(app.project.WFSlayers[layertype].model[i].matrixWorld);
+             position.applyMatrix4(app.project.layers[layertype].model[i].matrixWorld);
 
              app.camera.position.set(position.x, position.y, 10);
              app.controls.target = position;

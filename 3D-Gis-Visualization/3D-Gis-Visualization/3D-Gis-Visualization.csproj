@@ -68,6 +68,7 @@
   <ItemGroup>
     <Content Include="3D\csvAPI.js" />
     <Content Include="3D\DataFondler.js" />
+    <Content Include="3D\Hydrate.js" />
     <Content Include="3D\Octree.js" />
     <Content Include="3D\parser.js" />
     <Content Include="3D\spectrum.png" />
