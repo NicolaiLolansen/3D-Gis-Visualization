@@ -245,7 +245,7 @@ limitations:
 
     app.octree = new THREE.Octree({
         // uncomment below to see the octree (may kill the fps)
-        //scene: app.scene,
+        // scene: app.scene,
         // when undeferred = true, objects are inserted immediately
         // instead of being deferred until next octree.update() call
         // this may decrease performance as it forces a matrix update
@@ -324,7 +324,7 @@ limitations:
     app.highlightObject = null;
 
     //Generate Texture
-    app.calculatebbox(1);
+    app.calculatebbox(4);
     app.getBuildings();
       //Generate Buildings
       // app.getbounds("http://wfs-kbhkort.kk.dk/k101/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=k101:karre&outputFormat=json");
@@ -1003,7 +1003,7 @@ limitations:
       app.wmsready = false;
       app.removeLayer(100,true);
       app.removeLayer(110,true);
-      app.octree = null;
+     app.octree = null;
         
       app.octree = new THREE.Octree({
           // uncomment below to see the octree (may kill the fps)
@@ -1159,16 +1159,13 @@ limitations:
 
       for (var i = 0; i < app.project.WFSlayers[0].model.length; i++) {
           app.project.WFSlayers[0].model[i].updateMatrix();
-
           var geometry = app.project.WFSlayers[0].model[i].geometry;
           var matrix = app.project.WFSlayers[0].model[i].matrix;
 
-          mergeGeometry.merge(geometry, matrix, i);
-          //app.project.WFSlayers[0].model.geometry
+          mergeGeometry.merge(geometry, matrix, i); //i is the materials index number, don't think it makes a difference though
+          
       }
-      console.log(mergeGeometry);
-
-      mergeGeometry.dynamic = true;
+      mergeGeometry.dynamic = true; 
       var material = new THREE.MeshPhongMaterial({opacity: 0.4, transparent: true });
       var mesh = new THREE.Mesh(mergeGeometry,material);
 
@@ -1176,8 +1173,8 @@ limitations:
       app.mergeMesh.userData.layerId = 100;
       app.octree.add(mesh);
       app.octreeNeedsUpdate = true;
-
   }
+
   app.generateTerrain = function (url, height, width) {
 
         var img = new Image();
@@ -1251,8 +1248,8 @@ limitations:
         var tiley = parseFloat((ymax - ymin) / num);
 
         //Tile pixel dimensions (Higher is more detailed)
-        var width = 2048;
-        var height = 2048;
+        var width = 256;
+        var height = 256;
     
         //The service URL for the layer we are using for map (Here orto photos from kortforsyningen)
         var url = "http://kortforsyningen.kms.dk/service?servicename=orto_foraar&request=GetMap&service=WMS&version=1.1.1&LOGIN=student134859&PASSWORD=3dgis&layers=orto_foraar&width=" + (width) + "&height=" + (height) + "&format=image%2Fpng&srs=EPSG%3A25832";
@@ -1313,8 +1310,36 @@ limitations:
         }
         app.project.plane = [];
         app.project.plane.push(plane);
-        app.scene.add(app.project.plane[0]);
+/*
+        var plane2 = plane.clone();
+        plane2.position.x = app.project.width;
+        app.scene.add(plane2);
 
+        var plane3 = plane.clone();
+        plane3.position.x = -app.project.width;
+        app.scene.add(plane3);
+
+        var plane4 = plane.clone();
+        plane4.position.y = app.project.height;
+        app.scene.add(plane4);
+
+        var plane5 = plane.clone();
+        plane5.position.y = -app.project.height;
+        app.scene.add(plane5);
+        */
+        var dim = 2;
+        for (var row = -dim; row < dim; row++) {
+            for (var column = -dim; column < dim; column++) {
+                var tempPlane = plane.clone();
+
+                tempPlane.position.x = app.project.width * column;
+                tempPlane.position.y = app.project.height * row;
+               // app.octree.add(tempPlane);
+                app.scene.add(tempPlane);
+            }
+        }
+        app.octree.update();
+        app.scene.add(app.project.plane[0]);
         app.updateResolution(num, width, height);
     }
   app.updateResolution = function (num, width, height) {
