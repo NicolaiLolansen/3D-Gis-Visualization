@@ -43,6 +43,7 @@ and uses the following library:
 <script src="./Qgis2threejs.js"></script>
 <script src="./threejs/OrbitControls.js"></script>
 <script src="./stats/build/stats.min.js"></script>
+<script src="./Hydrate.js"></script>
 <script src="./Octree.js"></script>
     <script src="./xml2json.js"></script>
 <script>
@@ -57,6 +58,8 @@ var container = document.getElementById("webgl");
 var app = Q3D.application;
 app.init(container);
 
+project = new Q3D.Project({ crs: "EPSG:25832", title: "Untitled Project", baseExtent: [719777, 6187092, 722250, 6188663], rotation: 0, zShift: 0.0, width: 100.0, zExaggeration: 1.5 });
+
 // load the project
 app.loadProject(project);
 
@@ -66,6 +69,16 @@ app.start();
 </script>
 <script src="./dat-gui/dat.gui.min.js"></script>
 <script src="./dat-gui_panel.js"></script>
+
+<img src="spectrum.png" id="spectrum"/>
+<script>
+    var img = document.getElementById('spectrum');
+    var canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    canvas.getContext('2d').drawImage(img, 0, 0, img.width, img.height);
+</script>
+
 <script>
 // initialize dat-gui panel
 Q3D.gui.init();
