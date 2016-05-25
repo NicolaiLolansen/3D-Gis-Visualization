@@ -10,11 +10,18 @@
 
 <div class="login-page">
   <div class="form">
-    <form class="login-form" name="login_form" method="post" action="testpage.html">
+      <form class="scene_selection">
+          <button>scene1</button>
+          <button>scene2</button>
+          <button>scenee</button>
+          <p class="message"><a href="#">Back</a></p>
+      </form>
+
+    <form class="login-form" name="login_form">
       <input type="text" placeholder="username" name="username" id="username"/>
       <input type="password" placeholder="password" name="password" id="password"/>
-      <button type="submit">login</button>
-      <p class="message">No admin login? <a href="../3D/index.html">Enter as Observer</a></p>
+      <button onclick="validate()">login</button>
+      <p class="message a">No admin login? <a href="#">Enter as Observer</a></p>
     </form>
   </div>
 </div>

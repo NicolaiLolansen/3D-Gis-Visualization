@@ -7,16 +7,23 @@ function validate() {
 	$.ajax({
 	    url: 'http://localhost:8081/login/',
 	    type: 'POST',
-	    dataType: JSON,
+        crossDomain: true,
+	    dataType: 'text',
         data: JSON.stringify(form),
 
         success: function (result) {
+            console.log("success");
             console.log(result);
             if (result) {
-                window.location = '../testpage.html';
+                console.log(result);
+                window.location = '../Website/testpage.html';
             } else {
                 alert("Unsuccesful login")
             }
+        },
+        error: function (err) {
+            console.log("error:")
+            console.log(err);
         }
 	});
 	console.log("Validation finished");
