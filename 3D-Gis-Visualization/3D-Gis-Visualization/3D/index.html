@@ -67,13 +67,19 @@ app.start();
 <script src="./dat-gui/dat.gui.min.js"></script>
 <script src="./dat-gui_panel.js"></script>
 
-<img src="spectrum.png" id="spectrum"/>
+
+<canvas id="spectrum_canvas"></canvas>
 <script>
-    var img = document.getElementById('spectrum');
-    var canvas = document.createElement('canvas');
-    canvas.width = img.width;
-    canvas.height = img.height;
-    canvas.getContext('2d').drawImage(img, 0, 0, img.width, img.height);
+    //<img src="spectrum.png" id="spectrum"/>
+    var myImg = new Image();
+    myImg.src = 'spectrum.png';
+    myImg.onload = function () {
+        app.spectrum = document.getElementById('spectrum_canvas');
+        canvas.width = myImg.width;
+        canvas.height = myImg.height;
+        var context = canvas.getContext('2d');
+        context.drawImage(myImg, 0, 0);
+    }
 </script>
 
 <script>

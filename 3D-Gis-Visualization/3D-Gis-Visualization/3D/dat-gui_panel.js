@@ -203,8 +203,9 @@ Q3D.gui = {
                   //var keys = Object.keys(jsonData[0]);
                   funcFolder.add(parameters, 'selected', numAttribs).onFinishChange(function (param) {
                       console.log(param);
-
+                      var spectrum = app.spectrum.getContext('2d');
                       var hit = false;
+
                       for (var i = 0; i < parameters.WFSlayers.model.length; i++) {
                           for (var j = 0; j < jsonData.length; j++){
                               if (parameters.WFSlayers.a[i]["Adresse"].toLowerCase() == jsonData[j].dawa.toLowerCase()) {
@@ -219,17 +220,19 @@ Q3D.gui = {
                                   }
                                   if (maxminObj != undefined){
                                   var x = (jsonData[j][param] - maxminObj.min) / (maxminObj.min - maxminObj.max);
-                                  //console.log(x);
-                                  /*if (!hit) {
-                                    console.log(parameters.WFSlayers.a[i]["Adresse"]);
-                                    console.log(jsonData[j].dawa);
-                                    hit = true;
-                                } */
+                                  console.log(jsonData[j][param]);
 
-                                  var rgb = canvas.getContext('2d').getImageData(((x * 100) | 0), 10, 1, 1).data; // [R, G, B, A]
-                                  console.log(rgb);
+                                  //For testing
+                                  if (!hit) {
+                                      console.log(jsonData[j][param]);
+                                      console.log(x);
+                                      console.log(spectrum);
+                                    hit = true;
+                                  }
+                                  
+                                  var rgb = spectrum.getImageData(((x * 100) | 0), 10, 1, 1).data; // [R, G, B, A]
                                   parameters.WFSlayers.model[i].material.color.setRGB(rgb[0], rgb[1], rgb[2]);
-                              }
+                                  }
                               }
                           }
                       }
