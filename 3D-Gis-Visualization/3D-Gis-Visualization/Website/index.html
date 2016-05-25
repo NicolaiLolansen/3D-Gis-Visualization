@@ -4,16 +4,19 @@
     <meta charset="UTF-8">
     <title>GeoViz</title>
         <link rel="stylesheet" href="css/style.css">
+      <script src="../3D/jquery-2.2.0.js"></script>
+      <script src="js/loginscripts.js"></script>
   </head>
 
   <body>
 
 <div class="login-page">
   <div class="form">
-      <form class="scene_selection">
-          <button>scene1</button>
-          <button>scene2</button>
-          <button>scenee</button>
+      <form class="scene_selection" id="scene_buttons">
+          <div id="button_panel"></div>
+          <script>
+              getScenes();
+          </script>
           <p class="message"><a href="#">Back</a></p>
       </form>
 
@@ -21,13 +24,11 @@
       <input type="text" placeholder="username" name="username" id="username"/>
       <input type="password" placeholder="password" name="password" id="password"/>
       <button onclick="validate()">login</button>
-      <p class="message a">No admin login? <a href="#">Enter as Observer</a></p>
+      <p class="message">No admin login? <a href="#">Enter as Observer</a></p>
     </form>
   </div>
 </div>
-    <script src="../3D/jquery-2.2.0.js"></script>
     <script src="js/index.js"></script>
-    <script src="js/loginscripts.js"></script>
     
   </body>
 </html>
