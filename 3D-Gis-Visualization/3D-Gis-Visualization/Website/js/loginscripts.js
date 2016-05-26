@@ -5,7 +5,7 @@ function validate() {
     };
 
 	$.ajax({
-	    url: 'http://localhost:8081/login/',
+	    url: 'http://localhost:8085/login/',
 	    type: 'POST',
         crossDomain: true,
 	    dataType: 'text',
@@ -29,9 +29,11 @@ function validate() {
 	console.log("Validation finished");
 }
 
-function getScenes(){
+function getScenes() {
+    var element = document.getElementById("button_panel");
+
     $.getJSON({
-        url: 'http://localhost:8081/savesList/',
+        url: 'http://localhost:8085/savesList/',
         type: 'GET',
         crossDomain: true,
         contentType: "application/json; charset=utf-8",
@@ -39,16 +41,17 @@ function getScenes(){
 
         success: function (scene_list) {
             console.log(scene_list);
-            var element = document.getElementById("button_panel");
+            
             for (var scene in scene_list.saves) {
                 var name = scene_list.saves[scene];
-                var button = document.createElement("BUTTON");
-                var text = document.createTextNode(name);
+                var button = document.createElement('BUTTON');
+                var text = document.createTextNode(name.replace('.json', ''));
                 button.id = name;
                 button.name = name;
-                button.type = "button";
-                button.onClick = function () {
+                button.type = 'button';
+                button.onclick = function () {
                     window.sessionStorage.scene = this.name;
+                    console.log(this.name);
                     window.location = '../3D/index.html';
                 };
                 button.appendChild(text);
@@ -57,12 +60,14 @@ function getScenes(){
             }
         },
         error: function (err) {
-            console.log("error:")
-            console.log(err);
+            var button = document.createElement('BUTTON');
+            var text = document.createTextNode('No Saved Scenes');
+            button.type = 'button';
+            button.onclick = function () {
+                window.location = '../Website/index.html';
+            }
+            button.appendChild(text);
+            element.appendChild(button);
         }
     });
-}
-
-function loadScene(scene_name) {
-    console.log(scene_name);
 }
