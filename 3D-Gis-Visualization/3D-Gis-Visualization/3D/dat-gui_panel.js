@@ -33,6 +33,8 @@ Q3D.gui = {
     selected: '[Select Data Type]',
     dataLoaded: false,
     saveProject: 'Type Project Name Here',
+    enabled: true,
+
   },
   
   // initialize gui
@@ -292,20 +294,42 @@ Q3D.gui = {
                   url: "http://dawa.aws.dk/adgangsadresser?id="+response.resultater[0].adresse.adgangsadresseid+"&srid=25832",
                   dataType: "json",
               }).success(function (response) {
-
+                  /*
+                  CREATE A STOP RENDER INSTEAD OF 10 RUNTHROUGHS OF THIS
+                  */
+                  for (var i = 0; i < 10; i++){
+                      app.scene.children.forEach(function (child) {
+                          if (child instanceof THREE.Mesh) {
+                              app.scene.remove(child);
+                              app.octree.remove(child);
+                          }
+                      });
+                  }
                   var x = response[0].adgangspunkt.koordinater[0];
                   var y = response[0].adgangspunkt.koordinater[1];
                   
                   app.project.origin.x = x;
                   app.project.origin.y = y;
 
-                  app.project.baseExtent[0] = x - 1250;
-                  app.project.baseExtent[1] = y - 750;
-                  app.project.baseExtent[2] = x + 750;
-                  app.project.baseExtent[3] = y + 750;
+                  var tilex = parseFloat((app.project.baseExtent[2] - app.project.baseExtent[0])/2);
+                  var tiley = parseFloat((app.project.baseExtent[3] - app.project.baseExtent[1])/2);
+
+
+                  var xmin = app.project.baseExtent[0] = x - tilex;
+                  var ymin = app.project.baseExtent[1] = y - tiley;
+                  var xmax = app.project.baseExtent[2] = x + tilex;
+                  var ymax = app.project.baseExtent[3] = y + tiley;
                   app.calculatebbox(1);
-                  app.getBuildings();
-                  app.removeLayer(110, true, true);
+                  var url = "http://services.kortforsyningen.dk/service?servicename=topo_geo_gml2&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=kms:Bygning&login=student134859&password=3dgis&maxfeatures=5000";
+ 
+
+
+                  app.getBuildings(xmin, ymin, xmax, ymax, 0, 0, url, "FOT10",false);
+                  
+
+                 
+
+                  app.project.layers = [];
               }).fail(function (error) {
 
                   console.log(error);
