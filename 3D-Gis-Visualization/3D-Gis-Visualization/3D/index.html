@@ -23,7 +23,7 @@
   <div id="usage"></div>
 
   <h1>About</h1>
-  <div id="about">This page was made with <a href="http://www.qgis.org/" target="_blank">QGIS</a> and <a href="https://github.com/minorua/Qgis2threejs" target="_blank">Qgis2threejs</a> plugin, 
+  <div id="about">This page was made with <a id="djson" href="http://www.qgis.org/" >QGIS</a> and <a href="https://github.com/minorua/Qgis2threejs" target="_blank">Qgis2threejs</a> plugin, 
 and uses the following library:
   <ul>
   <li>three.js <a href="http://threejs.org/" target="_blank">http://threejs.org/</a> <a href="./threejs/LICENSE" target="_blank" class="license">(LICENSE)</a></li>
@@ -43,13 +43,12 @@ and uses the following library:
 <script src="./Qgis2threejs.js"></script>
 <script src="./threejs/OrbitControls.js"></script>
 <script src="./stats/build/stats.min.js"></script>
-<script src="./Hydrate.js"></script>
+    <script src="./tween.js"></script>
 <script src="./Octree.js"></script>
     <script src="./xml2json.js"></script>
 <script>
 var option = Q3D.Options;
 </script>
-<script src="./test_køge - Copy.js"></script>
 <script>
 if (typeof proj4 !== "undefined") document.getElementById("lib_proj4js").style.display = "list-item";
 
@@ -60,11 +59,15 @@ app.init(container);
 
 project = new Q3D.Project({ crs: "EPSG:25832", title: "Untitled Project", baseExtent: [719777, 6187092, 722250, 6188663], rotation: 0, zShift: 0.0, width: 100.0, zExaggeration: 1.5 });
 
-// load the project
-app.loadProject(project);
+    // load the project
+$.getJSON("aavej9.json", function (json) {
+    app.loadProject(json);
+    app.start();
+    app.addEventListeners();
 
-app.addEventListeners();
-app.start();
+    // this will show the info it in firebug console
+});
+
 
 </script>
 <script src="./dat-gui/dat.gui.min.js"></script>
@@ -73,7 +76,7 @@ app.start();
 
 <canvas id="spectrum_canvas"></canvas>
 <script>
-    //<img src="spectrum.png" id="spectrum"/>
+   /* //<img src="spectrum.png" id="spectrum"/>
     var myImg = new Image();
     myImg.src = 'spectrum.png';
     myImg.onload = function () {
@@ -82,7 +85,7 @@ app.start();
         canvas.height = myImg.height;
         var context = canvas.getContext('2d');
         context.drawImage(myImg, 0, 0);
-    }
+    } */  
 </script>
 
 <script>

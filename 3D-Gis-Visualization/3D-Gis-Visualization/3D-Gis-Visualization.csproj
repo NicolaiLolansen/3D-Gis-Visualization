@@ -72,20 +72,16 @@
     <Content Include="3D\Octree.js" />
     <Content Include="3D\parser.js" />
     <Content Include="3D\stats\stats.min.js" />
-    <Content Include="3D\test.js" />
-    <Content Include="3D\Test_bygninger.js" />
-    <Content Include="3D\Test_dtu.js" />
-    <Content Include="3D\test_køge - Copy.js" />
-    <Content Include="3D\test_køge.js" />
+    <Content Include="3D\tween.js" />
     <Content Include="3D\xml2json.js" />
     <Content Include="packages.config" />
-    <Content Include="3D\randdata.csv" />
     <Content Include="Website\css\style.css" />
     <Content Include="Website\index.html" />
     <Content Include="Website\js\index.js" />
     <Content Include="Website\js\loginscripts.js" />
     <Content Include="Website\js\testpage.html" />
     <Content Include="Website\testpage.html" />
+    <Content Include="3D\aavej9.json" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -99,8 +95,6 @@
     <Content Include="3D\jquery-2.2.0.js" />
     <Content Include="3D\Qgis2threejs.css" />
     <Content Include="3D\Qgis2threejs.js" />
-    <Content Include="3D\Qgis2threejsOld.js" />
-    <Content Include="3D\Test_old.js" />
     <Content Include="RefactorTest\dat-gui_panel.js" />
     <Content Include="RefactorTest\index.html" />
     <Content Include="RefactorTest\index.js" />
