@@ -31,7 +31,7 @@ Q3D.gui = {
     colorBuilding: 'Aavej 9',
     generateScene: 'Aavej 9',
     selected: '[Select Data Type]',
-    dataLoaded: false,
+  dataLoaded: false,
     saveProject: 'Type Project Name Here',
     enabled: true,
 
@@ -186,7 +186,7 @@ Q3D.gui = {
       funcFolder.add(this.parameters, 'getbounds').name('Get Bounds!').onFinishChange(function (value) { Q3D.application.getbounds(value) }); //Kalder til qgis2threejs.js med værdien fra feltet
 
       funcFolder.add(this.parameters, 'saveProject').name('Save Project').onFinishChange(function (value) { Q3D.application.saveProject(value) }); //Kalder til qgis2threejs.js med værdien fra feltet
-
+      
       
       funcFolder.add(this.parameters, 'Source').name('Select Data Source').onFinishChange(function (value) {
           $.getJSON({
@@ -208,9 +208,10 @@ Q3D.gui = {
                   //var keys = Object.keys(jsonData[0]);
                   funcFolder.add(parameters, 'selected', numAttribs).onFinishChange(function (param) {
                       console.log(param);
-
+                      var spectrum = app.spectrum.getContext('2d');
                       var hit = false;
-                      for (var i = 0; i < parameters.layers.model.length; i++) {
+
+                      for (var i = 0; i < parameters.WFSlayers.model.length; i++) {
                           for (var j = 0; j < jsonData.length; j++){
                               if (parameters.layers.a[i]["Adresse"].toLowerCase() == jsonData[j].dawa.toLowerCase()) {
                                   //Change structure of properties, temp hack solution:
@@ -224,16 +225,18 @@ Q3D.gui = {
                                   }
                                   if (maxminObj != undefined){
                                   var x = (jsonData[j][param] - maxminObj.min) / (maxminObj.min - maxminObj.max);
-                                  //console.log(x);
-                                  /*if (!hit) {
-                                    console.log(parameters.layers.a[i]["Adresse"]);
-                                    console.log(jsonData[j].dawa);
-                                    hit = true;
-                                } */
+                                  console.log(jsonData[j][param]);
 
-                                  var rgb = canvas.getContext('2d').getImageData(((x * 100) | 0), 10, 1, 1).data; // [R, G, B, A]
-                                  console.log(rgb);
-                                  parameters.layers.model[i].material.color.setRGB(rgb[0], rgb[1], rgb[2]);
+                                  //For testing
+                                  if (!hit) {
+                                      console.log(jsonData[j][param]);
+                                      console.log(x);
+                                      console.log(spectrum);
+                                    hit = true;
+                                  }
+
+                                  var rgb = spectrum.getImageData(((x * 100) | 0), 10, 1, 1).data; // [R, G, B, A]
+                                  parameters.WFSlayers.model[i].material.color.setRGB(rgb[0], rgb[1], rgb[2]);
                               }
                               }
                           }
@@ -361,7 +364,7 @@ Q3D.gui = {
         project.layers.forEach(function (layer, i) {
       
             var folder = Q3D.gui.gui.__folders["Custom Layers"];
- 
+       
         //Change Opacity
             folder.add(parameters, 'opacity').name('Show Layer').min(0).max(1).name('Opacity (0-1)').onChange(function (opacityValue) {
 

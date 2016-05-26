@@ -79,6 +79,12 @@
     <Content Include="3D\xml2json.js" />
     <Content Include="packages.config" />
     <Content Include="3D\randdata.csv" />
+    <Content Include="Website\css\style.css" />
+    <Content Include="Website\index.html" />
+    <Content Include="Website\js\index.js" />
+    <Content Include="Website\js\loginscripts.js" />
+    <Content Include="Website\js\testpage.html" />
+    <Content Include="Website\testpage.html" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
