@@ -3,27 +3,27 @@ function validate() {
         name: document.getElementById("username").value,
         pass: document.getElementById("password").value
     };
-
+    
 	$.ajax({
 	    url: 'http://localhost:8085/login/',
 	    type: 'POST',
-        crossDomain: true,
+	    contentType: "application/json",
 	    dataType: 'text',
         data: JSON.stringify(form),
 
         success: function (result) {
-            console.log("success");
-            console.log(result);
-            if (result) {
-                console.log(result);
-                window.location = '../Website/testpage.html';
-            } else {
-                alert("Unsuccesful login")
-            }
+            console.log("Success");
+            window.sessionStorage.userRole = 'builder';
+            window.location = '../3D/index.html';
         },
         error: function (err) {
-            console.log("error:")
-            console.log(err);
+            console.log("Failed")
+            var l = 10;
+            for (var i = 0; i < 10; i++)
+                $("form").animate({
+                    'margin-left': "+=" + (l = -l) + 'px',
+                    'margin-right': "-=" + l + 'px'
+                }, 50);
         }
 	});
 	console.log("Validation finished");
@@ -52,6 +52,7 @@ function getScenes() {
                 button.onclick = function () {
                     window.sessionStorage.scene = this.name;
                     console.log(this.name);
+                    window.sessionStorage.userRole = 'observer';
                     window.location = '../3D/index.html';
                 };
                 button.appendChild(text);
