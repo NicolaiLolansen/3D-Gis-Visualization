@@ -191,7 +191,7 @@ Q3D.gui = {
       funcFolder.add(this.parameters, 'Source').name('Select Data Source').onFinishChange(function (value) {
           $.getJSON({
               type: 'GET',
-              url: 'http://localhost:8081/getData',
+              url: 'http://api-geovizjs.rhcloud.com/getData',
               data: { 'targetURL': value },
               contentType: "application/json; charset=utf-8",
               header: { 'Access-Control-Allow-Origin': '*' },

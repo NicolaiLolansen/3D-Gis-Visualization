@@ -5,7 +5,7 @@ function validate() {
     };
     
 	$.ajax({
-	    url: 'http://localhost:8085/login/',
+	    url: 'http://api-geovizjs.rhcloud.com/login/',
 	    type: 'POST',
 	    contentType: "application/json",
 	    dataType: 'text',
@@ -13,6 +13,7 @@ function validate() {
 
         success: function (result) {
             console.log("Success");
+            console.log(result);
             window.sessionStorage.userRole = 'builder';
             window.location = '../3D/index.html';
         },
@@ -33,7 +34,7 @@ function getScenes() {
     var element = document.getElementById("button_panel");
 
     $.getJSON({
-        url: 'http://localhost:8085/savesList/',
+        url: 'https://api-geovizjs.rhcloud.com/savesList/',
         type: 'GET',
         crossDomain: true,
         contentType: "application/json; charset=utf-8",
@@ -57,7 +58,6 @@ function getScenes() {
                 };
                 button.appendChild(text);
                 element.appendChild(button);
-                console.log(button);
             }
         },
         error: function (err) {

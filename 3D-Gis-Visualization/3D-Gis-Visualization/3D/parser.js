@@ -9,7 +9,7 @@ function getAllData() {
     //console.log(data.outputs);
     $.ajax({
         dataType: 'json',
-        url: 'http://localhost:8081/getData',
+        url: 'http://api-geovizjs.rhcloud.com/getData',
         type: 'POST',
         data: 'http://dl.dropboxusercontent.com/s/8qyigf5hvqmty0z/csvtest1.csv?dl=1'
     }).success(function (res) {
