@@ -201,12 +201,7 @@ limitations:
         app.modelBuilders = [];
         app._wireframeMode = false;
 
-        //create some logic that generalizes the process of creating the layers
-        var xmin = parseFloat(project.baseExtent[0]);
-        var ymin = parseFloat(project.baseExtent[1]);
-        var xmax = parseFloat(project.baseExtent[2]);
-        var ymax = parseFloat(project.baseExtent[3]);
-
+      
         var url = "http://services.kortforsyningen.dk/service?servicename=topo_geo_gml2&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=kms:Bygning&login=student134859&password=3dgis&maxfeatures=5000";
         //app.getBuildings(xmin, ymin, xmax, ymax, 0, 0, url, "FOT Buildings");
         //Generate Buildings
