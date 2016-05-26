@@ -5,6 +5,7 @@
     <title>GeoViz</title>
         <link rel="stylesheet" href="css/style.css">
       <script src="../3D/jquery-2.2.0.js"></script>
+      <script src="../3D/jquery-ui.min.js"></script>
       <script src="js/loginscripts.js"></script>
   </head>
 
@@ -20,10 +21,10 @@
           <p class="message"><a href="#">Back</a></p>
       </form>
 
-    <form class="login-form" name="login_form">
+    <form class="login-form" name="login_form" method="post">
       <input type="text" placeholder="username" name="username" id="username"/>
       <input type="password" placeholder="password" name="password" id="password"/>
-      <button onclick="validate()">login</button>
+      <button onclick="validate()" type="button">login</button>
       <p class="message">No admin login? <a href="#">Enter as Observer</a></p>
     </form>
   </div>
