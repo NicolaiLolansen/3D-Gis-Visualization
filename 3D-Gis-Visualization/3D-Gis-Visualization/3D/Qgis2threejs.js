@@ -143,6 +143,7 @@ limitations:
         app.stats = new Stats();
         app.stats.setMode(0); // 0: fps, 1: ms, 2: mb
 
+       
         // align top-left
         app.stats.domElement.style.position = 'absolute';
         app.stats.domElement.style.left = '0px';
@@ -193,6 +194,8 @@ limitations:
         // scene
         app.scene = new THREE.Scene();
         app.scene.autoUpdate = true;
+        //Fog
+        app.scene.fog = new THREE.Fog(0xddddff, 0.1, 550);
 
         //Clickable objects that has attributes (buildings etc.)
         app._queryableObjects = [];
@@ -526,7 +529,21 @@ limitations:
 
     app.buildDefaultCamera = function () {
         app.camera = new THREE.PerspectiveCamera(45, app.width / app.height, 0.1, 1000);
-        app.camera.position.set(45, 0, 15);
+
+
+        var position = { x: 0, y: 0, z: 150};
+        var target = { x: 45, y: 15, z:10 };
+        var tween = new TWEEN.Tween(position).to(target, 5000);
+
+        tween.easing(TWEEN.Easing.Exponential.InOut);
+        tween.onUpdate(function () {
+            //loadedMesh.position.x = position.x;
+            app.camera.position.set(position.x, position.y, position.z);
+            app.camera.lookAt(new THREE.Vector3(0, 0, 0));
+       
+        });
+        tween.start();
+       
     };
 
     app.currentViewUrl = function () {
@@ -644,8 +661,6 @@ limitations:
             });
             //Custom WFS layer addition - Nicolai
             if (app.project.layers != undefined) {
-
-     
                 app.project.layers.forEach(function (layer) {
                     if (layer.model.length) {
                         app._queryableObjects = app._queryableObjects.concat(layer.model);
@@ -653,6 +668,12 @@ limitations:
                     }
                 });
             }
+        }
+        //Make the plane tiles queryable
+        if (app.project.plane != undefined) {
+            app.project.plane.forEach(function (plane) {
+                app._queryableObjects = app._queryableObjects.concat(plane);
+            });
         }
         return app._queryableObjects;
     };
@@ -1095,9 +1116,10 @@ limitations:
         url = url + bbox;
         app.wmsready = false;
         app.removeLayer(0,true);
-       
+        
+        console.log(url);
         $.ajax({
-            url: url + bbox,
+            url: url,
             dataType: "xml",
         })
        .success(function (response) {
@@ -1349,8 +1371,8 @@ limitations:
         var tiley = parseFloat((ymax - ymin) / num);
 
         //Tile pixel dimensions (Higher is more detailed)
-        var width = 64;
-        var height = 64;
+        var width = 512;
+        var height = 512;
     
         //The service URL for the layer we are using for map (Here orto photos from kortforsyningen)
         var url = "http://kortforsyningen.kms.dk/service?servicename=orto_foraar&request=GetMap&service=WMS&version=1.1.1&LOGIN=student134859&PASSWORD=3dgis&layers=orto_foraar&width=" + (width) + "&height=" + (height) + "&format=image%2Fpng&srs=EPSG%3A25832";
@@ -1418,7 +1440,7 @@ limitations:
         app.octree.update();
         app.scene.add(app.project.plane[0]);
         app.updateResolution(plane, num, width, height);
-        app.extendMap(1);
+        app.extendMap(2);
     }
 
   app.extendMap = function (dim) {
@@ -1434,16 +1456,22 @@ limitations:
       var tiley = parseFloat((ymax - ymin) / num);
 
       //Tile pixel dimensions (Higher is more detailed)
-      var width = 64;
-      var height = 64;
+      var width = 256;
+      var height = 256;
       var url = app.project.map.url + "&width=" +width+"&height="+height;
       var materials = [];
       //The service URL for the layer we are using for map (Here orto photos from kortforsyningen)
      // var url = "http://kortforsyningen.kms.dk/service?servicename=orto_foraar&request=GetMap&service=WMS&version=1.1.1&LOGIN=student134859&PASSWORD=3dgis&layers=orto_foraar&width=" + (width) + "&height=" + (height) + "&format=image%2Fpng&srs=EPSG%3A25832";
+      var buildingUrl = "http://services.kortforsyningen.dk/service?servicename=topo_geo_gml2&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=kms:Bygning&login=student134859&password=3dgis&maxfeatures=5000";
       for (var column = -dim; column <= dim; column++) {
           for (var row = -dim; row <= dim; row++) {
               var tempPlane = app.project.plane[0].clone();
               //We dont want to draw the center tile
+              if (column == 0 && row == 0) {
+                 
+                  continue;
+              }
+
 
               THREE.ImageUtils.crossOrigin = '';
               var texture = THREE.ImageUtils.loadTexture(url + "&bbox=" + (xmin + (column * tilex)) + "," + (ymin + (row * tiley)) + "," + (xmin + ((column + 1) * tilex)) + "," + (ymin + ((row + 1) * tiley)));
@@ -1455,13 +1483,25 @@ limitations:
               tempPlane.material = material;
               tempPlane.position.x = app.project.width * column;
               tempPlane.position.y = app.project.height * row;
+
               app.scene.add(tempPlane);
               tempPlane.column = column;
               tempPlane.row = row;
+
+              //Information to build buildings on the tile:
+              tempPlane.userData.url = buildingUrl;
+              tempPlane.userData.xmin = (xmin + (column * tilex));
+              tempPlane.userData.ymin = (ymin + (row * tiley));
+              tempPlane.userData.xmax = (xmin + ((column + 1) * tilex));
+              tempPlane.userData.ymax = (ymin + ((row + 1) * tiley));
+              tempPlane.userData.row = row;
+              tempPlane.userData.column = column;
+
+
               app.project.plane.push(tempPlane);
               //var buildings = "http://services.kortforsyningen.dk/service?servicename=topo_geo_gml2&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=kms:Bygning&login=student134859&password=3dgis&maxfeatures=5000";
               //app.getBuildings((xmin + (column * tilex)), (ymin + (row * tiley)), (xmin + ((column + 1) * tilex)), (ymin + ((row + 1) * tiley)), row, column, (buildings + "&bbox=" + (xmin + (column * tilex)) + "," + (ymin + (row * tiley)) + "," + (xmin + ((column + 1) * tilex)) + "," + (ymin + ((row + 1) * tiley))),"Fot10");
-              app.updateResolution(tempPlane, num, width, height);
+             // app.updateResolution(tempPlane, num, width, height);
           }
 
       }
@@ -1982,7 +2022,7 @@ limitations:
     var canvasOffset = app._offset(app.renderer.domElement);
     var objs = app.intersectObjects(e.clientX - canvasOffset.left, e.clientY - canvasOffset.top);
     for (var i = 0, l = objs.length; i < l; i++) {
-      var obj = objs[i];
+        var obj = objs[i];
       if (!obj.object.visible) continue;
 
       // query marker
@@ -1992,6 +2032,15 @@ limitations:
 
       // get layerId and featureId of clicked object
       var object = obj.object, layerId, featureId;
+
+      if (object.userData.url != undefined) {
+          var d = object.userData;
+          console.log(d);
+          app.updateResolution(object, 1, 256, 256);
+          app.getBuildings(d.xmin, d.ymin, d.xmax, d.ymax, d.row, d.column, d.url, "Tile", false);
+      }
+
+      
 
       while (object) {
         layerId = object.userData.layerId,
@@ -2015,6 +2064,8 @@ limitations:
      
       app.highlightFeature((layerId === undefined) ? null : layerId,
                          (featureId === undefined) ? null : featureId);
+
+
 
       if (Q3D.Options.debugMode && object instanceof THREE.Mesh) {
         var face = obj.face,

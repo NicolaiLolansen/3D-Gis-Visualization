@@ -82,6 +82,7 @@
     <Content Include="Website\js\testpage.html" />
     <Content Include="Website\testpage.html" />
     <Content Include="3D\aavej9.json" />
+    <Content Include="3D\hej.json" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
