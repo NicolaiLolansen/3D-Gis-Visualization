@@ -1,8 +1,10 @@
 function validate() {
+    var input = document.getElementById("login-form");
     var form = {
-        name: document.getElementById("username").value,
-        pass: document.getElementById("password").value
+        name: input.username.value,
+        pass: input.password.value
     };
+    console.log(form);
     
 	$.ajax({
 	    url: 'http://api-geovizjs.rhcloud.com/login/',
@@ -10,7 +12,7 @@ function validate() {
 	    contentType: 'application/json',
 	    dataType: 'text',
         data: JSON.stringify(form),
-
+        
         success: function (result) {
             console.log("Success");
             console.log(result);
@@ -24,7 +26,7 @@ function validate() {
                 $("form").animate({
                     'margin-left': "+=" + (l = -l) + 'px',
                     'margin-right': "-=" + l + 'px'
-                }, 50);
+                }, 40);
         }
 	});
 	console.log("Validation finished");
