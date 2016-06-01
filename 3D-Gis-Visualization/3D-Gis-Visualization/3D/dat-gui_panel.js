@@ -43,7 +43,7 @@ Q3D.gui = {
     this.gui = new dat.GUI();
     this.gui.domElement.parentElement.style.zIndex = 1000;   // display the panel on the front of labels
     if (setupDefaultItems === undefined || setupDefaultItems == true) {
-      this.addLayersFolder();
+      //this.addLayersFolder();
       //this.addCustomPlaneFolder();
       this.addFunctionsFolder();
       //this.addCustomLayers();
@@ -191,7 +191,7 @@ Q3D.gui = {
       funcFolder.add(this.parameters, 'Source').name('Select Data Source').onFinishChange(function (value) {
           $.getJSON({
               type: 'GET',
-              url: 'http://localhost:8081/getData',
+              url: 'http://api-geovizjs.rhcloud.com/getData',
               data: { 'targetURL': value },
               contentType: "application/json; charset=utf-8",
               header: { 'Access-Control-Allow-Origin': '*' },
@@ -217,9 +217,9 @@ Q3D.gui = {
                                   //Change structure of properties, temp hack solution:
 
                                   var maxminObj;
-                                  for (var element in properties) {
-                                      if (properties[element].parameter == param){
-                                          maxminObj = properties[element];
+                                  for (var key in properties) {
+                                      if (properties[key].parameter == param){
+                                          maxminObj = properties[key];
                                           break;
                                       }
                                   }

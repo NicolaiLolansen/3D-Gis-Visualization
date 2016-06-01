@@ -1,18 +1,21 @@
 function validate() {
+    var input = document.getElementById("login-form");
     var form = {
-        name: document.getElementById("username").value,
-        pass: document.getElementById("password").value
+        name: input.username.value,
+        pass: input.password.value
     };
+    console.log(form);
     
 	$.ajax({
-	    url: 'http://localhost:8085/login/',
+	    url: 'http://api-geovizjs.rhcloud.com/login/',
 	    type: 'POST',
-	    contentType: "application/json",
+	    contentType: 'application/json',
 	    dataType: 'text',
         data: JSON.stringify(form),
-
+        
         success: function (result) {
             console.log("Success");
+            console.log(result);
             window.sessionStorage.userRole = 'builder';
             window.location = '../3D/index.html';
         },
@@ -23,7 +26,7 @@ function validate() {
                 $("form").animate({
                     'margin-left': "+=" + (l = -l) + 'px',
                     'margin-right': "-=" + l + 'px'
-                }, 50);
+                }, 40);
         }
 	});
 	console.log("Validation finished");
@@ -33,7 +36,7 @@ function getScenes() {
     var element = document.getElementById("button_panel");
 
     $.getJSON({
-        url: 'http://localhost:8085/savesList/',
+        url: 'https://api-geovizjs.rhcloud.com/savesList/',
         type: 'GET',
         crossDomain: true,
         contentType: "application/json; charset=utf-8",
@@ -51,13 +54,11 @@ function getScenes() {
                 button.type = 'button';
                 button.onclick = function () {
                     window.sessionStorage.scene = this.name;
-                    console.log(this.name);
                     window.sessionStorage.userRole = 'observer';
                     window.location = '../3D/index.html';
                 };
                 button.appendChild(text);
                 element.appendChild(button);
-                console.log(button);
             }
         },
         error: function (err) {

@@ -18,17 +18,22 @@
           <script>
               getScenes();
           </script>
-          <p class="message"><a href="#">Back</a></p>
+          <button class="obs" type="button" href="#">Back</button>
       </form>
 
-    <form class="login-form" name="login_form" method="post">
-      <input type="text" placeholder="username" name="username" id="username"/>
-      <input type="password" placeholder="password" name="password" id="password"/>
-      <button onclick="validate()" type="button">login</button>
-      <p class="message">No admin login? <a href="#">Enter as Observer</a></p>
+    <form class="login-form" name="login_form" method="post" id="login-form">
+      <input type="text" placeholder="username" name="username"/>
+      <input type="password" placeholder="password" name="password" 
+             onkeydown = "if (event.keyCode == 13) document.getElementById('login_button').click()"/>
+
+      <button name="login_button" id="login_button" onclick="validate()" type="button">login</button>
+      <button class="obs" name="observer_btn" id="observer_btn" href="#" type="button">observe</button>
     </form>
   </div>
 </div>
+
+
+
     <script src="js/index.js"></script>
     
   </body>

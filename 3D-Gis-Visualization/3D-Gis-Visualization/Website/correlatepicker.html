@@ -1,0 +1,157 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <link rel="stylesheet" href="css/style.css">
+	<meta charset="utf-8" />
+</head>
+<body>
+
+    <h2>Animated Modal with Header and Footer</h2>
+    <script src="../3D/jquery-2.2.0.js"></script>
+    <!-- Trigger/Open The Modal -->
+    <button id="save_scene" type="button">Save scene</button>
+    <button id="myBtn" type="button">Open Menu</button>
+    <button onclick="window.location = 'index.html'">Open Menu</button>
+
+    <!-- The Modal -->
+    <div id="myModal" class="modal">
+        <!-- Modal content -->
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="close">×</span>
+                <h2>Select components for address building</h2>
+            </div>
+            <div class="modal-body">
+                <table>
+                    <tr class="titles">
+                        <td>Street</td>
+                        <td>Number</td>
+                        <td>Zip</td>
+                    </tr>
+                    <tr>
+                        <td>
+                        <select id="select_street">
+                            <option value="volvo">Volvo</option>
+                            <option value="saab">Saab</option>
+                            <option value="vw">VW</option>
+                            <option value="audi">Audi</option>
+                        </select>
+                        </td>
+                        <td>
+                            <select id="select_streetnum">
+                                <option value="volvo">Volvo</option>
+                                <option value="saab">Saab</option>
+                                <option value="vw">VW</option>
+                                <option value="audi">Audi</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select id="select_zip">
+                                <option value="volvo">Volvo</option>
+                                <option value="saab">Saab</option>
+                                <option value="vw">VW</option>
+                                <option value="audi">Audi</option>
+                            </select>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button id="buildAddr">Construct Addresses</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+// Get the modal
+var modal = document.getElementById('myModal');
+
+// Get the button that opens the modal
+var btn = document.getElementById("myBtn");
+
+// Get the <span> element that closes the modal
+var span = document.getElementsByClassName("close")[0];
+
+// When the user clicks the button, open the modal
+btn.onclick = function() {
+    modal.style.display = "block";
+}
+
+// When the user clicks on <span> (x), close the modal
+span.onclick = function() {
+    modal.style.display = "none";
+}
+
+// When the user clicks anywhere outside of the modal, close it
+window.onclick = function(event) {
+    if (event.target == modal) {
+        modal.style.display = "none";
+    }
+}
+
+//DROPDOWN MENU SCRIPT
+function myFunction() {
+    document.getElementById("myDropdown").classList.toggle("show");
+}
+
+// Close the dropdown if the user clicks outside of it
+window.onclick = function (event) {
+    if (!event.target.matches('.dropbtn')) {
+
+        var dropdowns = document.getElementsByClassName("dropdown-content");
+        var i;
+        for (i = 0; i < dropdowns.length; i++) {
+            var openDropdown = dropdowns[i];
+            if (openDropdown.classList.contains('show')) {
+                openDropdown.classList.remove('show');
+            }
+        }
+    }
+}
+
+function loadShit() {
+    var poly = "&Bbox=" + xmin + "," + ymin + "," + xmax + "," + ymax;
+
+}
+
+function bboxToPolygon(xmin, ymin, xmax, ymax) {
+    return [[[xmin, ymin], [xmin, ymax], [xmax, ymax], [xmax, ymin], [xmin, ymin]]];
+}
+
+
+//Save scene to server
+var btn2 = document.getElementById("save_scene");
+btn2.onclick = function () {
+    console.log("clickity clack")
+    $.getJSON("../3D/dtu.json", function (json) {
+        var block = {
+            scene_name: 'dtu.json',
+            scene: json
+        };
+        console.log(block);
+
+        var saveBlock = JSON.stringify(block);
+
+
+        $.ajax({
+            type: 'POST',
+            url: 'https://api-geovizjs.rhcloud.com/saveScene/',
+            data: saveBlock,
+            contentType: 'application/json',
+            success: function (data) {
+                alert("success");
+                console.log(data);
+            },
+            failure: function (errMsg) {
+                alert("FAIL");
+                console.log(errMsg);
+            }
+        });
+    });
+}
+
+</script>
+
+</body>
+</html>
