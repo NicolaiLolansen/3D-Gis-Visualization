@@ -60,7 +60,7 @@ app.init(container);
 project = new Q3D.Project({ crs: "EPSG:25832", title: "Untitled Project", baseExtent: [719777, 6187092, 722250, 6188663], rotation: 0, zShift: 0.0, width: 100.0, zExaggeration: 1.5 });
 
     // load the project
-$.getJSON("hej.json", function (json) {
+$.getJSON("dtu1.json", function (json) {
     app.loadProject(json);
     app.start();
     app.addEventListeners();

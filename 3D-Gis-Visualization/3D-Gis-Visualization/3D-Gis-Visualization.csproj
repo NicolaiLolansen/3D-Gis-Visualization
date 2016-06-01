@@ -68,6 +68,7 @@
   <ItemGroup>
     <Content Include="3D\csvAPI.js" />
     <Content Include="3D\DataFondler.js" />
+    <Content Include="3D\gml_worker.js" />
     <Content Include="3D\jquery-ui.min.js" />
     <Content Include="3D\Octree.js" />
     <Content Include="3D\parser.js" />
@@ -83,6 +84,7 @@
     <Content Include="Website\testpage.html" />
     <Content Include="3D\aavej9.json" />
     <Content Include="3D\hej.json" />
+    <Content Include="3D\dtu1.json" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>

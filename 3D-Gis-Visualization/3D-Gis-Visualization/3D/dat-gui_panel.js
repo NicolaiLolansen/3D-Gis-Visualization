@@ -300,7 +300,7 @@ Q3D.gui = {
                   /*
                   CREATE A STOP RENDER INSTEAD OF 10 RUNTHROUGHS OF THIS
                   */
-                  for (var i = 0; i < 10; i++){
+                  for (var i = 0; i < 20; i++){
                       app.scene.children.forEach(function (child) {
                           if (child instanceof THREE.Mesh) {
                               app.scene.remove(child);
@@ -308,6 +308,20 @@ Q3D.gui = {
                           }
                       });
                   }
+                  for (var i = 0; i < 5; i++) {
+                      app.project.layers.forEach(function (layer) {
+                          
+                          layer.model.forEach(function(child){
+
+                          if (child instanceof THREE.Mesh) {
+                              app.scene.remove(child);
+                              app.octree.remove(child);
+                          }
+                          });
+                      });
+                  }
+                  app.octreeNeedsUpdate = true;
+                 
                   var x = response[0].adgangspunkt.koordinater[0];
                   var y = response[0].adgangspunkt.koordinater[1];
                   
@@ -327,7 +341,7 @@ Q3D.gui = {
  
 
 
-                  app.getBuildings(xmin, ymin, xmax, ymax, 0, 0, url, "FOT10",false);
+                  app.getBuildings(xmin, ymin, xmax, ymax, 0, 0, url, "FOT10",true);
                   
 
                  

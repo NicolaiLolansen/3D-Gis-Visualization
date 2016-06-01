@@ -212,7 +212,7 @@ limitations:
         // var request = "Bygning_BBR_P";
         // var url = "http://services.kortforsyningen.dk/service?servicename=topo_geo_gml2&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=kms:Navnefortidsminde&maxfeatures=3&login=student134859&password=3dgis&outputFormat=json";
         // app.getbounds(url);
-
+        window.scene = app.scene;
     };
 
     app.parseUrlParameters = function () {
@@ -259,6 +259,7 @@ limitations:
                 geo.vertices = layer.model[i].geometry.vertices;
                 geo.faces = layer.model[i].geometry.faces;
                 layer.model[i].geometry = geo;
+                console.log(layer.model[i].userData);
                 var result = layer.model[i].toJSON();
                 var resultJSON = JSON.stringify(result);
                 models.push(resultJSON);
@@ -303,6 +304,10 @@ limitations:
               TODO 08-05-2016
               Nicolai
         */
+        projectJSON.baseExtent[0] = projectJSON.baseExtent[0];
+        projectJSON.baseExtent[1] = projectJSON.baseExtent[1];
+        projectJSON.baseExtent[2] = projectJSON.baseExtent[2];
+        projectJSON.baseExtent[3] = projectJSON.baseExtent[3];
         var project = new Q3D.Project({
             crs: projectJSON.crs, title: projectJSON.title, baseExtent: projectJSON.baseExtent, rotation: projectJSON.rotation, zshift: projectJSON.zshift,
             width: projectJSON.width, height: projectJSON.height, zExaggeration: projectJSON.zExaggeration, layers: projectJSON.layers,
@@ -333,7 +338,7 @@ limitations:
 
         app.octree = new THREE.Octree({
             // uncomment below to see the octree (may kill the fps)
-            // scene: app.scene,
+            //scene: app.scene,
             // when undeferred = true, objects are inserted immediately
             // instead of being deferred until next octree.update() call
             // this may decrease performance as it forces a matrix update
@@ -341,7 +346,7 @@ limitations:
             // set the max depth of tree
             depthMax: 8,
             // max number of objects before nodes split or merge
-            objectsThreshold: 128,
+            objectsThreshold: 256,
             // percent between 0 and 1 that nodes will overlap each other
             // helps insert objects that lie over more than one node
             overlapPct: 0.10
@@ -408,7 +413,8 @@ limitations:
         app.calculatebbox(1);
         
         var loader = new THREE.ObjectLoader();
-   
+        
+
         project.layers.forEach(function (layer,i) {
             var models = [];
             layer.model.forEach(function (model) {
@@ -423,11 +429,15 @@ limitations:
                 tween.onUpdate(function () {
                     //loadedMesh.position.x = position.x;
                     loadedMesh.position.z = position.y;
-                    app.octree.update();
                 });
                 tween.start();
                 app.octree.add(loadedMesh);
             });
+
+            for (var x = 0; x < models.length; x++) {
+                models[x].userData.layerId = i;
+                models[x].userData.featureId = x;
+            }
             layer.model = models;
             app.mergeLayer(layer);
             project.layers[i] = layer;
@@ -575,8 +585,9 @@ limitations:
      
         //If we changed the active octree update
         if (app.octreeNeedsUpdate) {
+            //alert("Updating the octree");
             app.octree.update();
-            app.octreeObjects = app.octree.search(app.raycaster.ray.origin, 100, true, app.vector);
+            app.octreeObjects = app.octree.search(app.raycaster.ray.origin, 0, true, app.vector);
         }
         //If the camera lookat has changed, search the octree
         var vector = new THREE.Vector3(0, 0, -1);
@@ -596,7 +607,18 @@ limitations:
             app.octreeObjects = app.octree.search(app.raycaster.ray.origin, 100, true, app.vector);
 
             if (app.octreeObjects.length > 0) {
-                app.removeLayer(0, false);
+              
+                    app.project.layers.forEach(function (layer) {
+
+                        layer.model.forEach(function (child) {
+
+                            if (child instanceof THREE.Mesh) {
+                                app.scene.remove(child);
+                                //app.octree.remove(child);
+                            }
+                        });
+                    });
+                
                 
                 for (var i = 0; i < app.octreeObjects.length; i++) {
                     app.scene.add(app.octreeObjects[i].object);
@@ -959,7 +981,10 @@ limitations:
         if (["Icon", "JSON model", "COLLADA model"].indexOf(layer.objType) != -1) return;
 
         
+        console.log("Clicking " + featureId);
+        console.log(layer);
         var model = layer.model[featureId];
+        console.log(model);
       //  if (f === undefined || f.objs.length == 0) return;
 
 
@@ -998,11 +1023,19 @@ limitations:
 
         });
         
-        folder.add(Q3D.gui.parameters, 'height').min(0).max(5).name('Height').onChange(function (height) {
+        folder.add(Q3D.gui.parameters, 'height').min(1).max(5).name('Height').onChange(function (height) {
 
            
-          //  model.position.z = height;
-                model.scale.set(1, 1, height);
+            //  model.position.z = height;
+            var geo = new THREE.Geometry();
+            geo.vertices = model.geometry.vertices;
+            geo.faces = model.geometry.faces;
+            
+           
+            geo.scale(1, 1, height);
+            model.geometry = geo;
+
+           
 
             
         }); 
@@ -1115,18 +1148,35 @@ limitations:
         var bbox = "&Bbox=" + xmin + "," + ymin + "," + xmax + "," + ymax;
         url = url + bbox;
         app.wmsready = false;
-        app.removeLayer(0,true);
-        
+        //app.removeLayer(0,true);
+        app.loader = new THREE.ObjectLoader();
         console.log(url);
         $.ajax({
             url: url,
             dataType: "xml",
         })
        .success(function (response) {
-     
+            
+           
            var coordinates = response.getElementsByTagName("coordinates");
            var attributes = response.getElementsByTagName("Bygning");
         
+           
+
+           var myWorker1 = new Worker("gml_worker.js");
+           var myWorker2 = new Worker("gml_worker.js");
+           var myWorker3 = new Worker("gml_worker.js");
+           var myWorker4 = new Worker("gml_worker.js");
+
+           /*
+           Worker version of script
+           Input: GML response
+
+           Output: model, a
+           */
+           var count = 1;
+           app.date1 = new Date();
+           
            if (coordinates.length > 0) {
                if (app.project.layers == undefined) {
                    app.project.layers = [];
@@ -1144,6 +1194,7 @@ limitations:
                    app.project.layers[index].name = "FOT10";
                }
                
+
                var loader = new THREE.JSONLoader();
                var widthP = app.project.width;
                var heightP = app.project.height;
@@ -1159,6 +1210,29 @@ limitations:
                    var gmlPoints = new XMLSerializer().serializeToString(coordinates[i].childNodes[0]);
                    var cords = gmlPoints.split(" ");
 
+                   if (attributes[i] != undefined) {
+                       var gmlAttributes = attributes[i].getElementsByTagName("*");
+                       app.project.layers[index].a[i] = {};
+                       for (var k = 0; k < gmlAttributes.length; k++) {
+                           var key = String(gmlAttributes[k].nodeName);
+                           var key = key.replace(/kms:|gml:/gi, "");
+                           var value = gmlAttributes[k].innerHTML;
+                           app.project.layers[index].a[i][key] = value;
+                       }
+                   }
+
+                   if (i % 4 == 0) {
+                       myWorker1.postMessage([app.project.zScale, app.project.layers.length, i, cords, widthP, heightP, column, row, xmax, ymax, factorX, factorY]);
+                   } else if(i % 4 == 1) {
+                       myWorker2.postMessage([app.project.zScale, app.project.layers.length, i, cords, widthP, heightP, column, row, xmax, ymax, factorX, factorY]);
+                   } else if (i % 4 == 2) {
+                       myWorker3.postMessage([app.project.zScale, app.project.layers.length, i, cords, widthP, heightP, column, row, xmax, ymax, factorX, factorY]);
+                   } else {
+                       myWorker4.postMessage([app.project.zScale, app.project.layers.length, i, cords, widthP, heightP, column, row, xmax, ymax, factorX, factorY]);
+                   }
+                  
+                  
+/*
                    var points = [];
                    var xs = [];
                    var ys = [];
@@ -1175,18 +1249,19 @@ limitations:
                        points.push(point);
                        xs.push(x);
                        ys.push(y);
-                   }
-                   if (attributes[i] != undefined) {
-                       var gmlAttributes = attributes[i].getElementsByTagName("*");
-                       app.project.layers[index].a[i] = {};
-                       for (var k = 0; k < gmlAttributes.length; k++) {
-                           var key = String(gmlAttributes[k].nodeName);
-                           var key = key.replace(/kms:|gml:/gi, "");
-                           var value = gmlAttributes[k].innerHTML;
-                           app.project.layers[index].a[i][key] = value;
-                       }
-                   }
-               
+                   } */
+                   
+                   /*
+                   if (coordinates.length % 2 == 1) {
+                       myWorker1.postMessage([points, z, app.project.zScale, xs, ys, app.project.layers.length, i]);
+
+                   } else {
+                       myWorker2.postMessage([points, z, app.project.zScale, xs, ys, app.project.layers.length, i]);
+
+                   } */
+                   
+
+                   /*
                    var shape = new THREE.Shape(points);
                    var extrudeSettings = {
                        amount: 1,
@@ -1207,7 +1282,7 @@ limitations:
                    } else {
                        mesh.scale.set(1, 1, app.project.zScale * 12);
                    }
-               
+
                    //Compute the center coordinate of the box that bounds the object:
 
                    var xminMap = Math.min.apply(null, xs);
@@ -1219,27 +1294,154 @@ limitations:
                    var xCorMap = xminMap + ((xmaxMap - xminMap) / 2);
                    var yCorMap = yminMap + ((ymaxMap - yminMap) / 2);
                    mesh.mapcoords = [xCorMap, yCorMap];
-           
-                   mesh.userData.layerId = app.project.layers.length-1;
-                   mesh.userData.featureId = i;
-                   var meshString = JSON.stringify(mesh);
-                   app.project.layers[index].modelJSON[i] = meshString;
-                   app.project.layers[index].model[i] = mesh;
 
-                   if (showBuildings == true) {
-                       app.octree.add(mesh);
-                       var opacity = 0.3;
-                   } else {
-                       var opacity = 1;
+                   mesh.userData.layerId = app.project.layers.length - 1;
+                   mesh.userData.featureId = i;
+
+                 */
+                   myWorker1.onmessage = function (e) {
+                      // console.log("Worker 1 got a message");
+                       var loadedGeometry = JSON.parse(e.data[0]);
+                     
+                       var mesh = app.loader.parse(loadedGeometry);
+
+
+                       mesh.userData = [];
+                       mesh.userData.layerId = app.project.layers.length - 1;
+                       mesh.userData.featureId = e.data[1];
+
+                       //var meshString = JSON.stringify(mesh);
+                       //app.project.layers[index].modelJSON[i] = meshString;
+                       app.project.layers[index].model[e.data[1]] = mesh;
+
+                       if (showBuildings == true) {
+                           app.octree.add(mesh);
+                           var opacity = 0.3;
+                       } else {
+                           var opacity = 1;
+                       }
+
+                       if (count >= coordinates.length) {
+                        
+                           app.project.layers[index].url = url;
+                           app.project.layers[index].name = name;
+                           app.project.layers[index].type = "GML";
+
+                           app.date2 = new Date();
+                           console.log(app.date2 - app.date1);
+                           app.mergeLayer(app.project.layers[index], 1);
+                           
+                       }
+                       count++;
                    }
-                   
+                   myWorker2.onmessage = function (e) {
+                   //    console.log("Worker 2 got a message");
+                       var loadedGeometry = JSON.parse(e.data[0]);
+
+                       var mesh = app.loader.parse(loadedGeometry);
+
+
+                       mesh.userData = [];
+                       mesh.userData.layerId = app.project.layers.length - 1;
+                       mesh.userData.featureId = e.data[1];
+
+                       //var meshString = JSON.stringify(mesh);
+                       //app.project.layers[index].modelJSON[i] = meshString;
+                       app.project.layers[index].model[e.data[1]] = mesh;
+
+                       if (showBuildings == true) {
+                           app.octree.add(mesh);
+                           var opacity = 0.3;
+                       } else {
+                           var opacity = 1;
+                       }
+
+                       if (count >= coordinates.length) {
+
+                           app.project.layers[index].url = url;
+                           app.project.layers[index].name = name;
+                           app.project.layers[index].type = "GML";
+
+                           app.date2 = new Date();
+                           console.log(app.date2 - app.date1);
+                           app.mergeLayer(app.project.layers[index], 1);
+
+                       }
+                       count++;
+                   }
+                   myWorker3.onmessage = function (e) {
+                       //console.log("Worker 3 got a message");
+                       var loadedGeometry = JSON.parse(e.data[0]);
+
+                       var mesh = app.loader.parse(loadedGeometry);
+
+
+                       mesh.userData = [];
+                       mesh.userData.layerId = app.project.layers.length - 1;
+                       mesh.userData.featureId = e.data[1];
+
+                       //var meshString = JSON.stringify(mesh);
+                       //app.project.layers[index].modelJSON[i] = meshString;
+                       app.project.layers[index].model[e.data[1]] = mesh;
+
+                       if (showBuildings == true) {
+                           app.octree.add(mesh);
+                           var opacity = 0.3;
+                       } else {
+                           var opacity = 1;
+                       }
+
+                       if (count >= coordinates.length) {
+
+                           app.project.layers[index].url = url;
+                           app.project.layers[index].name = name;
+                           app.project.layers[index].type = "GML";
+
+                           app.date2 = new Date();
+                           console.log(app.date2 - app.date1);
+                           app.mergeLayer(app.project.layers[index], 1);
+
+                       }
+                       count++;
+                   }
+                   myWorker4.onmessage = function (e) {
+                       //console.log("Worker 4 got a message");
+                       var loadedGeometry = JSON.parse(e.data[0]);
+
+                       var mesh = app.loader.parse(loadedGeometry);
+
+
+                       mesh.userData = [];
+                       mesh.userData.layerId = app.project.layers.length - 1;
+                       mesh.userData.featureId = e.data[1];
+
+                       //var meshString = JSON.stringify(mesh);
+                       //app.project.layers[index].modelJSON[i] = meshString;
+                       app.project.layers[index].model[e.data[1]] = mesh;
+
+                       if (showBuildings == true) {
+                           app.octree.add(mesh);
+                           var opacity = 0.3;
+                       } else {
+                           var opacity = 1;
+                       }
+
+                       if (count >= coordinates.length) {
+
+                           app.project.layers[index].url = url;
+                           app.project.layers[index].name = name;
+                           app.project.layers[index].type = "GML";
+
+                           app.date2 = new Date();
+                           console.log(app.date2 - app.date1);
+                           app.mergeLayer(app.project.layers[index], 1);
+
+                       }
+                       count++;
+                   }
+
                }
-               app.project.layers[index].url = url;
-               app.project.layers[index].name = name;
-               app.project.layers[index].type = "GML";
                
-               app.mergeLayer(app.project.layers[index],opacity);
-            
                Q3D.gui.addCustomLayers(project.layers[index]);
            }
       
@@ -1257,26 +1459,34 @@ limitations:
     Adds the mergedGeometry as a representation mesh of that layer
     Adds the mergedGeometry to the octree
     */
-    app.mergeLayer = function (layer,opacity) {
+    app.mergeLayer = function (layer, opacity) {
+
+
+        app.date1 = new Date();
+        console.log(app.date2 - app.date1);
+
         var mergeGeometry = new THREE.Geometry();
 
-        for (var i = 0; i <layer.model.length; i++) {
+        for (var i = 0; i < layer.model.length; i++) {
             layer.model[i].updateMatrix();
-
             var geometry = layer.model[i].geometry;
             var matrix = layer.model[i].matrix;
 
             mergeGeometry.merge(geometry, matrix, i);
             //app.project.WFSlayers[0].model.geometry
         }
-        console.log(mergeGeometry);
 
     
     mergeGeometry.dynamic = true;
     
-    var material = new THREE.MeshPhongMaterial({opacity: opacity, transparent: true, color: 0xffffff });
-    var mesh = new THREE.Mesh(mergeGeometry,material);
+    var material = new THREE.MeshPhongMaterial({opacity: opacity, transparent: true, color: 0xffffff , polygonOffset: true,
+        polygonOffsetFactor: 1,
+        polygonOffsetUnits: 0.1
+    });
+    var mesh = new THREE.Mesh(mergeGeometry, material);
+    mesh.scale.set(1, 1, 0.95);
     layer.mergeMesh = mesh;
+
 
     var position = { x: 0, y: -2 };
     var target = { x: 0, y: 0 };
@@ -1285,7 +1495,6 @@ limitations:
     tween.onUpdate(function () {
         //loadedMesh.position.x = position.x;
         mesh.position.z = position.y;
-        app.octree.update();
     });
     tween.onComplete(function () {
         
@@ -1294,6 +1503,9 @@ limitations:
     });
     app.octree.add(mesh);
     app.octreeNeedsUpdate = true;
+    app.date2 = new Date();
+    console.log(app.date2 - app.date1);
+
     tween.start();
 }
 
@@ -2037,11 +2249,11 @@ limitations:
           var d = object.userData;
           console.log(d);
           app.updateResolution(object, 1, 256, 256);
-          app.getBuildings(d.xmin, d.ymin, d.xmax, d.ymax, d.row, d.column, d.url, "Tile", false);
+          app.getBuildings(d.xmin, d.ymin, d.xmax, d.ymax, d.row, d.column, d.url, "Tile", true);
       }
 
       
-
+      console.log(object);
       while (object) {
         layerId = object.userData.layerId,
         featureId = object.userData.featureId;
