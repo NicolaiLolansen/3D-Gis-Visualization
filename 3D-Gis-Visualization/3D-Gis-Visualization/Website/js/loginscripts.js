@@ -7,7 +7,7 @@ function validate() {
 	$.ajax({
 	    url: 'http://api-geovizjs.rhcloud.com/login/',
 	    type: 'POST',
-	    contentType: "application/json",
+	    contentType: 'application/json',
 	    dataType: 'text',
         data: JSON.stringify(form),
 
@@ -52,7 +52,6 @@ function getScenes() {
                 button.type = 'button';
                 button.onclick = function () {
                     window.sessionStorage.scene = this.name;
-                    console.log(this.name);
                     window.sessionStorage.userRole = 'observer';
                     window.location = '../3D/index.html';
                 };
