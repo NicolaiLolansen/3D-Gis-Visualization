@@ -70,6 +70,7 @@
     <Content Include="3D\scripts\csvAPI.js" />
     <Content Include="3D\scripts\gml_worker.js" />
     <Content Include="3D\scripts\jquery-ui.min.js" />
+    <Content Include="3D\scripts\menufunctions.js" />
     <Content Include="3D\scripts\Octree.js" />
     <Content Include="3D\scripts\parser.js" />
     <Content Include="3D\stats\build\stats.min.js" />
