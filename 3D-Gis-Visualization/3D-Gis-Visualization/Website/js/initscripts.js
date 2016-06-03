@@ -14,12 +14,7 @@
     $.ajax({
         url: url,
         type: 'GET',
-        data: JSON.stringify(data),
-        contentType: "application/json; charset=utf-8",
-        header: { 'Access-Control-Allow-Origin': '*' },
-
         success: function (json_scene) {
-            console.log(json_scene);
             app.loadProject(JSON.parse(json_scene));
             app.start();
             app.addEventListeners();
@@ -28,4 +23,13 @@
             console.log(err);;
         }
     });
+}
+initModal = function () {
+    var street = document.getElementById('select_street');
+    var num = document.getElementById('select_streetnum');
+    var zip = document.getElementById('select_zip');
+    
+    for (var key in app.attributeList) {
+       
+    }
 }

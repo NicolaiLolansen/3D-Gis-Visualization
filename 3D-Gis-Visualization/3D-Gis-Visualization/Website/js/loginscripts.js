@@ -17,7 +17,7 @@ function validate() {
             console.log("Success");
             console.log(result);
             window.sessionStorage.userRole = 'builder';
-            window.location = '../3D/index.html';
+            window.location = 'geoviz.html';
         },
         error: function (err) {
             console.log("Failed")
@@ -55,7 +55,7 @@ function getScenes() {
                 button.onclick = function () {
                     window.sessionStorage.scene = this.name;
                     window.sessionStorage.userRole = 'observer';
-                    window.location = '../3D/index.html';
+                    window.location = 'geoviz.html';
                 };
                 button.appendChild(text);
                 element.appendChild(button);

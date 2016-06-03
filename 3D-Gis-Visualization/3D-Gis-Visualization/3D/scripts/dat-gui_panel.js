@@ -197,6 +197,7 @@ Q3D.gui = {
               header: { 'Access-Control-Allow-Origin': '*' },
 
               success: function (jsonData) {
+                  app.attributeList = jsonData.pop();
                   var properties = jsonData.pop();
                   var numAttribs = [];
                   for (var key in properties) {

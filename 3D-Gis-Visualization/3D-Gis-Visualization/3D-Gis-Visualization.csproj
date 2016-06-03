@@ -66,15 +66,18 @@
     <Reference Include="System.EnterpriseServices" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="3D\csvAPI.js" />
-    <Content Include="3D\DataFondler.js" />
-    <Content Include="3D\jquery-ui.min.js" />
-    <Content Include="3D\Octree.js" />
-    <Content Include="3D\parser.js" />
-    <Content Include="3D\scripts\initscripts.js" />
-    <Content Include="3D\stats\stats.min.js" />
-    <Content Include="3D\tween.js" />
-    <Content Include="3D\xml2json.js" />
+    <Content Include="3D\dat-gui\dat.gui.min.js" />
+    <Content Include="3D\scripts\csvAPI.js" />
+    <Content Include="3D\scripts\gml_worker.js" />
+    <Content Include="3D\scripts\jquery-ui.min.js" />
+    <Content Include="3D\scripts\Octree.js" />
+    <Content Include="3D\scripts\parser.js" />
+    <Content Include="3D\stats\build\stats.min.js" />
+    <Content Include="3D\threejs\OrbitControls.js" />
+    <Content Include="3D\threejs\three.min.js" />
+    <Content Include="Website\js\initscripts.js" />
+    <Content Include="3D\scripts\tween.js" />
+    <Content Include="3D\scripts\xml2json.js" />
     <Content Include="packages.config" />
     <Content Include="Website\correlatepicker.html" />
     <Content Include="Website\css\style.css" />
@@ -86,6 +89,7 @@
     <Content Include="3D\aavej9.json" />
     <Content Include="3D\hej.json" />
     <Content Include="3D\dtu.json" />
+    <Content Include="3D\threejs\LICENSE" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -94,11 +98,11 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="3D\dat-gui_panel.js" />
-    <Content Include="3D\index.html" />
-    <Content Include="3D\jquery-2.2.0.js" />
-    <Content Include="3D\Qgis2threejs.css" />
-    <Content Include="3D\Qgis2threejs.js" />
+    <Content Include="3D\scripts\dat-gui_panel.js" />
+    <Content Include="Website\geoviz.html" />
+    <Content Include="3D\scripts\jquery-2.2.0.js" />
+    <Content Include="Website\css\Qgis2threejs.css" />
+    <Content Include="3D\scripts\Qgis2threejs.js" />
     <Content Include="RefactorTest\dat-gui_panel.js" />
     <Content Include="RefactorTest\index.html" />
     <Content Include="RefactorTest\index.js" />
@@ -115,10 +119,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="3D\BabyParse\" />
-    <Folder Include="3D\dat-gui\" />
-    <Folder Include="3D\PapaParse-4.1.2\" />
-    <Folder Include="3D\threejs\" />
     <Folder Include="RefactorTest\dat-gui\" />
     <Folder Include="RefactorTest\PapaParse-4.1.2\" />
     <Folder Include="RefactorTest\stats\" />
