@@ -1114,13 +1114,10 @@ limitations:
         app.selectedLayerId = layerId;
         app.selectedFeatureId = featureId;
         app.highlightObject = highlightObject;
-
-        
     };
 
 
     app.getBuildings = function (xmin, ymin, xmax, ymax, row, column, url, name, showBuildings) {
-        console.log("GetBuildings Was called"); 
         if (row == 0) {
             row = 1;
         } else if (row < 0) {
@@ -1164,10 +1161,12 @@ limitations:
         
            
 
-           var myWorker1 = new Worker("gml_worker.js");
-           //var myWorker2 = new Worker("gml_worker.js");
-           //var myWorker3 = new Worker("gml_worker.js");
-           //var myWorker4 = new Worker("gml_worker.js");
+           var myWorker1 = new Worker('../3D/scripts/gml_worker.js');
+           /*
+           var myWorker2 = new Worker("gml_worker.js");
+           var myWorker3 = new Worker("gml_worker.js");
+           var myWorker4 = new Worker("gml_worker.js");
+           */
 
            /*
            Worker version of script
@@ -1224,14 +1223,14 @@ limitations:
 
                    //if (i % 4 == 0) {
                        myWorker1.postMessage([app.project.zScale, app.project.layers.length, i, cords, widthP, heightP, column, row, xmax, ymax, factorX, factorY]);
-                   //} else if(i % 4 == 1) {
-                     //  myWorker2.postMessage([app.project.zScale, app.project.layers.length, i, cords, widthP, heightP, column, row, xmax, ymax, factorX, factorY]);
-                   //} else if (i % 4 == 2) {
-                     //  myWorker3.postMessage([app.project.zScale, app.project.layers.length, i, cords, widthP, heightP, column, row, xmax, ymax, factorX, factorY]);
-                   //} else {
-                    //   myWorker4.postMessage([app.project.zScale, app.project.layers.length, i, cords, widthP, heightP, column, row, xmax, ymax, factorX, factorY]);
-                   //}
-                  
+                   /*} else if(i % 4 == 1) {
+                       myWorker2.postMessage([app.project.zScale, app.project.layers.length, i, cords, widthP, heightP, column, row, xmax, ymax, factorX, factorY]);
+                   } else if (i % 4 == 2) {
+                       myWorker3.postMessage([app.project.zScale, app.project.layers.length, i, cords, widthP, heightP, column, row, xmax, ymax, factorX, factorY]);
+                   } else {
+                       myWorker4.postMessage([app.project.zScale, app.project.layers.length, i, cords, widthP, heightP, column, row, xmax, ymax, factorX, factorY]);
+                   }
+                    */                
                   
 /*
                    var points = [];
@@ -1301,7 +1300,6 @@ limitations:
 
                  */
                    myWorker1.onmessage = function (e) {
-                       console.log("Worker 1 got a message");
                        var loadedGeometry = JSON.parse(e.data[0]);
                      
                        var mesh = app.loader.parse(loadedGeometry);
@@ -1442,7 +1440,6 @@ limitations:
                        count++;
                    }
                    */
-
                }
                
                Q3D.gui.addCustomLayers(project.layers[index]);
@@ -2407,5 +2404,3 @@ limitations:
     }
   };
 })();
-
-

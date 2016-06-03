@@ -24,3 +24,12 @@
         }
     });
 }
+initModal = function () {
+    var street = document.getElementById('select_street');
+    var num = document.getElementById('select_streetnum');
+    var zip = document.getElementById('select_zip');
+    
+    for (var key in app.attributeList) {
+       
+    }
+}
