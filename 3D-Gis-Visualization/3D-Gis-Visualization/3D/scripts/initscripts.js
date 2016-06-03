@@ -1,4 +1,4 @@
-﻿initScene = function () {
+﻿var initScene = function () {
     var url = 'https://api-geovizjs.rhcloud.com/loadScene/';
     var _scene = 'default.json'; //Name of default scene
     if (window.sessionStorage.userRole == "builder") {
@@ -14,12 +14,7 @@
     $.ajax({
         url: url,
         type: 'GET',
-        data: JSON.stringify(data),
-        contentType: "application/json; charset=utf-8",
-        header: { 'Access-Control-Allow-Origin': '*' },
-
         success: function (json_scene) {
-            console.log(json_scene);
             app.loadProject(JSON.parse(json_scene));
             app.start();
             app.addEventListeners();
