@@ -84,8 +84,6 @@
     <Content Include="Website\index.html" />
     <Content Include="Website\js\index.js" />
     <Content Include="Website\js\loginscripts.js" />
-    <Content Include="Website\js\testpage.html" />
-    <Content Include="Website\testpage.html" />
     <Content Include="3D\aavej9.json" />
     <Content Include="3D\hej.json" />
     <Content Include="3D\dtu.json" />
