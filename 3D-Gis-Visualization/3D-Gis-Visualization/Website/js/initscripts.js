@@ -39,19 +39,15 @@ var initModal = function () {
         modal.style.display = "none";
     }
 
-    // When the user clicks anywhere outside of the modal, close it
-    window.onclick = function (event) {
-
-    }
-
     //--------------------------------------- TESTING FUNCTIONS ------------------------------------
-    // Get the button that opens the modal
-    var btn = document.getElementById("myBtn");
+    window.onkeyup = function (e) {
+        var key = e.keyCode ? e.keyCode : e.which;
 
-    // When the user clicks the button, open the modal
-    btn.onclick = function () {
-        startCorrelation('https://dl.dropboxusercontent.com/s/88vgr6io5q63cjg/energimaerke.csv'); //ONLY FOR TESTING
+        if (key == 77) {
+            startCorrelation('https://dl.dropboxusercontent.com/s/88vgr6io5q63cjg/energimaerke.csv');
+        } 
     }
+
     //----------------------------------------------------------------------------------------------
     
     var buildbtn = document.getElementById('build');
@@ -72,16 +68,16 @@ var initModal = function () {
                 num: num_sel,        //document.getElementById('select_streetnum').value,
                 zip: zip_sel         //document.getElementById('select_zip').value
             }
-            console.log(block);
+            //startBuild();
         }
     }
 }
 
-var startCorrelation = function (source_url) {
-    var url = 'http://localhost:8085/getSourceHeaders?targetURL=' + source_url;
+var startCorrelation = function (sourceURL) {
+    var url = 'http://api-geovizjs.rhcloud.com/getSourceHeaders?sourceURL=' + sourceURL;
     console.log("performing get request");
     $.ajax({
-        url: 'http://localhost:8085/getSourceHeaders/?targetURL=https://dl.dropboxusercontent.com/s/88vgr6io5q63cjg/energimaerke.csv',
+        url: url,
         type: 'GET',
         dataType: 'json',
         success: function (json) {
@@ -97,6 +93,7 @@ var startCorrelation = function (source_url) {
                 zip.options.add(new Option(json[key], json[key]));
             }
             modal.style.display = "block";
+            console.log(modal);
         },
         error: function (err) {
             console.log('ERROR');
@@ -105,17 +102,18 @@ var startCorrelation = function (source_url) {
     });
 }
 
-var startBuild = function () {
-    console.log("bygger")
-    /*
-    var x = document.getElementById("select_street").selectedIndex;
-    var y = document.getElementById("select_streetnum").selectedIndex;
-    var z = document.getElementById("select_zip").selectedIndex;
-    
-    var block = {
-        street: $('select[name=select_street]').val(),  //document.getElementById('select_street').value,
-        num: $('select[name=select_streetnum]').val(),  //document.getElementById('select_streetnum').value,
-        zip: $('select[name=select_zip]').val()         //document.getElementById('select_zip').value
-    }*/
-}
+var startBuild = function (sourceURL) {
+    var url = 'http://api-geovizjs.rhcloud.com/parseCSV?sourceURL=' + sourceURL;
+    $.ajax({
+        url: url,
+        type: 'GET',
+        dataType: 'json',
+        success: function (csv_as_json) {
 
+        },
+        error: function (err) {
+            console.log('ERROR: ' + err);
+            
+        }
+    });
+}
