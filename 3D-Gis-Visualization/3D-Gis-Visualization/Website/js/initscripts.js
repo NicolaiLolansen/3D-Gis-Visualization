@@ -52,35 +52,9 @@ var initModal = function () {
     }
 
     //----------------------------------------------------------------------------------------------
-    
-    var buildbtn = document.getElementById('build');
-    buildbtn.onclick = function () {
-        var street = document.getElementById('select_street');
-        var num = document.getElementById('select_streetnum');
-        var zip = document.getElementById('select_zip');
-
-        var street_sel = street.options[street.selectedIndex].value;
-        var num_sel = num.options[num.selectedIndex].value;
-        var zip_sel = zip.options[zip.selectedIndex].value; 
-
-        if (street_sel == "default" || num_sel == "default" || zip_sel == "default") {
-            alert("Argument missing");
-        } else {
-            var block = {
-                street: street_sel,  //document.getElementById('select_street').value,
-                num: num_sel,        //document.getElementById('select_streetnum').value,
-                zip: zip_sel         //document.getElementById('select_zip').value
-            }
-            setTimeout(function () {
-                document.getElementById("loader").style.display = "none";
-                //TODO: Handling of too long load times
-            }, 3000);
-
-            startBuild();
-        }
-    }
+   
 }
-
+ 
 var startCorrelation = function (sourceURL, bbox, tile_zip) {
     var url = 'http://api-geovizjs.rhcloud.com/getSourceHeaders?sourceURL=' + sourceURL;
     $.ajax({
@@ -89,6 +63,8 @@ var startCorrelation = function (sourceURL, bbox, tile_zip) {
         dataType: 'json',
         success: function (json) {
             console.log("SUCCESS");
+
+            //Init select menus for address construction
             var modal = document.getElementById('modal-menu');
             var street = document.getElementById('select_street');
             var num = document.getElementById('select_streetnum');
@@ -99,6 +75,39 @@ var startCorrelation = function (sourceURL, bbox, tile_zip) {
                 num.options.add(new Option(json[key], json[key]));
                 zip.options.add(new Option(json[key], json[key]));
             }
+
+            //Init button for starting construction
+            var buildbtn = document.getElementById('build');
+            buildbtn.onclick = function () {
+                var street = document.getElementById('select_street');
+                var num = document.getElementById('select_streetnum');
+                var zip = document.getElementById('select_zip');
+
+                var street_sel = street.options[street.selectedIndex].value;
+                var num_sel = num.options[num.selectedIndex].value;
+                var zip_sel = zip.options[zip.selectedIndex].value;
+
+                if (street_sel == "default" || num_sel == "default" || zip_sel == "default") {
+                    alert("Argument missing");
+                } else {
+                    var block = {
+                        street: street_sel,  //document.getElementById('select_street').value,
+                        num: num_sel,        //document.getElementById('select_streetnum').value,
+                        zip: zip_sel,         //document.getElementById('select_zip').value
+                        sourceURL: sourceURL,
+                        tile_zip: tile_zip,
+                        bbox: bbox
+                    }
+                    setTimeout(function () {
+                        document.getElementById("loader").style.display = "none";
+                        //TODO: Handling of too long load times
+                    }, 3000);
+
+                    startBuild(block);
+                }
+            }
+
+
             modal.style.display = "block";
         },
         error: function (err) {
@@ -108,8 +117,8 @@ var startCorrelation = function (sourceURL, bbox, tile_zip) {
     });
 }
 
-var startBuild = function (sourceURL) {
-    var url = 'http://api-geovizjs.rhcloud.com/parseCSV?sourceURL=' + sourceURL;
+var startBuild = function (param_block) {
+    var url = 'http://localhost:8085/parseCSV' //'http://api-geovizjs.rhcloud.com/parseCSV';
     document.getElementById("build").innerHTML = "Constructing Addresses";
     document.getElementById("loader").style.display = "block";
     //app.highlightPlane
@@ -118,6 +127,7 @@ var startBuild = function (sourceURL) {
         url: url,
         type: 'GET',
         dataType: 'json',
+        data: JSON.stringify(param_block),
         success: function (csv_as_json) {
             document.getElementById("build").innerHTML = "Construction Successful";
             
@@ -126,6 +136,21 @@ var startBuild = function (sourceURL) {
         error: function (err) {
             document.getElementById("build").innerHTML = "Construction Failed. Try Again?";
             console.log('ERROR: ' + err);
+        }
+    });
+}
+
+var retrieveData = function (parameter_block){
+    $.ajax({
+        url: url,
+        type: 'GET',
+        dataType: 'json',
+        data: JSON.stringify(parameter_block),
+        success: function (json) {
+            console.log("Data Retrieved");
+        },
+        error: function (err) {
+
         }
     });
 }
