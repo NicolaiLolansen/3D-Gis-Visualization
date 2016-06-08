@@ -34,6 +34,7 @@ Q3D.gui = {
   dataLoaded: false,
     saveProject: 'Type Project Name Here',
     enabled: true,
+    resolution: function () { },
 
   },
   
@@ -314,11 +315,26 @@ Q3D.gui = {
                           
                           layer.model.forEach(function(child){
 
-                          if (child instanceof THREE.Mesh) {
+                         
                               app.scene.remove(child);
                               app.octree.remove(child);
-                          }
+                              delete child;
+                          
                           });
+                      });
+                  }
+
+                  for (var i = 0; i < 5; i++) {
+                      app.project.plane.forEach(function (plane) {
+                          if (plane.buildings !== undefined) {
+                              plane.buildings.model.forEach(function (child) {
+                                      app.scene.remove(child);
+                                      app.octree.remove(child);
+                                      delete child;
+                                  
+                              });
+                          }
+                         
                       });
                   }
                   app.octreeNeedsUpdate = true;
@@ -338,11 +354,12 @@ Q3D.gui = {
                   var xmax = app.project.baseExtent[2] = x + tilex;
                   var ymax = app.project.baseExtent[3] = y + tiley;
                   app.calculatebbox(1);
+                  app.extendMap(2);
                   var url = "http://services.kortforsyningen.dk/service?servicename=topo_geo_gml2&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=kms:Bygning&login=student134859&password=3dgis&maxfeatures=5000";
  
 
 
-                  app.getBuildings(xmin, ymin, xmax, ymax, 0, 0, url, "FOT10",true);
+                //  app.getBuildings(xmin, ymin, xmax, ymax, 0, 0, url, "FOT10",true);
                   
 
                  

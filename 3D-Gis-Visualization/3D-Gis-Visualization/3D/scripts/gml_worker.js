@@ -66,7 +66,7 @@ onmessage = function (e) {
         bevelEnabled: false,
     };
 
-    var color = 0xffffff;
+    var color = 0xff0000;
     var material = new THREE.MeshPhongMaterial({
         color: color,
         polygonOffset: true,
@@ -115,7 +115,7 @@ onmessage = function (e) {
 
 
 
-    postMessage([resultJSON, i]);
+    postMessage([resultJSON, i,xCorMap,yCorMap]);
 
 
 

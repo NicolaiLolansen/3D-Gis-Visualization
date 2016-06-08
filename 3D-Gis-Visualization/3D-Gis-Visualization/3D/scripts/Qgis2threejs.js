@@ -236,6 +236,7 @@ limitations:
             title: name,
             creator: "Builder",
             layers: [],
+            planeData: {},
             crs: project.crs,
             origin: project.origin,
             baseExtent: project.baseExtent,
@@ -259,7 +260,6 @@ limitations:
                 geo.vertices = layer.model[i].geometry.vertices;
                 geo.faces = layer.model[i].geometry.faces;
                 layer.model[i].geometry = geo;
-                console.log(layer.model[i].userData);
                 var result = layer.model[i].toJSON();
                 var resultJSON = JSON.stringify(result);
                 models.push(resultJSON);
@@ -269,6 +269,58 @@ limitations:
             savedProject.layers.push(layerJSON);
         });
 
+
+        /*
+        Save an object that describes the planes
+        */
+        var planeData = { tileWidth: (Math.sqrt((app.project.plane.length - 1)) - 1) / 2, planes: [{ detail: {}, buildings: {} }]};
+        console.log(planeData);
+        //Iterate over the planes to fill out the planeData accordingly
+
+        var models = [];
+        var a = [];
+        project.plane.forEach(function (plane, i) {
+         
+            planeData.planes[i] = { detail: {}, buildings: {} };
+           
+            if (plane.buildings !== undefined) {
+                //If the plane has buildings, we have to save it into planeData
+                plane.buildings.model.forEach(function (model, i) {
+                    var geo = new THREE.Geometry();
+                    geo.vertices = model.geometry.vertices;
+                    geo.faces = model.geometry.faces;
+                    model.geometry = geo;
+                  
+                    var result = model.toJSON();
+                    var resultJSON = JSON.stringify(result);
+                    models.push(resultJSON);
+                    a.push(plane.buildings.a[i]);
+                });
+                var model = plane.buildings.mergeMesh;
+                var geo = new THREE.Geometry();
+                geo.vertices = plane.buildings.mergeMesh.geometry.vertices;
+                geo.faces = plane.buildings.mergeMesh.geometry.faces;
+                model.geometry = geo;
+
+
+                //Only save the meshes if details specify it
+                //We also save when addresses has been built, because it takes a !long! time during run
+                if (plane.detail.address == true || plane.detail.buildings == 2) {
+                planeData.planes[i].buildings.a = a;
+                planeData.planes[i].buildings.models = models;
+                planeData.planes[i].buildings.name = plane.buildings.name;
+                planeData.planes[i].buildings.type = plane.buildings.type;
+                planeData.planes[i].buildings.url = plane.buildings.url;
+
+                //Actually we dont need to save the mergedMesh, as it is transitive
+                //planeData.planes[i].buildings.mergeMesh = JSON.stringify(model.toJSON());     
+                }
+            }
+            planeData.planes[i].detail = plane.detail;
+            console.log(planeData.planes[i]);
+        });
+        
+        savedProject.planeData = planeData;
         //Test how it goes
         var projectString = JSON.stringify(savedProject);
         //console.log(projectString);
@@ -281,7 +333,6 @@ limitations:
         });
         project.layers = projectJSON.layers;
        
-
         var json = projectString;
         var blob = new Blob([json], { type: "application/json" });
         var url = URL.createObjectURL(blob);
@@ -292,6 +343,8 @@ limitations:
         a.textContent = "Download backup.json";
         
         console.log(a);
+
+      
         //Eventually when we are done, try to load the project (If done live, should just reload the entire scene correctly):
       //  app.loadProject(projectParsed);
     }
@@ -299,21 +352,21 @@ limitations:
     Loads a project from a JSON formatted file (has to be called from saveProject) (Implement a verification method)
     */
     app.loadProject = function (projectJSON) {
-        /*
-              Rewrite this function to be able to load exported projects, and build the scene from that
-              TODO 08-05-2016
-              Nicolai
-        */
+    
+
+
         projectJSON.baseExtent[0] = projectJSON.baseExtent[0];
         projectJSON.baseExtent[1] = projectJSON.baseExtent[1];
         projectJSON.baseExtent[2] = projectJSON.baseExtent[2];
         projectJSON.baseExtent[3] = projectJSON.baseExtent[3];
         var project = new Q3D.Project({
             crs: projectJSON.crs, title: projectJSON.title, baseExtent: projectJSON.baseExtent, rotation: projectJSON.rotation, zshift: projectJSON.zshift,
-            width: projectJSON.width, height: projectJSON.height, zExaggeration: projectJSON.zExaggeration, layers: projectJSON.layers,
+            width: projectJSON.width, height: projectJSON.height, zExaggeration: projectJSON.zExaggeration, 
         });
         project.map = {url: "http://kortforsyningen.kms.dk/service?servicename=orto_foraar&request=GetMap&service=WMS&version=1.1.1&LOGIN=student134859&PASSWORD=3dgis&layers=orto_foraar&format=image%2Fpng&srs=EPSG%3A25832"}
         project.layers = projectJSON.layers;
+
+
         //Since this method can be called again, we need to completely wipe the THREE.JS scene for any children, lights, cameras. as these will be set up
         //We wipe clean, because it might be in a later version, that lights and camera settings can be included in the project
 
@@ -412,6 +465,9 @@ limitations:
         //Generate the plane
         app.calculatebbox(1);
         
+        app.extendMap(2,projectJSON.planeData);
+
+
         var loader = new THREE.ObjectLoader();
         
 
@@ -543,7 +599,7 @@ limitations:
 
         var position = { x: 0, y: 0, z: 150};
         var target = { x: 45, y: 15, z:10 };
-        var tween = new TWEEN.Tween(position).to(target, 5000);
+        var tween = new TWEEN.Tween(position).to(target, 2000);
 
         tween.easing(TWEEN.Easing.Exponential.InOut);
         tween.onUpdate(function () {
@@ -607,16 +663,28 @@ limitations:
             app.octreeObjects = app.octree.search(app.raycaster.ray.origin, 100, true, app.vector);
 
             if (app.octreeObjects.length > 0) {
-              
+                    
+                    //remove layers before update
                     app.project.layers.forEach(function (layer) {
-
                         layer.model.forEach(function (child) {
-
                             if (child instanceof THREE.Mesh) {
                                 app.scene.remove(child);
                                 //app.octree.remove(child);
                             }
                         });
+                    });
+
+                    //remove buildings before update
+                    app.project.plane.forEach(function (plane) {
+                        if (plane.buildings !== undefined) {
+                            plane.buildings.model.forEach(function (child) {
+                                if (child instanceof THREE.Mesh) {
+                                    app.scene.remove(child);
+                                    //app.octree.remove(child);
+                                }
+                            });
+                        }
+                        
                     });
                 
                 
@@ -626,26 +694,7 @@ limitations:
             }
         }
         app.octreeNeedsUpdate = false;
-
-        if (app.wmsready) {
-            // find intersections
-                 if (app.project.layers != undefined && app.project.layers[0].model != undefined) {
-                     var intersects = app.raycaster.intersectObjects(app.project.layers[0].model);
-                  if (intersects.length > 0) {
-                      if (app.INTERSECTED != intersects[0].object) {
         
-                          if (app.INTERSECTED) app.INTERSECTED.material.emissive.setHex(app.INTERSECTED.currentHex);
-        
-                          app.INTERSECTED = intersects[0].object;
-                          app.INTERSECTED.currentHex = app.INTERSECTED.material.emissive.getHex();
-                          app.INTERSECTED.material.emissive.setHex(0x00ff00);
-                  }
-                  } else {
-                      if (app.INTERSECTED) app.INTERSECTED.material.emissive.setHex(app.INTERSECTED.currentHex);
-                      app.INTERSECTED = null;
-                  }
-                  } 
-        }
         TWEEN.update();
         app.render();
 
@@ -694,9 +743,17 @@ limitations:
         //Make the plane tiles queryable
         if (app.project.plane != undefined) {
             app.project.plane.forEach(function (plane) {
-                app._queryableObjects = app._queryableObjects.concat(plane);
+                if (plane.buildings != undefined) {
+                    plane.buildings.model.forEach(function (model) {
+                        app._queryableObjects = app._queryableObjects.concat(model);
+                    });
+                }
+
+                     app._queryableObjects = app._queryableObjects.concat(plane.mesh);
+               
             });
         }
+       
         return app._queryableObjects;
     };
 
@@ -793,8 +850,9 @@ limitations:
         app.popup.show();
     };
 
-    app.showQueryResult = function (point, layerId, featureId) {
+    app.showQueryResult = function (point, layerId, featureId,type) {
         var layer, r = [];
+        
         if (layerId !== undefined) {
             //If layerId is WFS - Nicolai
             if (layerId == 100 || layerId == 110) {
@@ -804,16 +862,25 @@ limitations:
                 r.push("<tr><td>" + layer.type + "</td></tr>");
                 r.push("</table>");
 
-            } else {
+            } else if(type == "layer") {
                 // layer name
                 layer = app.project.layers[layerId];
                 r.push('<table class="layer">');
                 r.push("<caption>Layer name</caption>");
                 r.push("<tr><td>" + layer.name + "</td></tr>");
                 r.push("</table>");
+            } else if (type == "building") {
+                console.log("Clicked object is of type building");
+                layer = app.project.plane[layerId];
+                r.push('<table class="layer">');
+                r.push("<caption>Layer name</caption>");
+                r.push("<tr><td>" + "Building" + "</td></tr>");
+                r.push("</table>");
             }
      
         }
+
+        console.log(layer);
 
         // clicked coordinates
         var pt = app.project.toMapCoordinates(point.x, point.y, point.z);
@@ -829,10 +896,12 @@ limitations:
             r.push(Q3D.Utils.convertToDMS(lonLat[1], lonLat[0]) + ", Elev. " + pt.z.toFixed(2));
       
         }
-        app.getList(pt.x.toFixed(2), pt.y.toFixed(2));
+        //app.getList(pt.x.toFixed(2), pt.y.toFixed(2));
 
         r.push("</td></tr></table>");
-
+        if (type == "building") {
+            layer.a = layer.buildings.a;
+        }
         if (layerId !== undefined && featureId !== undefined && layer.a !== undefined) {
             // attributes
             r.push('<table class="attrs">');
@@ -949,8 +1018,8 @@ limitations:
         }
     };
 
-    app.highlightFeature = function (layerId, featureId) {
-        
+    app.highlightFeature = function (layerId, featureId, type) {
+
         if (app.highlightObject) {
             // remove highlight object from the scene
             app.scene.remove(app.highlightObject);
@@ -958,7 +1027,10 @@ limitations:
             app.selectedFeatureId = null;
             app.highlightObject = null;
         }
- 
+        
+        /*
+        Nicolai: Menu for the selected feature. Remove the folder id no object is selected
+        */
         if (Q3D.gui.gui.__folders["Selected Feature"] == undefined) {
             var folder = Q3D.gui.gui.addFolder("Selected Feature");
             folder.open();
@@ -968,7 +1040,6 @@ limitations:
             delete Q3D.gui.gui.__folders["Selected Feature"];
 
             if (layerId != null && featureId != null) {
-                
                 var folder = Q3D.gui.gui.addFolder("Selected Feature");
                 folder.open();
             } 
@@ -976,15 +1047,19 @@ limitations:
 
       
         if (layerId === null || featureId === null) return;
-        var layer = app.project.layers[layerId];
+        if (type == "layer"){
+            var layer = app.project.layers[layerId];
+        } else if (type == "building"){
+            var layer = app.project.plane[layerId].buildings;
+        }
+
         if (layer === undefined) return;
         if (["Icon", "JSON model", "COLLADA model"].indexOf(layer.objType) != -1) return;
 
         
-        console.log("Clicking " + featureId);
-        console.log(layer);
+    
         var model = layer.model[featureId];
-        console.log(model);
+       
       //  if (f === undefined || f.objs.length == 0) return;
 
 
@@ -1015,10 +1090,12 @@ limitations:
         folder.addColor(Q3D.gui.parameters, 'color').name('Color layer').onChange(function (color) {
 
             var pColor = color.replace('#', '0x');
-            for (var i = 0; i < layer.model.length; i++) {
-                layer.model[i].material.color.setHex(pColor);
-                layer.mergeMesh.material.color.setHex(pColor);
-            }
+                for (var i = 0; i < layer.model.length; i++) {
+                    layer.model[i].material.color.setHex(pColor);
+                    layer.mergeMesh.material.color.setHex(pColor);
+                }
+   
+            
           
 
         });
@@ -1034,9 +1111,6 @@ limitations:
            
             geo.scale(1, 1, height);
             model.geometry = geo;
-
-           
-
             
         }); 
 
@@ -1117,7 +1191,10 @@ limitations:
     };
 
 
-    app.getBuildings = function (xmin, ymin, xmax, ymax, row, column, url, name, showBuildings) {
+    app.getBuildings = function (plane, xmin, ymin, xmax, ymax, row, column, url, showBuildings) {
+        /*
+        TODO: faulty index, only works 1 tile out, gets imprecise after that
+        */
         if (row == 0) {
             row = 1;
         } else if (row < 0) {
@@ -1136,12 +1213,6 @@ limitations:
             column++;
             column++;
         }
-
-        console.log(row + " " + column)
-        //   var xmin = app.project.baseExtent[0];
-        //   var ymin = app.project.baseExtent[1];
-        //   var xmax = app.project.baseExtent[2];
-        //   var ymax = app.project.baseExtent[3];
       
         var bbox = "&Bbox=" + xmin + "," + ymin + "," + xmax + "," + ymax;
         url = url + bbox;
@@ -1155,12 +1226,9 @@ limitations:
         })
        .success(function (response) {
             
-           
            var coordinates = response.getElementsByTagName("coordinates");
            var attributes = response.getElementsByTagName("Bygning");
         
-           
-
            var myWorker1 = new Worker('../3D/scripts/gml_worker.js');
            /*
            var myWorker2 = new Worker("gml_worker.js");
@@ -1178,6 +1246,8 @@ limitations:
            app.date1 = new Date();
            
            if (coordinates.length > 0) {
+               /*
+               TODO: remove?
                if (app.project.layers == undefined) {
                    app.project.layers = [];
                    app.project.layers[0] = {};
@@ -1193,7 +1263,13 @@ limitations:
                    app.project.layers[index].modelJSON = []
                    app.project.layers[index].name = "FOT10";
                }
-               
+               */
+
+               plane.buildings = {};
+               plane.buildings.model = [];
+               plane.buildings.a = [];
+               plane.buildings.name = "FOT10";
+               plane.buildings.modelJSON = [];
 
                var loader = new THREE.JSONLoader();
                var widthP = app.project.width;
@@ -1212,12 +1288,12 @@ limitations:
 
                    if (attributes[i] != undefined) {
                        var gmlAttributes = attributes[i].getElementsByTagName("*");
-                       app.project.layers[index].a[i] = {};
+                       plane.buildings.a[i] = {};
                        for (var k = 0; k < gmlAttributes.length; k++) {
                            var key = String(gmlAttributes[k].nodeName);
                            var key = key.replace(/kms:|gml:/gi, "");
                            var value = gmlAttributes[k].innerHTML;
-                           app.project.layers[index].a[i][key] = value;
+                           plane.buildings.a[i][key] = value;
                        }
                    }
 
@@ -1301,20 +1377,21 @@ limitations:
                  */
                    myWorker1.onmessage = function (e) {
                        var loadedGeometry = JSON.parse(e.data[0]);
-                     
+
                        var mesh = app.loader.parse(loadedGeometry);
-
-
+               
+                       mesh.mapcoords = [e.data[2], e.data[3]];
                        mesh.userData = [];
-                       mesh.userData.layerId = app.project.layers.length - 1;
+                       mesh.userData.layerId = plane.mesh.userData.index + 1;
                        mesh.userData.featureId = e.data[1];
-
+                       mesh.userData.type = "building";
                        //var meshString = JSON.stringify(mesh);
                        //app.project.layers[index].modelJSON[i] = meshString;
-                       app.project.layers[index].model[e.data[1]] = mesh;
+                       plane.buildings.model[e.data[1]] = mesh;
 
                        if (showBuildings == true) {
                            app.octree.add(mesh);
+                          // app.scene.add(mesh);
                            var opacity = 0.3;
                        } else {
                            var opacity = 1;
@@ -1322,13 +1399,11 @@ limitations:
 
                        if (count >= coordinates.length) {
                         
-                           app.project.layers[index].url = url;
-                           app.project.layers[index].name = name;
-                           app.project.layers[index].type = "GML";
+                           plane.buildings.url = url;
+                           plane.buildings.name = name;
+                           plane.buildings.type = "GML";
 
-                           app.date2 = new Date();
-                           console.log(app.date2 - app.date1);
-                           app.mergeLayer(app.project.layers[index], 1);
+                           app.mergeBuilding(plane, 1);
                            
                        }
                        count++;
@@ -1453,7 +1528,49 @@ limitations:
      });
 
     }
+    app.mergeBuilding = function (plane, opacity) {
 
+        var mergeGeometry = new THREE.Geometry();
+
+        for (var i = 0; i < plane.buildings.model.length; i++) {
+            plane.buildings.model[i].updateMatrix();
+            var geometry = plane.buildings.model[i].geometry;
+            var matrix = plane.buildings.model[i].matrix;
+
+            mergeGeometry.merge(geometry, matrix, i);
+            //app.project.WFSlayers[0].model.geometry
+        }
+
+
+        mergeGeometry.dynamic = true;
+
+        var material = new THREE.MeshPhongMaterial({
+            opacity: opacity, transparent: true, color: 0xffffff, polygonOffset: true,
+            polygonOffsetFactor: 1,
+            polygonOffsetUnits: 0.1
+        });
+        var mesh = new THREE.Mesh(mergeGeometry, material);
+        mesh.scale.set(1, 1, 0.95);
+        plane.mergeMesh = mesh;
+        plane.buildings.mergeMesh = mesh;
+
+        var position = { x: 0, y: -2 };
+        var target = { x: 0, y: 0 };
+        var tween = new TWEEN.Tween(position).to(target, 3000);
+
+        tween.onUpdate(function () {
+            //loadedMesh.position.x = position.x;
+            mesh.position.z = position.y;
+        });
+        tween.onComplete(function () {
+
+            app.wmsready = true;
+
+        });
+        app.octree.add(mesh);
+        app.octreeNeedsUpdate = true;
+        tween.start();
+    }
     /*
     Merges a layer into one geometry for performance gain
     Adds the mergedGeometry as a representation mesh of that layer
@@ -1647,17 +1764,25 @@ limitations:
 
         plane.receiveShadow = true;
         app.project.plane = [];
-        //app.octree.add(plane);
-        app.project.plane.push(plane);
+      //app.octree.add(plane);
+        plane.userData.index = 0;
+        var planeObject = {mesh: plane, detail: { buildings: 0, address: false, style: "block", resolution: false } };
+
+        console.log(planeObject);
+        app.project.plane.push(planeObject);
+
         app.octree.update();
-        app.scene.add(app.project.plane[0]);
+        app.scene.add(app.project.plane[0].mesh);
+        app.project.plane[0].mesh.visible = false;
         app.updateResolution(plane, num, width, height);
-        app.extendMap(2);
+
+
+        
     }
 
-  app.extendMap = function (dim) {
+  app.extendMap = function (dim,planeData) {
       var num = 1;
-     
+  
       var xmin = parseFloat(app.project.baseExtent[0]);
       var ymin = parseFloat(app.project.baseExtent[1]);
       var xmax = parseFloat(app.project.baseExtent[2]);
@@ -1675,14 +1800,13 @@ limitations:
       //The service URL for the layer we are using for map (Here orto photos from kortforsyningen)
      // var url = "http://kortforsyningen.kms.dk/service?servicename=orto_foraar&request=GetMap&service=WMS&version=1.1.1&LOGIN=student134859&PASSWORD=3dgis&layers=orto_foraar&width=" + (width) + "&height=" + (height) + "&format=image%2Fpng&srs=EPSG%3A25832";
       var buildingUrl = "http://services.kortforsyningen.dk/service?servicename=topo_geo_gml2&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=kms:Bygning&login=student134859&password=3dgis&maxfeatures=5000";
+      var index = 0;
       for (var column = -dim; column <= dim; column++) {
           for (var row = -dim; row <= dim; row++) {
-              var tempPlane = app.project.plane[0].clone();
+              var tempPlane = app.project.plane[0].mesh.clone();
+              tempPlane.visible = true;
               //We dont want to draw the center tile
-              if (column == 0 && row == 0) {
-                 
-                  continue;
-              }
+              
 
 
               THREE.ImageUtils.crossOrigin = '';
@@ -1701,6 +1825,8 @@ limitations:
               tempPlane.row = row;
 
               //Information to build buildings on the tile:
+              
+              
               tempPlane.userData.url = buildingUrl;
               tempPlane.userData.xmin = (xmin + (column * tilex));
               tempPlane.userData.ymin = (ymin + (row * tiley));
@@ -1708,12 +1834,36 @@ limitations:
               tempPlane.userData.ymax = (ymin + ((row + 1) * tiley));
               tempPlane.userData.row = row;
               tempPlane.userData.column = column;
+              tempPlane.userData.index = app.project.plane.length - 1;
+              
+            //  var planeData = { tileWidth: (Math.sqrt((app.project.plane.length - 1)) - 1) / 2, planes: [{ detail: {}, buildings: {} }]};
+              if(planeData != undefined){
+                  var planeObject = { mesh: tempPlane, detail: planeData.planes[index].detail};
+
+                  //If we need to build the buildings, do it
+                  if (planeData.plane[index].detail.buildings > 0 || planeData.plane[index].detail.address == true) {
+                      if (planeData.plane[index].detail.buildings == 1) {
+                          app.getBuildings(planeObject, planeObject.userData.xmin, planeObject.userData.ymin, planeObject.userData.xmax, planeObject.userData.ymax, planeObject.userData.row, planeObject.userData.column, planeObject.userData.url, false);
+                      } else if (planeData.plane[index].detail.buildings == 2) {
+                          app.getBuildings(planeObject, planeObject.userData.xmin, planeObject.userData.ymin, planeObject.userData.xmax, planeObject.userData.ymax, planeObject.userData.row, planeObject.userData.column, planeObject.userData.url, false);
+                      }
+                  }
+
+              } else {
+                  var planeObject = { mesh: tempPlane, detail: { buildings: 0, address: false, style: "block", resolution: false } };
+
+              }
+             
 
 
-              app.project.plane.push(tempPlane);
+
+
+
+              app.project.plane.push(planeObject);
               //var buildings = "http://services.kortforsyningen.dk/service?servicename=topo_geo_gml2&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=kms:Bygning&login=student134859&password=3dgis&maxfeatures=5000";
               //app.getBuildings((xmin + (column * tilex)), (ymin + (row * tiley)), (xmin + ((column + 1) * tilex)), (ymin + ((row + 1) * tiley)), row, column, (buildings + "&bbox=" + (xmin + (column * tilex)) + "," + (ymin + (row * tiley)) + "," + (xmin + ((column + 1) * tilex)) + "," + (ymin + ((row + 1) * tiley))),"Fot10");
-             // app.updateResolution(tempPlane, num, width, height);
+              // app.updateResolution(tempPlane, num, width, height);
+              index++;
           }
 
       }
@@ -2156,47 +2306,54 @@ limitations:
 
 
   app.getAddress = function (index) {
-      var d = new Date().getTime(); // for now
-
       var host = "http://dawa.aws.dk";
       var parametre = {};
       var srid = "";
       
-      var xCor = app.project.layers[0].model[index].mapcoords[0];
-      var yCor = app.project.layers[0].model[index].mapcoords[1];
-      $.ajax({
-          url: "http://dawa.aws.dk/adgangsadresser/reverse?x=" + xCor + "&y=" + yCor + "&srid=25832",
-          dataType: "json",
-      })
-      .success(function (response) {
-          if (response.length === 0) {
-              console.log("Bad stuff");
-          }
-          else {
-              var address = response.vejstykke.adresseringsnavn + " " + response.husnr + ", " + response.postnummer.nr;
-              app.project.layers[0].a[index]["Adresse"] = address;
+      
+      for (var i = 0; i < app.project.plane[index].buildings.model.length; i++) {
+          var xCor = app.project.plane[index].buildings.model[i].mapcoords[0];
+          var yCor = app.project.plane[index].buildings.model[i].mapcoords[1];
 
-              if (index == 1) { console.log(response) };
 
-              if (response.adgangspunkt.nøjagtighed == "A") {
-                  app.project.layers[0].model[index].material.color.setHex(0x00ff00);
-              } else if (response.adgangspunkt.nøjagtighed == "B") {
-                  app.project.layers[0].model[index].material.color.setHex(0xffff00);
-              } else if (response.adgangspunkt.nøjagtighed == "C") {
-                  app.project.layers[0].model[index].material.color.setHex(0xff0000);
+          callAjax(i);
+       
+      }
+
+      function callAjax (i) {
+
+          $.ajax({
+              url: "http://dawa.aws.dk/adgangsadresser/reverse?x=" + xCor + "&y=" + yCor + "&srid=25832",
+              dataType: "json",
+          })
+          .success(function (response) {
+              if (response.length === 0) {
+                  console.log("Bad stuff");
               }
-              
+              else {
+                  var address = response.vejstykke.adresseringsnavn + " " + response.husnr + ", " + response.postnummer.nr;
+                  app.project.plane[index].buildings.a[i]["Adresse"] = address;
+                  if (index == 1) { console.log(response) };
 
 
-
-              var n = new Date().getTime();
-              var total = n - d;
-             
-          }
-      })
-      .fail(function (jqXHR, textStatus, errorThrown) {
-          console.log("Failed jquery");
-      });
+                  
+                  if (response.adgangspunkt.nøjagtighed == "A") {
+                      app.project.plane[index].buildings.model[i].material.color.setHex(0x00ff00);
+                      app.project.plane[index].buildings.a[i]["Adresse Nøjagtighed"] = "A";
+                  } else if (response.adgangspunkt.nøjagtighed == "B") {
+                      app.project.plane[index].buildings.model[i].color.setHex(0xffff00);
+                      app.project.plane[index].buildings.a[i]["Adresse Nøjagtighed"] = "B";
+                  } else if (response.adgangspunkt.nøjagtighed == "C") {
+                      app.project.plane[index].buildings.model[i].color.setHex(0xff0000);
+                      app.project.plane[index].buildings.a[i]["Adresse Nøjagtighed"] = "C";
+                  }
+                  
+              }
+          })
+          .fail(function (jqXHR, textStatus, errorThrown) {
+              console.log("Failed jquery");
+          });
+      }
 
   };
   app.searchBuilding = function (value) {
@@ -2235,49 +2392,253 @@ limitations:
     var objs = app.intersectObjects(e.clientX - canvasOffset.left, e.clientY - canvasOffset.top);
     for (var i = 0, l = objs.length; i < l; i++) {
         var obj = objs[i];
-      if (!obj.object.visible) continue;
+        if (!obj.object.visible) continue;
 
-      // query marker
-      //app.queryMarker.position.set(obj.point.x, obj.point.y, obj.point.z);
-      //app.queryMarker.visible = true;
-      //app.queryMarker.updateMatrixWorld();
+        // query marker
+        //app.queryMarker.position.set(obj.point.x, obj.point.y, obj.point.z);
+        //app.queryMarker.visible = true;
+        //app.queryMarker.updateMatrixWorld();
 
-      // get layerId and featureId of clicked object
-      var object = obj.object, layerId, featureId;
+        // get layerId and featureId of clicked object
+        var object = obj.object, layerId, featureId;
 
-      if (object.userData.url != undefined) {
-          var d = object.userData;
-          console.log(d);
-          app.updateResolution(object, 1, 256, 256);
-          app.getBuildings(d.xmin, d.ymin, d.xmax, d.ymax, d.row, d.column, d.url, "Tile", true);
-      }
 
-      
-      console.log(object);
-      while (object) {
-        layerId = object.userData.layerId,
-        featureId = object.userData.featureId;
-        if (layerId !== undefined) break;
-        object = object.parent;
-      }
+        /*
+        Nicolai
+        If we click on a plane, we check that it is not "explored"
+        If it is not explored, we update the texture and build the buildings according to the current LOD
 
-      if (app.highlightObject == null) {
-      app.showQueryResult(obj.point, layerId, featureId);
-        // highlight clicked object
-      } else {
-          if (featureId == app.highlightObject.userData.featureId) {
-              layerId = undefined;
-              featureId = undefined;
-              app.closePopup();
-          } else {
-              app.showQueryResult(obj.point, layerId, featureId);
-          }
-      }
+        */
+        //We got a plane
+
+        if (app.highlightPlane) {
+            app.scene.remove(app.highlightPlane);
+            app.highlightPlane = null;
+
+            console.log("Closing the menu");
+            var folder = Q3D.gui.gui.__folders["Selected Feature"];
+            Q3D.gui.gui.__ul.removeChild(folder.domElement.parentNode);
+            delete Q3D.gui.gui.__folders["Selected Feature"];
+
+        }
+        if (object.userData.url != undefined) {
+            if (app.highlightObject) {
+                app.scene.remove(app.highlightObject);
+                app.highlightObject = null;
+
+                console.log("Closing the menu");
+                var folder = Q3D.gui.gui.__folders["Selected Feature"];
+                Q3D.gui.gui.__ul.removeChild(folder.domElement.parentNode);
+                delete Q3D.gui.gui.__folders["Selected Feature"];
+                
+                app.closePopup();
+            }
+            //We already have a plane, so we remove the old one
+          
+            var d = object.userData;
+
+            // app.getBuildings(d.xmin, d.ymin, d.xmax, d.ymax, d.row, d.column, d.url, "Tile", true);
+            //   }
+            var clone = object.clone();
+            clone.material = app.highlightMaterial;
+            var s = 1.0;
+
+            clone.geometry.computeBoundingBox();
+            var boundingBox = clone.geometry.boundingBox;
+
+            var position = new THREE.Vector3();
+            position.subVectors(boundingBox.max, boundingBox.min);
+            position.multiplyScalar(0.5);
+            position.add(boundingBox.min);
+            //clone.userData.layerId = null;
+            position.applyMatrix4(clone.matrixWorld);
+            clone.scale.set(clone.scale.x * s, clone.scale.y * s, clone.scale.z * s);
+            var highlightPlane = clone;
+            app.scene.add(highlightPlane);
+            app.highlightPlane = highlightPlane;
+
+            //If we dont have the menu, open it
+            if (Q3D.gui.gui.__folders["Selected Feature"] == undefined) {
+                console.log("Folder should open");
+                var folder = Q3D.gui.gui.addFolder("Selected Feature");
+
+                /*
+                Functionalities for planes (color is just a test)
+                */
+                var index = d.index;
+                var detail = app.project.plane[index].detail;
+
+                console.log(detail);
+                //No buildings are present, give the opportunity to create them
+                if (detail.buildings == 0) {
+
+                    folder.add(Q3D.gui.parameters, 'resolution').name('Add merged buildings').onChange(function () {
+                        app.getBuildings(app.project.plane[index], object.userData.xmin, object.userData.ymin,object.userData.xmax,object.userData.ymax,object.userData.row,object.userData.column,object.userData.url,false);
+                        detail.buildings = 1;
+                       
+
+                        //Make the plane tile buildings queryable   
+                        });
+                        
+                    
+                //Merged buildings are present, give the opportunity to add them to the octree, or to to level 0 again.
+                } else if (detail.buildings == 1) {
+                    folder.add(Q3D.gui.parameters, 'resolution').name('Add to octree').onChange(function () {
+                        app.project.plane[index].buildings.model.forEach(function (building) {
+                            app.octree.add(building);
+                            
+                        });
+                        app.octreeNeedsUpdate = true;
+                        detail.buildings = 2;
+                    });
+
+                    folder.add(Q3D.gui.parameters, 'resolution').name('Remove buildings').onChange(function () {
+                        delete app.project.plane[index].buildings;
+                        app.scene.remove(app.project.plane[index].mergeMesh);
+                        app.octree.remove(app.project.plane[index].mergeMesh);
+                        app.octreeNeedsUpdate = true;
+                        delete app.project.plane[index].mergeMesh;
+                        detail.buildings = 0;
+                    });
+                   
+                 //Buildings are in the octree, give the opportunity to remove them from the octree, or remove them completely
+                } else if (detail.buildings == 2) {
+                    folder.add(Q3D.gui.parameters, 'resolution').name('Remove from octree').onChange(function () {
+                        app.project.plane[index].buildings.model.forEach(function (building) {
+                            app.octree.remove(building);
+                            app.scene.remove(building);
+                        });
+                        app.octreeNeedsUpdate = true;
+                        detail.buildings = 1;
+                    });
+
+                    folder.add(Q3D.gui.parameters, 'resolution').name('Remove buildings').onChange(function () {
+                        app.project.plane[index].buildings.model.forEach(function (building) {
+                            app.octree.remove(building);
+                            app.scene.remove(building);
+                            
+                        });
+
+                        delete app.project.plane[index].buildings;
+                        app.scene.remove(app.project.plane[index].mergeMesh);
+                        app.octree.remove(app.project.plane[index].mergeMesh);
+                        app.octreeNeedsUpdate = true;
+                        delete app.project.plane[index].mergeMesh;
+                        app.octreeNeedsUpdate = true;
+                        detail.buildings = 0;
+                    });
+                }
+                
+                /*
+                Change viz style
+                */
+               
+
+                
+                if(detail.address == false && detail.buildings > 0){
+                    folder.add(Q3D.gui.parameters, 'resolution').name('Build addresses').onChange(function () {
+                        app.getAddress(d.index);
+                       
+                        detail.address = true;
+
+
+
+                    });
+                }
+                
+
+                /*
+                Change resolution
+                */
+                if (detail.resolution == false) {
+                    folder.add(Q3D.gui.parameters, 'resolution').name('Enhance resolution').onChange(function () {
+                        app.updateResolution(object, 1, 512, 512);
+                        detail.resolution = true;
+                    });
+                }
+
+
+                folder.addColor(Q3D.gui.parameters, 'color').name('Color selected').onChange(function (color) {
+                    var pColor = color.replace('#', '0x');
+                    object.material.color.setHex(pColor);
+                });
+
+
+                folder.open();
+
+            } else { //If we have the menu, close it unless we have a new highlight
+                console.log("Closing the menu");
+                var folder = Q3D.gui.gui.__folders["Selected Feature"];
+                Q3D.gui.gui.__ul.removeChild(folder.domElement.parentNode);
+                delete Q3D.gui.gui.__folders["Selected Feature"];
+
+                if (layerId != null && featureId != null) {
+                    var folder = Q3D.gui.gui.addFolder("Selected Feature");
+                    folder.open();
+                }
+            }
+
+        } else if (object.userData.type == "building") {
+
+            while (object) {
+                layerId = object.userData.layerId,
+                featureId = object.userData.featureId;
+                if (layerId !== undefined) break;
+               // object = object.parent;
+            }
+ 
+            if (app.highlightObject == null) {
+                app.showQueryResult(obj.point, layerId, featureId, "building");
+                
+
+             //If app.highlightobject is set:
+            } else {
+                if (featureId == app.highlightObject.userData.featureId) {
+
+                    layerId = undefined;
+                    featureId = undefined;
+                    app.closePopup();
+                } else {
+
+                    app.showQueryResult(obj.point, layerId, featureId, "building");
+                }
+                
+            }
+
+            app.highlightFeature((layerId === undefined) ? null : layerId,
+                               (featureId === undefined) ? null : featureId, "building");
+
+        } else{
+
+       
+        while (object) {
+            layerId = object.userData.layerId,
+            featureId = object.userData.featureId;
+            if (layerId !== undefined) break;
+            object = object.parent;
+        }
+
+        if (app.highlightObject == null) {
+            app.showQueryResult(obj.point, layerId, featureId, "layer");
+            // highlight clicked object
+        } else {
+            if (featureId == app.highlightObject.userData.featureId) {
+                layerId = undefined;
+                featureId = undefined;
+                app.closePopup();
+            } else {
+                app.showQueryResult(obj.point, layerId, featureId,"layer");
+            }
+        }
+
+
      
-      app.highlightFeature((layerId === undefined) ? null : layerId,
-                         (featureId === undefined) ? null : featureId);
+        app.highlightFeature((layerId === undefined) ? null : layerId,
+                           (featureId === undefined) ? null : featureId,"layer");
+        }
 
-
+    
+  
 
       if (Q3D.Options.debugMode && object instanceof THREE.Mesh) {
         var face = obj.face,
