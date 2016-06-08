@@ -39,6 +39,9 @@ var initModal = function () {
         modal.style.display = "none";
     }
 
+    //Hide the modal loader
+    document.getElementById("loader").style.display = "none";
+
     //--------------------------------------- TESTING FUNCTIONS ------------------------------------
     window.onkeyup = function (e) {
         var key = e.keyCode ? e.keyCode : e.which;
@@ -68,14 +71,18 @@ var initModal = function () {
                 num: num_sel,        //document.getElementById('select_streetnum').value,
                 zip: zip_sel         //document.getElementById('select_zip').value
             }
-            //startBuild();
+            setTimeout(function () {
+                document.getElementById("loader").style.display = "none";
+                //TODO: Handling of too long load times
+            }, 3000);
+
+            startBuild();
         }
     }
 }
 
 var startCorrelation = function (sourceURL) {
     var url = 'http://api-geovizjs.rhcloud.com/getSourceHeaders?sourceURL=' + sourceURL;
-    console.log("performing get request");
     $.ajax({
         url: url,
         type: 'GET',
@@ -93,7 +100,6 @@ var startCorrelation = function (sourceURL) {
                 zip.options.add(new Option(json[key], json[key]));
             }
             modal.style.display = "block";
-            console.log(modal);
         },
         error: function (err) {
             console.log('ERROR');
@@ -104,16 +110,22 @@ var startCorrelation = function (sourceURL) {
 
 var startBuild = function (sourceURL) {
     var url = 'http://api-geovizjs.rhcloud.com/parseCSV?sourceURL=' + sourceURL;
+    document.getElementById("build").innerHTML = "Constructing Addresses";
+    document.getElementById("loader").style.display = "block";
+    //app.highlightPlane
+
     $.ajax({
         url: url,
         type: 'GET',
         dataType: 'json',
         success: function (csv_as_json) {
+            document.getElementById("build").innerHTML = "Construction Successful";
+            
 
         },
         error: function (err) {
+            document.getElementById("build").innerHTML = "Construction Failed. Try Again?";
             console.log('ERROR: ' + err);
-            
         }
     });
 }

@@ -76,6 +76,8 @@
     <Content Include="3D\stats\build\stats.min.js" />
     <Content Include="3D\threejs\OrbitControls.js" />
     <Content Include="3D\threejs\three.min.js" />
+    <Content Include="Website\css\loaderreset.css" />
+    <Content Include="Website\css\loaderstyle.css" />
     <Content Include="Website\js\initscripts.js" />
     <Content Include="3D\scripts\tween.js" />
     <Content Include="3D\scripts\xml2json.js" />

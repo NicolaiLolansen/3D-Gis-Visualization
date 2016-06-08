@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     <link rel="stylesheet" type="text/css" href="css/Qgis2threejs.css">
     <link rel="stylesheet" type="text/css" href="css/style.css" >
+    <link rel="stylesheet" type="text/css" href="css/loaderstyle.css"> <!-- http://codepen.io/jackrugile/full/JddmaX -->
     <link rel="apple-touch-icon" sizes="57x57" href="./resources/apple-icon-57x57.png">
     <link rel="apple-touch-icon" sizes="60x60" href="./resources/apple-icon-60x60.png">
     <link rel="apple-touch-icon" sizes="72x72" href="./resources/apple-icon-72x72.png">
@@ -57,10 +58,28 @@
                 </table>
             </div>
             <div class="modal-footer">
-                <button id="build" type="button" onclick="startBuild()">Construct Addresses</button>
+                <button id="build" type="button">Construct Addresses</button>
+            </div>
+            <div id="loader" class="loader">
+                <div class="loader-inner">
+                    <div class="loader-line-wrap">
+                        <div class="loader-line"></div>
+                    </div>
+                    <div class="loader-line-wrap">
+                        <div class="loader-line"></div>
+                    </div>
+                    <div class="loader-line-wrap">
+                        <div class="loader-line"></div>
+                    </div>
+                    <div class="loader-line-wrap">
+                        <div class="loader-line"></div>
+                    </div>
+                    <div class="loader-line-wrap">
+                        <div class="loader-line"></div>
+                    </div>
+                </div>
             </div>
         </div>
-        s
     </div>
 <!-- popup -->
 <div id="popup" style="display:none;">
