@@ -82,6 +82,7 @@ var initModal = function () {
 }
 
 var startCorrelation = function (sourceURL, bbox, tile_zip) {
+    alert("startCorrelation");
     var url = 'http://api-geovizjs.rhcloud.com/getSourceHeaders?sourceURL=' + sourceURL;
     $.ajax({
         url: url,
