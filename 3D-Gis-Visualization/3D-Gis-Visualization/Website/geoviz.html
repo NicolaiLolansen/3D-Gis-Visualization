@@ -4,11 +4,64 @@
 <meta charset="UTF-8">
 <title>Test</title>
 <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-<link rel="stylesheet" type="text/css" href="css/Qgis2threejs.css">
+    <link rel="stylesheet" type="text/css" href="css/Qgis2threejs.css">
+    <link rel="stylesheet" type="text/css" href="css/style.css" >
+    <link rel="apple-touch-icon" sizes="57x57" href="./resources/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="./resources/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="./resources/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="./resources/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="./resources/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="./resources/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="./resources/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="./resources/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="./resources/apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="./resources/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="./resources/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="./resources/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="./resources/favicon-16x16.png">
 </head>
 <body>
 <div id="webgl"></div>
-
+    <!-- The Address-block picker modal menu -->
+    <div id="modal-menu" class="modal">
+        <!-- Modal content -->
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="close">×</span>
+                <h2>Select components for address building</h2>
+            </div>
+            <div class="modal-body">
+                <table>
+                    <tr class="titles">
+                        <td>Street</td>
+                        <td>Number</td>
+                        <td>Zip</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <select name="select_street" id="select_street">
+                                <option value="default">Select Street</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select name="select_streetnum" id="select_streetnum">
+                                <option value="default">Select Street Number</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select name="select_zip" id="select_zip">
+                                <option value="default">Select Zip Code</option>
+                            </select>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button id="build" type="button" onclick="startBuild()">Construct Addresses</button>
+            </div>
+        </div>
+        s
+    </div>
 <!-- popup -->
 <div id="popup" style="display:none;">
 <div id="closebtn">&times;</div>
@@ -29,6 +82,8 @@ and uses the following library:
             </ul>
         </div>
 </div>
+
+
 
 <!-- footer -->
 <div id="footer"></div>
@@ -53,19 +108,19 @@ var container = document.getElementById("webgl");
 var app = Q3D.application;
 app.init(container);
 //project = new Q3D.Project({ crs: "EPSG:25832", title: "Untitled Project", baseExtent: [719777, 6187092, 722250, 6188663], rotation: 0, zShift: 0.0, width: 100.0, zExaggeration: 1.5 });
+initModal();
+initScene();
 
-//initScene();
-
-
+/*
 //LOKAL VERSION TIL TESTING
-$.getJSON("../3D/hej.json", function (json) {
+$.getJSON("hej.json", function (json) {
     app.loadProject(json);
     app.start();
     app.addEventListeners();
 
     // this will show the info it in firebug console
 });
-
+*/
 </script>
 <script src="../3D/dat-gui/dat.gui.min.js"></script>
 <script src="../3D/scripts/dat-gui_panel.js"></script>

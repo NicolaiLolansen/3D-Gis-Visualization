@@ -4,17 +4,31 @@
     <title></title>
     <link rel="stylesheet" href="css/style.css">
 	<meta charset="utf-8" />
+    <link rel="apple-touch-icon" sizes="57x57" href="./resources/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="./resources/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="./resources/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="./resources/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="./resources/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="./resources/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="./resources/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="./resources/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="./resources/apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="./resources/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="./resources/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="./resources/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="./resources/favicon-16x16.png">
 </head>
 <body>
 
     <h2>Animated Modal with Header and Footer</h2>
-    <script src="../3D/jquery-2.2.0.js"></script>
+    <script src="../3D/scripts/jquery-2.2.0.js"></script>
+    <script src="js/initscripts.js"></script>
     <!-- Trigger/Open The Modal -->
     <button id="save_scene" type="button">Save scene</button>
     <button id="myBtn" type="button">Open Menu</button>
-    <button onclick="window.location = 'index.html'">Open Menu</button>
+    <button onclick="window.location = 'index.html'">Direct Entry (huehue)</button>
 
-    <!-- The Modal -->
+    <!-- The Address-block picker modal menu -->
     <div id="modal-menu" class="modal">
         <!-- Modal content -->
         <div class="modal-content">
@@ -31,84 +45,31 @@
                     </tr>
                     <tr>
                         <td>
-                        <select id="select_street">
-                            <option value="volvo">Volvo</option>
-                            <option value="saab">Saab</option>
-                            <option value="vw">VW</option>
-                            <option value="audi">Audi</option>
+                        <select name="select_street" id="select_street">
+                            <option value="default">Select Street</option>
                         </select>
                         </td>
                         <td>
-                            <select id="select_streetnum">
-                                <option value="volvo">Volvo</option>
-                                <option value="saab">Saab</option>
-                                <option value="vw">VW</option>
-                                <option value="audi">Audi</option>
+                            <select name="select_streetnum" id="select_streetnum">
+                                <option value="default">Select Street Number</option>
                             </select>
                         </td>
                         <td>
-                            <select id="select_zip">
-                                <option value="volvo">Volvo</option>
-                                <option value="saab">Saab</option>
-                                <option value="vw">VW</option>
-                                <option value="audi">Audi</option>
+                            <select name="select_zip" id="select_zip">
+                                <option value="default">Select Zip Code</option>
                             </select>
                         </td>
                     </tr>
                 </table>
             </div>
             <div class="modal-footer">
-                <button id="buildAddr">Construct Addresses</button>
+                <button id="build" type="button" onclick="startBuild()">Construct Addresses</button>
             </div>
         </div>
     </div>
 
 <script>
-// Get the modal
-var modal = document.getElementById('myModal');
-
-// Get the button that opens the modal
-var btn = document.getElementById("myBtn");
-
-// Get the <span> element that closes the modal
-var span = document.getElementsByClassName("close")[0];
-
-// When the user clicks the button, open the modal
-btn.onclick = function() {
-    modal.style.display = "block";
-}
-
-// When the user clicks on <span> (x), close the modal
-span.onclick = function() {
-    modal.style.display = "none";
-}
-
-// When the user clicks anywhere outside of the modal, close it
-window.onclick = function(event) {
-    if (event.target == modal) {
-        modal.style.display = "none";
-    }
-}
-
-//DROPDOWN MENU SCRIPT
-function myFunction() {
-    document.getElementById("myDropdown").classList.toggle("show");
-}
-
-// Close the dropdown if the user clicks outside of it
-window.onclick = function (event) {
-    if (!event.target.matches('.dropbtn')) {
-
-        var dropdowns = document.getElementsByClassName("dropdown-content");
-        var i;
-        for (i = 0; i < dropdowns.length; i++) {
-            var openDropdown = dropdowns[i];
-            if (openDropdown.classList.contains('show')) {
-                openDropdown.classList.remove('show');
-            }
-        }
-    }
-}
+initModal();
 
 function loadShit() {
     var poly = "&Bbox=" + xmin + "," + ymin + "," + xmax + "," + ymax;

@@ -70,6 +70,7 @@
     <Content Include="3D\scripts\csvAPI.js" />
     <Content Include="3D\scripts\gml_worker.js" />
     <Content Include="3D\scripts\jquery-ui.min.js" />
+    <Content Include="3D\scripts\menufunctions.js" />
     <Content Include="3D\scripts\Octree.js" />
     <Content Include="3D\scripts\parser.js" />
     <Content Include="3D\stats\build\stats.min.js" />
@@ -88,6 +89,32 @@
     <Content Include="3D\hej.json" />
     <Content Include="3D\dtu.json" />
     <Content Include="3D\threejs\LICENSE" />
+    <Content Include="Website\resources\android-icon-144x144.png" />
+    <Content Include="Website\resources\android-icon-192x192.png" />
+    <Content Include="Website\resources\android-icon-36x36.png" />
+    <Content Include="Website\resources\android-icon-48x48.png" />
+    <Content Include="Website\resources\android-icon-72x72.png" />
+    <Content Include="Website\resources\android-icon-96x96.png" />
+    <Content Include="Website\resources\apple-icon-114x114.png" />
+    <Content Include="Website\resources\apple-icon-120x120.png" />
+    <Content Include="Website\resources\apple-icon-144x144.png" />
+    <Content Include="Website\resources\apple-icon-152x152.png" />
+    <Content Include="Website\resources\apple-icon-180x180.png" />
+    <Content Include="Website\resources\apple-icon-57x57.png" />
+    <Content Include="Website\resources\apple-icon-60x60.png" />
+    <Content Include="Website\resources\apple-icon-72x72.png" />
+    <Content Include="Website\resources\apple-icon-76x76.png" />
+    <Content Include="Website\resources\apple-icon-precomposed.png" />
+    <Content Include="Website\resources\apple-icon.png" />
+    <Content Include="Website\resources\browserconfig.xml" />
+    <Content Include="Website\resources\favicon-16x16.png" />
+    <Content Include="Website\resources\favicon-32x32.png" />
+    <Content Include="Website\resources\favicon-96x96.png" />
+    <Content Include="Website\resources\favicon.ico" />
+    <Content Include="Website\resources\ms-icon-144x144.png" />
+    <Content Include="Website\resources\ms-icon-150x150.png" />
+    <Content Include="Website\resources\ms-icon-310x310.png" />
+    <Content Include="Website\resources\ms-icon-70x70.png" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
