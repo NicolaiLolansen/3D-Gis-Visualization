@@ -112,7 +112,7 @@ var startBuild = function (sourceURL) {
     var url = 'http://api-geovizjs.rhcloud.com/parseCSV?sourceURL=' + sourceURL;
     document.getElementById("build").innerHTML = "Constructing Addresses";
     document.getElementById("loader").style.display = "block";
-    app.highlightPlane
+    //app.highlightPlane
 
     $.ajax({
         url: url,
