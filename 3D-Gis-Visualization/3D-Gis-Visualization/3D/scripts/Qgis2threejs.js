@@ -2562,13 +2562,35 @@ limitations:
                         app.getAddress(d.index, function () {
                             detail.address = true;
                         });
+                        detail.address = true;
                     });
                 }
 
                 if (detail.address == true && detail.buildings > 0) { //Fail safe
-                    folder.add(Q3D.gui.parameters, 'Source').name('Add Datasource').onChange(function (url) {
+                    folder.add(Q3D.gui.parameters, 'Source').name('Add Datasource').onFinishChange(function (url) {
                         var bbox = [object.userData.xmin, object.userData.ymin,object.userData.xmax,object.userData.ymax];
-                        app.startCorrelation(url, bbox, object.userData.zip);
+                        startCorrelation(url, bbox, app.project.plane[index].mesh.userData.zip, function (json) {
+                            console.log(json);
+                            var maxmin = json.pop();
+                            alert("Callback finished");
+
+                            //For every building in the tile, if address match, add a new group of attributes uData
+                            //
+                            app.project.plane[index].buildings.a.forEach(function (a,i) {
+                                json.forEach(function (json) {
+                                    
+                                    if (a["Adresse"] == json.addr) {
+                                        console.log("Matched data to a building!");
+                                        //match
+                                        app.project.plane[index].buildings.uData = json;
+                                        app.project.plane[index].mesh.userData.maxmin = maxmin;
+
+                                        var material = THREE.MeshLambertMaterial({ color: 0x0000ff });
+                                        app.project.plane[index].buildings.model[i].material = material;
+                                    }
+                                });
+                            });
+                        });
                     });
                 }
 
