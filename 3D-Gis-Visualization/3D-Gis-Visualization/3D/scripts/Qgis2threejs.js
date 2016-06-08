@@ -2305,19 +2305,18 @@ limitations:
   };
 
 
-  app.getAddress = function (index) {
+  app.getAddress = function (index,callback) {
       var host = "http://dawa.aws.dk";
       var parametre = {};
       var srid = "";
       
-      
+      callZipCode();
       for (var i = 0; i < app.project.plane[index].buildings.model.length; i++) {
           var xCor = app.project.plane[index].buildings.model[i].mapcoords[0];
           var yCor = app.project.plane[index].buildings.model[i].mapcoords[1];
 
 
           callAjax(i);
-       
       }
 
       function callAjax (i) {
@@ -2349,6 +2348,34 @@ limitations:
                   }
                   
               }
+             
+              if (i == app.project.plane[index].buildings.model.length - 1) {
+                  callback();
+              }
+          })
+          .fail(function (jqXHR, textStatus, errorThrown) {
+              console.log("Failed jquery");
+          });
+      }
+
+
+      function callZipCode () {
+          xCor = app.project.plane[index].mesh.userData.xmin + (app.project.plane[index].mesh.userData.xmax - app.project.plane[index].mesh.userData.xmin) / 2;
+          yCor = app.project.plane[index].mesh.userData.ymin + (app.project.plane[index].mesh.userData.ymax - app.project.plane[index].mesh.userData.ymin) / 2;
+          $.ajax({
+              url: "http://dawa.aws.dk/adgangsadresser/reverse?x=" + xCor + "&y=" + yCor + "&srid=25832",
+              dataType: "json",
+          })
+          .success(function (response) {
+              if (response.length === 0) {
+                  console.log("Bad stuff");
+              }
+              else {
+                  var zip = response.postnummer.nr;
+                  app.project.plane[index].mesh.userData.zip = zip;
+              }
+
+            
           })
           .fail(function (jqXHR, textStatus, errorThrown) {
               console.log("Failed jquery");
@@ -2529,23 +2556,23 @@ limitations:
                     });
                 }
                 
-                /*
-                Change viz style
-                */
                
-
-                
                 if(detail.address == false && detail.buildings > 0){
                     folder.add(Q3D.gui.parameters, 'resolution').name('Build addresses').onChange(function () {
-                        app.getAddress(d.index);
-                       
-                        detail.address = true;
-
-
-
+                        app.getAddress(d.index, function () {
+                            detail.address = true;
+                        });
                     });
                 }
-                
+
+                if (detail.address == true && detail.buildings > 0) { //Fail safe
+                    folder.add(Q3D.gui.parameters, 'Source').name('Add Datasource').onChange(function (url) {
+                        var bbox = [object.userData.xmin, object.userData.ymin,object.userData.xmax,object.userData.ymax];
+                        app.startCorrelation(url, bbox, object.userData.zip);
+                    });
+                }
+
+
 
                 /*
                 Change resolution
@@ -2636,9 +2663,6 @@ limitations:
         app.highlightFeature((layerId === undefined) ? null : layerId,
                            (featureId === undefined) ? null : featureId,"layer");
         }
-
-    
-  
 
       if (Q3D.Options.debugMode && object instanceof THREE.Mesh) {
         var face = obj.face,
