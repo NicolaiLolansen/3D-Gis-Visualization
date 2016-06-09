@@ -23,64 +23,133 @@
 </head>
 <body>
 <div id="webgl"></div>
-    <!-- The Address-block picker modal menu -->
-    <div id="modal-menu" class="modal">
-        <!-- Modal content -->
-        <div class="modal-content">
-            <div class="modal-header">
-                <span class="close">×</span>
-                <h2>Select components for address building</h2>
-            </div>
-            <div class="modal-body">
+<!-- The Address-block picker modal menu -->
+<div id="modal-menu" class="modal">
+    <!-- Modal content -->
+    <div class="modal-content">
+        <div class="modal-header">
+            <span class="close">×</span>
+            <h2>Select components for address building</h2>
+        </div>
+        <div class="modal-body">
+            <table>
+                <tr class="titles">
+                    <td>Street</td>
+                    <td>Number</td>
+                    <td>Zip</td>
+                </tr>
+                <tr>
+                    <td>
+                        <select name="select_street" id="select_street">
+                            <option value="default">Select Street</option>
+                        </select>
+                    </td>
+                    <td>
+                        <select name="select_streetnum" id="select_streetnum">
+                            <option value="default">Select Street Number</option>
+                        </select>
+                    </td>
+                    <td>
+                        <select name="select_zip" id="select_zip">
+                            <option value="default">Select Zip Code</option>
+                        </select>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div class="modal-footer">
+            <button id="build" type="button">Construct Addresses</button>
+        </div>
+    </div>
+</div>
+<!-- visualization modal -->
+<div id="modal-viz" class="modal">
+    <!-- Modal content -->
+    <div class="modal-content">
+        <div class="modal-header">
+            <span class="close" id="close-viz">×</span>
+            <h2>Visualize Data</h2>
+        </div>
+        <div class="modal-body">
+            <table>
+                <tr class="titles">
+                    <td>As Colour</td>
+                    <td>As Height</td>
+                </tr>
+                <tr>
+                    <td>
+                        <select name="colour_data" id="colour_data">
+                            <option value="default">Select Data</option>
+                        </select>
+                    </td>
+                    <td>
+                        <select name="height_data" id="height_data">
+                            <option value="default">Select Data</option>
+                        </select>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div class="modal-footer">
+            <div class="radio-buttons">
                 <table>
-                    <tr class="titles">
-                        <td>Street</td>
-                        <td>Number</td>
-                        <td>Zip</td>
+                    <tr>
+                        <td>
+                            <div>
+                                <input type="radio" name="radio_colour" id="c_building" class="radio" checked />
+                                <label for="c_building">Buildings</label>
+                            </div>
+                        </td>
+                        <td>
+                            <div>
+                                <input type="radio" name="radio_height" id="h_building" class="radio" checked />
+                                <label for="h_building">Buildings</label>
+                            </div>
+                        </td>
                     </tr>
                     <tr>
                         <td>
-                            <select name="select_street" id="select_street">
-                                <option value="default">Select Street</option>
-                            </select>
+                            <div>
+                                <input type="radio" name="radio_colour" id="c_block" class="radio" />
+                                <label for="c_block">Blocks</label>
+                            </div>
                         </td>
                         <td>
-                            <select name="select_streetnum" id="select_streetnum">
-                                <option value="default">Select Street Number</option>
-                            </select>
-                        </td>
-                        <td>
-                            <select name="select_zip" id="select_zip">
-                                <option value="default">Select Zip Code</option>
-                            </select>
+                            <div>
+                                <input type="radio" name="radio_height" id="h_block" class="radio" />
+                                <label for="h_block">Blocks</label>
+                            </div>
                         </td>
                     </tr>
                 </table>
             </div>
-            <div class="modal-footer">
-                <button id="build" type="button">Construct Addresses</button>
-            </div>
-            <div id="loader" class="loader">
-                <div class="loader-inner">
-                    <div class="loader-line-wrap">
-                        <div class="loader-line"></div>
-                    </div>
-                    <div class="loader-line-wrap">
-                        <div class="loader-line"></div>
-                    </div>
-                    <div class="loader-line-wrap">
-                        <div class="loader-line"></div>
-                    </div>
-                    <div class="loader-line-wrap">
-                        <div class="loader-line"></div>
-                    </div>
-                    <div class="loader-line-wrap">
-                        <div class="loader-line"></div>
-                    </div>
-                </div>
+            <div class="viz-button">
+                <button id="start_viz" type="button">Visualize</button>
             </div>
         </div>
     </div>
+</div>
+
+<!-- loading circle -->
+<div id="loader" class="loader">
+    <div class="loader-inner">
+        <div class="loader-line-wrap">
+            <div class="loader-line"></div>
+        </div>
+        <div class="loader-line-wrap">
+            <div class="loader-line"></div>
+        </div>
+        <div class="loader-line-wrap">
+            <div class="loader-line"></div>
+        </div>
+        <div class="loader-line-wrap">
+            <div class="loader-line"></div>
+        </div>
+        <div class="loader-line-wrap">
+            <div class="loader-line"></div>
+        </div>
+    </div>
+</div>
 <!-- popup -->
 <div id="popup" style="display:none;">
 <div id="closebtn">&times;</div>
