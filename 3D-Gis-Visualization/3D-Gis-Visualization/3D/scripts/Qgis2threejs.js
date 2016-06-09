@@ -277,10 +277,10 @@ limitations:
         console.log(planeData);
         //Iterate over the planes to fill out the planeData accordingly
 
-        var models = [];
-        var a = [];
+       
         project.plane.forEach(function (plane, i) {
-         
+            var models = [];
+            var a = [];
             planeData.planes[i] = { detail: {}, buildings: {} };
             if (plane.detail.address == true) {
                 console.log("address was true");
@@ -316,7 +316,7 @@ limitations:
                     planeData.planes[i].buildings.name = plane.buildings.name;
                     planeData.planes[i].buildings.type = plane.buildings.type;
                     planeData.planes[i].buildings.url = plane.buildings.url;
-
+                    planeData.planes[i].buildings.zip = plane.buildings.url
                 //Actually we dont need to save the mergedMesh, as it is transitive
                 //planeData.planes[i].buildings.mergeMesh = JSON.stringify(model.toJSON());     
                 }
@@ -324,7 +324,7 @@ limitations:
             planeData.planes[i].detail = plane.detail;
             console.log(planeData.planes[i]);
         });
-        
+        console.log(planeData);
         savedProject.planeData = planeData;
         //Test how it goes
         var projectString = JSON.stringify(savedProject);
@@ -349,9 +349,9 @@ limitations:
         
         console.log(a);
 
-      
+        
         //Eventually when we are done, try to load the project (If done live, should just reload the entire scene correctly):
-      //  app.loadProject(projectParsed);
+       // app.loadProject(projectParsed);
     }
     /*
     Loads a project from a JSON formatted file (has to be called from saveProject) (Implement a verification method)
@@ -474,7 +474,10 @@ limitations:
                         loadedMesh.position.z = position.y;
                     });
                     tween.start();
-                    app.octree.add(loadedMesh);
+                    if (plane.detail.building == 2) {
+                        app.octree.add(loadedMesh);
+                    }
+                    
                 });
 
                 for (var x = 0; x < models.length; x++) {
@@ -499,8 +502,6 @@ limitations:
             }
         });
 
-        console.log(app.project.plane);
-        console.log(app.project.plane);
         project.layers.forEach(function (layer,i) {
             var models = [];
             layer.model.forEach(function (model) {
@@ -1225,14 +1226,10 @@ limitations:
         /*
         TODO: faulty index, only works 1 tile out, gets imprecise after that
         */
-        alert("Row : " +  row + " " + "Column: " + column);
-
+     
          row = row * 2 + 1;
          column = column * 2 + 1;
 
-
-
-        alert("Row : " + row + " " + "Column: " + column);
         var bbox = "&Bbox=" + xmin + "," + ymin + "," + xmax + "," + ymax;
         url = url + bbox;
         app.wmsready = false;
@@ -1401,7 +1398,7 @@ limitations:
                
                        mesh.mapcoords = [e.data[2], e.data[3]];
                        mesh.userData = [];
-                       mesh.userData.layerId = plane.mesh.userData.index + 1;
+                       mesh.userData.layerId = plane.mesh.userData.index;
                        mesh.userData.featureId = e.data[1];
                        mesh.userData.type = "building";
                        //var meshString = JSON.stringify(mesh);
@@ -1843,7 +1840,7 @@ limitations:
               tempPlane.userData.ymax = (ymin + ((row + 1) * tiley));
               tempPlane.userData.row = row;
               tempPlane.userData.column = column;
-              tempPlane.userData.index = app.project.plane.length - 1;
+              tempPlane.userData.index = app.project.plane.length;
 
               //  var planeData = { tileWidth: (Math.sqrt((app.project.plane.length - 1)) - 1) / 2, planes: [{ detail: {}, buildings: {} }]};
               if (planeData != undefined) {
@@ -2366,7 +2363,7 @@ limitations:
               if (i == app.project.plane[index].buildings.model.length - 1) {
                   callback();
                   console.log(zipCodes);
-                  app.project.plane[index].mesh.userData.zip = zipCodes;
+                  app.project.plane[index].buildings.zip = zipCodes;
               }
           })
           .fail(function (jqXHR, textStatus, errorThrown) {
@@ -2374,7 +2371,7 @@ limitations:
               if (i == app.project.plane[index].buildings.model.length - 1) {
                   callback();
                   console.log(zipCodes);
-                  app.project.plane[index].mesh.userData.zip = zipCodes;
+                  app.project.plane[index].buildings.zip = zipCodes;
               }
           });
       }
@@ -2506,6 +2503,11 @@ limitations:
                   });
 
                   folder.add(Q3D.gui.parameters, 'resolution').name('Remove buildings').onChange(function () {
+                      app.project.plane[index].buildings.model.forEach(function (building) {
+                          app.octree.remove(building);
+                          app.scene.remove(building);
+                      });
+                      app.octreeNeedsUpdate = true;
                       delete app.project.plane[index].buildings;
                       app.scene.remove(app.project.plane[index].mergeMesh);
                       app.octree.remove(app.project.plane[index].mergeMesh);
@@ -2533,7 +2535,7 @@ limitations:
                           app.scene.remove(building);
 
                       });
-
+                      app.octreeNeedsUpdate = true;
                       delete app.project.plane[index].buildings;
                       app.scene.remove(app.project.plane[index].mergeMesh);
                       app.octree.remove(app.project.plane[index].mergeMesh);
@@ -2848,4 +2850,214 @@ limitations:
       restoreCanvasSize();
     }
   };
+
+
+
+  app.getGeoJson = function (plane,url) {
+
+      var xmin = app.project.baseExtent[0];
+      var ymin = app.project.baseExtent[1];
+      var xmax = app.project.baseExtent[2];
+      var ymax = app.project.baseExtent[3];
+
+      var bbox = "&Bbox=" + xmin + "," + ymin + "," + xmax + "," + ymax
+
+      app.wmsready = false;
+
+      $.ajax({
+          url: url + bbox,
+          dataType: "json",
+      })
+     .success(function (response) {
+         console.log(response);
+         console.log("Found: " + response.features.length + " Features");
+
+         if (response.features.length > 0) {
+             var index = app.project.layers.length;
+             app.project.layers.push(response);
+
+             app.project.layers[index].model = [];
+             app.project.layers[index].a = [];
+
+             var points = [];
+             for (var i = 0; i < response.features.length; i++) {
+                 //Determine geometry type
+                 if (response.features[i].geometry.type == "Point" || response.features[i].geometry.type == "MultiPoint") {
+                     //If point, create a point object. 
+                     //Point object is defined as a yellow sphere for simplicity
+
+                     var geometry = new THREE.CylinderGeometry(5, 5, 20, 32);
+                     var material = new THREE.MeshLambertMaterial({
+                         color: 0xffaaaa
+                     });
+                     var sphere = new THREE.Mesh(geometry, material);
+                     sphere.rotation.x = Math.PI / 2;
+                     var x = response.features[i].geometry.coordinates[0];
+                     var y = response.features[i].geometry.coordinates[1];
+                     var z = 1;
+
+                     //Okay we have the width and height, plus the bounding box
+                     //Figure out how to calculate mapcoordinates to project coordinates.
+
+                     //In each direction
+                     var widthP = app.project.width;
+                     var heightP = app.project.height;
+
+                     var widthM = xmax - xmin;
+                     var heightM = ymax - ymin;
+
+                     var factorX = widthP / widthM;
+                     var factorY = heightP / heightM;
+
+
+                     var ptx = widthP / 2 - ((xmax - x) * factorX);
+                     var pty = heightP / 2 - ((ymax - y) * factorY);
+
+                     // var pt = app.project.toMapCoordinates(x, y, z);
+
+
+
+                     sphere.position.set(ptx, pty, 0.5);
+
+                     sphere.scale.set(0.05, 0.25, 0.05);
+                     //LayerID 100 until we figure out proper indentation - Nicolai
+                     sphere.userData.layerId = app.project.layers.length - 1;
+                     sphere.userData.featureId = i;
+                     // app.scene.add(sphere);
+                     //Okay so instead of adding a sphere to the scene, we can add the sphere to our WFSLayer geometry
+
+                     //Todo create proper indexing somehow.
+                     app.project.layers[index].model[i] = sphere;
+                     app.project.layers[index].a[i] = app.project.layers[index].features[i].properties;
+                     app.octree.add(project.layers[index].model[i]);
+
+
+                 }
+                 else if (response.features[i].geometry.type == "Polygon" || response.features[i].geometry.type == "MultiPolygon") {
+
+                     //TODO - Nicolai
+                     //console.log(response);
+                     //get points from feature
+                     //console.log("There are this many coordinates in feature " + i + " " + response.features[i].geometry.coordinates[0][0].length);
+
+                     if (response.features[i].geometry.type == "Polygon") {
+                         var length = response.features[i].geometry.coordinates[0].length;
+                         var polygon = "Polygon";
+                     } else {
+                         var length = response.features[i].geometry.coordinates[0][0].length;
+                         var polygon = "MultiPolygon";
+                     }
+
+                     for (var j = 0; j < length; j++) {
+                         //  console.log(response.features[i].geometry.coordinates[0][0][j]);
+                         if (polygon == "MultiPolygon") {
+                             var x = response.features[i].geometry.coordinates[0][0][j][0];
+                             var y = response.features[i].geometry.coordinates[0][0][j][1];
+                         } else {
+                             var x = response.features[i].geometry.coordinates[0][j][0];
+                             var y = response.features[i].geometry.coordinates[0][j][1];
+                         }
+
+
+                         //Okay we have the width and height, plus the bounding box
+                         //Figure out how to calculate mapcoordinates to project coordinates.
+
+                         //In each direction
+                         var widthP = app.project.width;
+                         var heightP = app.project.height;
+
+                         var widthM = xmax - xmin;
+                         var heightM = ymax - ymin;
+
+                         var factorX = widthP / widthM;
+                         var factorY = heightP / heightM;
+
+                         var ptx = widthP / 2 - ((xmax - x) * factorX);
+                         var pty = heightP / 2 - ((ymax - y) * factorY);
+
+                         var point = new THREE.Vector2(ptx, pty);
+                         points.push(point);
+                     }
+
+                     var shape = new THREE.Shape(points);
+                     var extrudeSettings = {
+                         amount: 1.2,
+                         steps: 1,
+                         material: 0,
+                         extrudeMaterial: 1,
+                         bevelEnabled: false
+                     };
+
+                     //use points to build shape
+
+
+
+                     //build a geometry (ExtrudeGeometry) from the shape and extrude settings
+                     var geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+                     geometry.dynamic = true;
+
+                     var hex = 0xff0000;
+                     var hex2 = 0xaa0011;
+                     var hex3 = 0x990033;
+                     var color = 0xffffff;
+
+                     var colorlist = [hex, hex2, hex3];
+
+
+                     //  color = colorlist[Math.floor(Math.random() * colorlist.length)];
+
+                     var material = new THREE.MeshPhongMaterial({
+                         color: color
+                     });
+
+                     var mesh = new THREE.Mesh(geometry, material);
+                     mesh.scale.set(1, 1, 2 + Math.random());
+                     mesh.userData.layerId = app.project.layers.length - 1;
+                     mesh.userData.featureId = i;
+                     // app.scene.add(sphere);
+                     //Okay so instead of adding a sphere to the scene, we can add the sphere to our WFSLayer geometry
+
+                     //Todo create proper indexing somehow.
+                     app.project.layers[index].model[i] = mesh;
+                     app.project.layers[index].a[i] = app.project.layers[index].features[i].properties;
+                     app.octree.add(app.project.layers[index].model[i]);
+                     //app.scene.add(app.project.layers[0].model[i]);
+                     //  app.render();
+                     points = [];
+                     // var polygon = new THREE.Mesh(geometry, material);
+
+                     // var x = response.features[i].geometry.coordinates[0];
+                     // var y = response.features[i].geometry.coordinates[1];
+                     // var z = 1;
+
+                     //Okay we have the width and height, plus the bounding box
+                     //Figure out how to calculate mapcoordinates to project coordinates.
+
+                 }
+             }
+
+         }
+
+         app.octree.update();
+         app.wmsready = true;
+     })
+     .fail(function (jqXHR, textStatus, errorThrown) {
+         console.log("Failed jquery");
+     });
+
+      /*
+     Test to build the features 
+       */
+
+      //WFS contains:
+      //Crs - properties - code (EPSG)
+      //features - objects - geometry - coordinates - 0 1
+      //                              - type (point, polygon etc)
+
+
+
+
+  };
+
+
 })();
