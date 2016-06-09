@@ -99,6 +99,18 @@ var startCorrelation = function (sourceURL, tile_zip, callback) {
                 }
             }
 
+var startCorrelation = function (sourceURL, bbox, tile_zip) {
+    var url = 'http://api-geovizjs.rhcloud.com/getSourceHeaders?sourceURL=' + sourceURL;
+    $.ajax({
+        url: url,
+        type: 'GET',
+        dataType: 'json',
+        success: function (json) {
+            console.log("SUCCESS");
+            var modal = document.getElementById('modal-menu');
+            var street = document.getElementById('select_street');
+            var num = document.getElementById('select_streetnum');
+            var zip = document.getElementById('select_zip');
 
             modal.style.display = "block";
         },

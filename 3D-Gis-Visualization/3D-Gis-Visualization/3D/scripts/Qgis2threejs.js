@@ -1191,10 +1191,12 @@ limitations:
     };
 
 
-    app.getBuildings = function (plane, xmin, ymin, xmax, ymax, row, column, url, showBuildings) {
+    app.getBuildings = function (plane, xmin, ymin, xmax, ymax, row, column, url, showBuildings,callback) {
         /*
         TODO: faulty index, only works 1 tile out, gets imprecise after that
         */
+        
+
         if (row == 0) {
             row = 1;
         } else if (row < 0) {
@@ -1404,6 +1406,8 @@ limitations:
                            plane.buildings.type = "GML";
 
                            app.mergeBuilding(plane, 1);
+
+                           callback();
                            
                        }
                        count++;
@@ -2311,6 +2315,7 @@ limitations:
       var srid = "";
       
       callZipCode();
+
       for (var i = 0; i < app.project.plane[index].buildings.model.length; i++) {
           var xCor = app.project.plane[index].buildings.model[i].mapcoords[0];
           var yCor = app.project.plane[index].buildings.model[i].mapcoords[1];
@@ -2413,158 +2418,150 @@ limitations:
       }
   
   };
-  // Called from *Controls.js when canvas is clicked
-  app.canvasClicked = function (e) {
-    var canvasOffset = app._offset(app.renderer.domElement);
-    var objs = app.intersectObjects(e.clientX - canvasOffset.left, e.clientY - canvasOffset.top);
-    for (var i = 0, l = objs.length; i < l; i++) {
-        var obj = objs[i];
-        if (!obj.object.visible) continue;
 
-        // query marker
-        //app.queryMarker.position.set(obj.point.x, obj.point.y, obj.point.z);
-        //app.queryMarker.visible = true;
-        //app.queryMarker.updateMatrixWorld();
+  app.updateTile = function (obj, object, layerId, featureId) {
+      console.log(obj);
+      console.log(object);
 
-        // get layerId and featureId of clicked object
-        var object = obj.object, layerId, featureId;
+      
+     
+      if (app.highlightPlane) {
+          console.log(app.highlightPlane.userData.index + " " + object.userData.index);
+        
+
+              app.scene.remove(app.highlightPlane);
+              app.highlightPlane = null;
+
+              console.log("Closing the menu");
+              var folder = Q3D.gui.gui.__folders["Selected Feature"];
+              Q3D.gui.gui.__ul.removeChild(folder.domElement.parentNode);
+              delete Q3D.gui.gui.__folders["Selected Feature"];
+       
+          }
+
+      
+      if (object.userData.url != undefined) {
+          if (app.highlightObject) {
+              app.scene.remove(app.highlightObject);
+              app.highlightObject = null;
+
+              console.log("Closing the menu");
+              var folder = Q3D.gui.gui.__folders["Selected Feature"];
+              Q3D.gui.gui.__ul.removeChild(folder.domElement.parentNode);
+              delete Q3D.gui.gui.__folders["Selected Feature"];
+
+              //We already have a plane, so we remove the old one
+              app.closePopup();
+          }
+
+          var d = object.userData;
+
+          // app.getBuildings(d.xmin, d.ymin, d.xmax, d.ymax, d.row, d.column, d.url, "Tile", true);
+          //   }
+          var clone = object.clone();
+          clone.material = app.highlightMaterial;
+          var s = 1.0;
+
+          clone.geometry.computeBoundingBox();
+          var boundingBox = clone.geometry.boundingBox;
+
+          var position = new THREE.Vector3();
+          position.subVectors(boundingBox.max, boundingBox.min);
+          position.multiplyScalar(0.5);
+          position.add(boundingBox.min);
+          //clone.userData.layerId = null;
+          position.applyMatrix4(clone.matrixWorld);
+          clone.scale.set(clone.scale.x * s, clone.scale.y * s, clone.scale.z * s);
+          var highlightPlane = clone;
+          app.scene.add(highlightPlane);
+          app.highlightPlane = highlightPlane;
+
+          //If we dont have the menu, open it
+          if (Q3D.gui.gui.__folders["Selected Feature"] == undefined) {
+              console.log("Folder should open");
+              var folder = Q3D.gui.gui.addFolder("Selected Feature");
+
+              /*
+              Functionalities for planes (color is just a test)
+              */
+              var index = d.index;
+              var detail = app.project.plane[index].detail;
+
+              console.log(detail);
+              //No buildings are present, give the opportunity to create them
+              if (detail.buildings == 0) {
+
+                  folder.add(Q3D.gui.parameters, 'resolution').name('Add merged buildings').onChange(function () {
+                      app.getBuildings(app.project.plane[index], object.userData.xmin, object.userData.ymin, object.userData.xmax, object.userData.ymax, object.userData.row, object.userData.column, object.userData.url, false,
+                      function () {
+                          detail.buildings = 1;
+                          app.updateTile(obj, object, layerId, featureId);
+
+                      });
+                  });
 
 
-        /*
-        Nicolai
-        If we click on a plane, we check that it is not "explored"
-        If it is not explored, we update the texture and build the buildings according to the current LOD
+                  //Merged buildings are present, give the opportunity to add them to the octree, or to to level 0 again.
+              } else if (detail.buildings == 1) {
+                  folder.add(Q3D.gui.parameters, 'resolution').name('Add to octree').onChange(function () {
+                      app.project.plane[index].buildings.model.forEach(function (building) {
+                          app.octree.add(building);
+                      });
 
-        */
-        //We got a plane
+                      app.octreeNeedsUpdate = true;
+                      detail.buildings = 2;
+                      app.updateTile(obj, object, layerId, featureId);
+                  });
 
-        if (app.highlightPlane) {
-            app.scene.remove(app.highlightPlane);
-            app.highlightPlane = null;
+                  folder.add(Q3D.gui.parameters, 'resolution').name('Remove buildings').onChange(function () {
+                      delete app.project.plane[index].buildings;
+                      app.scene.remove(app.project.plane[index].mergeMesh);
+                      app.octree.remove(app.project.plane[index].mergeMesh);
+                      app.octreeNeedsUpdate = true;
+                      delete app.project.plane[index].mergeMesh;
+                      detail.buildings = 0;
+                      app.updateTile(obj, object, layerId, featureId);
+                  });
 
-            console.log("Closing the menu");
-            var folder = Q3D.gui.gui.__folders["Selected Feature"];
-            Q3D.gui.gui.__ul.removeChild(folder.domElement.parentNode);
-            delete Q3D.gui.gui.__folders["Selected Feature"];
+                  //Buildings are in the octree, give the opportunity to remove them from the octree, or remove them completely
+              } else if (detail.buildings == 2) {
+                  folder.add(Q3D.gui.parameters, 'resolution').name('Remove from octree').onChange(function () {
+                      app.project.plane[index].buildings.model.forEach(function (building) {
+                          app.octree.remove(building);
+                          app.scene.remove(building);
+                      });
+                      app.octreeNeedsUpdate = true;
+                      detail.buildings = 1;
+                      app.updateTile(obj, object, layerId, featureId);
+                  });
 
-        }
-        if (object.userData.url != undefined) {
-            if (app.highlightObject) {
-                app.scene.remove(app.highlightObject);
-                app.highlightObject = null;
+                  folder.add(Q3D.gui.parameters, 'resolution').name('Remove buildings').onChange(function () {
+                      app.project.plane[index].buildings.model.forEach(function (building) {
+                          app.octree.remove(building);
+                          app.scene.remove(building);
 
-                console.log("Closing the menu");
-                var folder = Q3D.gui.gui.__folders["Selected Feature"];
-                Q3D.gui.gui.__ul.removeChild(folder.domElement.parentNode);
-                delete Q3D.gui.gui.__folders["Selected Feature"];
-                
-                app.closePopup();
-            }
-            //We already have a plane, so we remove the old one
-          
-            var d = object.userData;
+                      });
 
-            // app.getBuildings(d.xmin, d.ymin, d.xmax, d.ymax, d.row, d.column, d.url, "Tile", true);
-            //   }
-            var clone = object.clone();
-            clone.material = app.highlightMaterial;
-            var s = 1.0;
+                      delete app.project.plane[index].buildings;
+                      app.scene.remove(app.project.plane[index].mergeMesh);
+                      app.octree.remove(app.project.plane[index].mergeMesh);
+                      app.octreeNeedsUpdate = true;
+                      delete app.project.plane[index].mergeMesh;
+                      app.octreeNeedsUpdate = true;
+                      detail.buildings = 0;
+                      app.updateTile(obj, object, layerId, featureId);
+                  });
+              }
 
-            clone.geometry.computeBoundingBox();
-            var boundingBox = clone.geometry.boundingBox;
 
-            var position = new THREE.Vector3();
-            position.subVectors(boundingBox.max, boundingBox.min);
-            position.multiplyScalar(0.5);
-            position.add(boundingBox.min);
-            //clone.userData.layerId = null;
-            position.applyMatrix4(clone.matrixWorld);
-            clone.scale.set(clone.scale.x * s, clone.scale.y * s, clone.scale.z * s);
-            var highlightPlane = clone;
-            app.scene.add(highlightPlane);
-            app.highlightPlane = highlightPlane;
-
-            //If we dont have the menu, open it
-            if (Q3D.gui.gui.__folders["Selected Feature"] == undefined) {
-                console.log("Folder should open");
-                var folder = Q3D.gui.gui.addFolder("Selected Feature");
-
-                /*
-                Functionalities for planes (color is just a test)
-                */
-                var index = d.index;
-                var detail = app.project.plane[index].detail;
-
-                console.log(detail);
-                //No buildings are present, give the opportunity to create them
-                if (detail.buildings == 0) {
-
-                    folder.add(Q3D.gui.parameters, 'resolution').name('Add merged buildings').onChange(function () {
-                        app.getBuildings(app.project.plane[index], object.userData.xmin, object.userData.ymin,object.userData.xmax,object.userData.ymax,object.userData.row,object.userData.column,object.userData.url,false);
-                        detail.buildings = 1;
-                       
-
-                        //Make the plane tile buildings queryable   
-                        });
-                        
-                    
-                //Merged buildings are present, give the opportunity to add them to the octree, or to to level 0 again.
-                } else if (detail.buildings == 1) {
-                    folder.add(Q3D.gui.parameters, 'resolution').name('Add to octree').onChange(function () {
-                        app.project.plane[index].buildings.model.forEach(function (building) {
-                            app.octree.add(building);
-                            
-                        });
-                        app.octreeNeedsUpdate = true;
-                        detail.buildings = 2;
-                    });
-
-                    folder.add(Q3D.gui.parameters, 'resolution').name('Remove buildings').onChange(function () {
-                        delete app.project.plane[index].buildings;
-                        app.scene.remove(app.project.plane[index].mergeMesh);
-                        app.octree.remove(app.project.plane[index].mergeMesh);
-                        app.octreeNeedsUpdate = true;
-                        delete app.project.plane[index].mergeMesh;
-                        detail.buildings = 0;
-                    });
-                   
-                 //Buildings are in the octree, give the opportunity to remove them from the octree, or remove them completely
-                } else if (detail.buildings == 2) {
-                    folder.add(Q3D.gui.parameters, 'resolution').name('Remove from octree').onChange(function () {
-                        app.project.plane[index].buildings.model.forEach(function (building) {
-                            app.octree.remove(building);
-                            app.scene.remove(building);
-                        });
-                        app.octreeNeedsUpdate = true;
-                        detail.buildings = 1;
-                    });
-
-                    folder.add(Q3D.gui.parameters, 'resolution').name('Remove buildings').onChange(function () {
-                        app.project.plane[index].buildings.model.forEach(function (building) {
-                            app.octree.remove(building);
-                            app.scene.remove(building);
-                            
-                        });
-
-                        delete app.project.plane[index].buildings;
-                        app.scene.remove(app.project.plane[index].mergeMesh);
-                        app.octree.remove(app.project.plane[index].mergeMesh);
-                        app.octreeNeedsUpdate = true;
-                        delete app.project.plane[index].mergeMesh;
-                        app.octreeNeedsUpdate = true;
-                        detail.buildings = 0;
-                    });
-                }
-                
-               
-                if(detail.address == false && detail.buildings > 0){
-                    folder.add(Q3D.gui.parameters, 'resolution').name('Build addresses').onChange(function () {
-                        app.getAddress(d.index, function () {
-                            detail.address = true;
-                        });
-                        detail.address = true;
-                    });
-                }
+              if (detail.address == false && detail.buildings > 0) {
+                  folder.add(Q3D.gui.parameters, 'resolution').name('Build addresses').onChange(function () {
+                      app.getAddress(d.index, function () {
+                          detail.address = true;
+                          app.updateTile(obj, object, layerId, featureId);
+                      });
+                  });
+              }
 
                 if (detail.address == true && detail.buildings > 0) { //Fail safe
                     folder.add(Q3D.gui.parameters, 'Source').name('Add Datasource').onFinishChange(function (url) {
@@ -2595,109 +2592,163 @@ limitations:
 
 
 
-                /*
-                Change resolution
-                */
-                if (detail.resolution == false) {
-                    folder.add(Q3D.gui.parameters, 'resolution').name('Enhance resolution').onChange(function () {
-                        app.updateResolution(object, 1, 512, 512);
-                        detail.resolution = true;
-                    });
-                }
+              /*
+              Change resolution
+              */
+              if (detail.resolution == false) {
+                  folder.add(Q3D.gui.parameters, 'resolution').name('Enhance resolution').onChange(function () {
+                      app.updateResolution(object, 1, 512, 512);
+                      detail.resolution = true;
+                      app.updateTile(obj, object, layerId, featureId);
+                  });
+              }
 
 
-                folder.addColor(Q3D.gui.parameters, 'color').name('Color selected').onChange(function (color) {
-                    var pColor = color.replace('#', '0x');
-                    object.material.color.setHex(pColor);
-                });
+              folder.addColor(Q3D.gui.parameters, 'color').name('Color selected').onChange(function (color) {
+                  var pColor = color.replace('#', '0x');
+                  object.material.color.setHex(pColor);
+              });
 
 
-                folder.open();
+              folder.open();
 
-            } else { //If we have the menu, close it unless we have a new highlight
-                console.log("Closing the menu");
-                var folder = Q3D.gui.gui.__folders["Selected Feature"];
-                Q3D.gui.gui.__ul.removeChild(folder.domElement.parentNode);
-                delete Q3D.gui.gui.__folders["Selected Feature"];
+          } else { //If we have the menu, close it unless we have a new highlight
+              console.log("Closing the menu");
+              var folder = Q3D.gui.gui.__folders["Selected Feature"];
+              Q3D.gui.gui.__ul.removeChild(folder.domElement.parentNode);
+              delete Q3D.gui.gui.__folders["Selected Feature"];
 
-                if (layerId != null && featureId != null) {
-                    var folder = Q3D.gui.gui.addFolder("Selected Feature");
-                    folder.open();
-                }
-            }
+              if (layerId != null && featureId != null) {
+                  var folder = Q3D.gui.gui.addFolder("Selected Feature");
+                  folder.open();
+              }
+          }
 
-        } else if (object.userData.type == "building") {
+      } else if (object.userData.type == "building") {
 
-            while (object) {
-                layerId = object.userData.layerId,
-                featureId = object.userData.featureId;
-                if (layerId !== undefined) break;
-               // object = object.parent;
-            }
- 
-            if (app.highlightObject == null) {
-                app.showQueryResult(obj.point, layerId, featureId, "building");
-                
+          while (object) {
+              layerId = object.userData.layerId,
+              featureId = object.userData.featureId;
+              if (layerId !== undefined) break;
+              // object = object.parent;
+          }
 
-             //If app.highlightobject is set:
-            } else {
-                if (featureId == app.highlightObject.userData.featureId) {
+          if (app.highlightObject == null) {
+              app.showQueryResult(obj.point, layerId, featureId, "building");
 
-                    layerId = undefined;
-                    featureId = undefined;
-                    app.closePopup();
-                } else {
 
-                    app.showQueryResult(obj.point, layerId, featureId, "building");
-                }
-                
-            }
+              //If app.highlightobject is set:
+          } else {
+              if (featureId == app.highlightObject.userData.featureId) {
 
-            app.highlightFeature((layerId === undefined) ? null : layerId,
-                               (featureId === undefined) ? null : featureId, "building");
+                  layerId = undefined;
+                  featureId = undefined;
+                  app.closePopup();
+              } else {
 
-        } else{
+                  app.showQueryResult(obj.point, layerId, featureId, "building");
+              }
+
+          }
+
+          app.highlightFeature((layerId === undefined) ? null : layerId,
+                             (featureId === undefined) ? null : featureId, "building");
+
+      } else {
+
+
+          while (object) {
+              layerId = object.userData.layerId,
+              featureId = object.userData.featureId;
+              if (layerId !== undefined) break;
+              object = object.parent;
+          }
+
+          if (app.highlightObject == null) {
+              app.showQueryResult(obj.point, layerId, featureId, "layer");
+              // highlight clicked object
+          } else {
+              if (featureId == app.highlightObject.userData.featureId) {
+                  layerId = undefined;
+                  featureId = undefined;
+                  app.closePopup();
+              } else {
+                  app.showQueryResult(obj.point, layerId, featureId, "layer");
+              }
+          }
+
+          app.highlightFeature((layerId === undefined) ? null : layerId,
+                              (featureId === undefined) ? null : featureId, "layer");
+
+
+          if (Q3D.Options.debugMode && object instanceof THREE.Mesh) {
+              var face = obj.face,
+                  geom = object.geometry;
+              if (face) {
+                  if (geom instanceof THREE.Geometry) {
+                      var v = object.geometry.vertices;
+                      console.log(v[face.a], v[face.b], v[face.c]);
+                  }
+                  else {
+                      console.log("Qgis2threejs: [DEBUG] THREE.BufferGeometry");
+                  }
+              }
+          }
+      }
+
+  };
+  // Called from *Controls.js when canvas is clicked
+  app.canvasClicked = function (e) {
+    var canvasOffset = app._offset(app.renderer.domElement);
+    var objs = app.intersectObjects(e.clientX - canvasOffset.left, e.clientY - canvasOffset.top);
+    for (var i = 0, l = objs.length; i < l; i++) {
+        var obj = objs[i];
+        if (!obj.object.visible) continue;
+
+        // query marker
+        //app.queryMarker.position.set(obj.point.x, obj.point.y, obj.point.z);
+        //app.queryMarker.visible = true;
+        //app.queryMarker.updateMatrixWorld();
+
+        // get layerId and featureId of clicked object
+        var object = obj.object, layerId, featureId;
+
+        var layerId = object.userData.layerId;
+        var featureId = object.userData.featureId;
+        /*
+        Nicolai
+        If we click on a plane, we check that it is not "explored"
+        If it is not explored, we update the texture and build the buildings according to the current LOD
+
+        */
+        //We got a plane
+        if (app.highlightPlane) {
+            if (app.highlightPlane.userData.index == object.userData.index) {
 
        
-        while (object) {
-            layerId = object.userData.layerId,
-            featureId = object.userData.featureId;
-            if (layerId !== undefined) break;
-            object = object.parent;
-        }
+            console.log(app.highlightPlane.userData.index + " " + object.userData.index);
 
-        if (app.highlightObject == null) {
-            app.showQueryResult(obj.point, layerId, featureId, "layer");
-            // highlight clicked object
-        } else {
-            if (featureId == app.highlightObject.userData.featureId) {
-                layerId = undefined;
-                featureId = undefined;
-                app.closePopup();
-            } else {
-                app.showQueryResult(obj.point, layerId, featureId,"layer");
+
+            app.scene.remove(app.highlightPlane);
+            app.highlightPlane = null;
+
+            console.log("Closing the menu");
+            var folder = Q3D.gui.gui.__folders["Selected Feature"];
+            Q3D.gui.gui.__ul.removeChild(folder.domElement.parentNode);
+            delete Q3D.gui.gui.__folders["Selected Feature"];
+            return;
             }
+
+            
+
         }
 
 
+
+        app.updateTile(obj, object, layerId, featureId);
+    
      
-        app.highlightFeature((layerId === undefined) ? null : layerId,
-                           (featureId === undefined) ? null : featureId,"layer");
-        }
-
-      if (Q3D.Options.debugMode && object instanceof THREE.Mesh) {
-        var face = obj.face,
-            geom = object.geometry;
-        if (face) {
-          if (geom instanceof THREE.Geometry) {
-            var v = object.geometry.vertices;
-            console.log(v[face.a], v[face.b], v[face.c]);
-          }
-          else {
-            console.log("Qgis2threejs: [DEBUG] THREE.BufferGeometry");
-          }
-        }
-      }
+       
 
       return;
     }
