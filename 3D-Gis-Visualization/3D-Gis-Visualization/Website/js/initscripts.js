@@ -26,8 +26,6 @@
 }
 var initModal = function () {
 
-
-
     // Get the modal
     var modal = document.getElementById('modal-menu');
 
@@ -69,7 +67,7 @@ var startCorrelation = function (sourceURL, tile_zip, callback) {
                 console.log("filled menus")
                 fillSelectMenus(json);
             }
-           
+
 
             //Init select menus for address construction
             var modal = document.getElementById('modal-menu');
@@ -98,25 +96,7 @@ var startCorrelation = function (sourceURL, tile_zip, callback) {
                     startBuild(block, callback);
                 }
             }
-
-var startCorrelation = function (sourceURL, bbox, tile_zip) {
-    var url = 'http://api-geovizjs.rhcloud.com/getSourceHeaders?sourceURL=' + sourceURL;
-    $.ajax({
-        url: url,
-        type: 'GET',
-        dataType: 'json',
-        success: function (json) {
-            console.log("SUCCESS");
-            var modal = document.getElementById('modal-menu');
-            var street = document.getElementById('select_street');
-            var num = document.getElementById('select_streetnum');
-            var zip = document.getElementById('select_zip');
-
             modal.style.display = "block";
-        },
-        error: function (err) {
-            console.log('ERROR');
-            console.log(err);
         }
     });
 }
@@ -171,4 +151,4 @@ var fillSelectMenus = function (json) {
         num.options.add(new Option(json[key], json[key]));
         zip.options.add(new Option(json[key], json[key]));
     }
-}
+};
