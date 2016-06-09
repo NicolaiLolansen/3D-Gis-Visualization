@@ -2568,8 +2568,7 @@ limitations:
 
                 if (detail.address == true && detail.buildings > 0) { //Fail safe
                     folder.add(Q3D.gui.parameters, 'Source').name('Add Datasource').onFinishChange(function (url) {
-                        var bbox = [object.userData.xmin, object.userData.ymin,object.userData.xmax,object.userData.ymax];
-                        startCorrelation(url, bbox, app.project.plane[index].mesh.userData.zip, function (json) {
+                        startCorrelation(url, app.project.plane[index].mesh.userData.zip, function (json) {
                             console.log(json);
                             var maxmin = json.pop();
                             alert("Callback finished");

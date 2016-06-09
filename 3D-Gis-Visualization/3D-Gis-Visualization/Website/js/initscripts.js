@@ -54,29 +54,25 @@ var initModal = function () {
     //----------------------------------------------------------------------------------------------
    
 }
- 
-var startCorrelation = function (sourceURL, bbox, tile_zip, callback) {
+var first = true;
+var startCorrelation = function (sourceURL, tile_zip, callback) {
     var url = 'http://api-geovizjs.rhcloud.com/getSourceHeaders?sourceURL=' + sourceURL;
-    console.log(tile_zip);
+    clearSelectMenus();
     $.ajax({
         url: url,
         type: 'GET',
         dataType: 'json',
         success: function (json) {
             //Clear options from previous data loads
-            clearSelectMenus();
+            if (first) {
+                first = false;
+                console.log("filled menus")
+                fillSelectMenus(json);
+            }
+           
 
             //Init select menus for address construction
             var modal = document.getElementById('modal-menu');
-            var street = document.getElementById('select_street');
-            var num = document.getElementById('select_streetnum');
-            var zip = document.getElementById('select_zip');
-
-            for (var key in json) {
-                street.options.add(new Option(json[key], json[key]));
-                num.options.add(new Option(json[key], json[key]));
-                zip.options.add(new Option(json[key], json[key]));
-            }
 
             //Init button for starting construction
             var buildbtn = document.getElementById('build');
@@ -97,8 +93,7 @@ var startCorrelation = function (sourceURL, bbox, tile_zip, callback) {
                         num: num_sel,        //document.getElementById('select_streetnum').value,
                         zip: zip_sel,         //document.getElementById('select_zip').value
                         sourceURL: sourceURL,
-                        tile_zip: tile_zip,
-                        bbox: bbox
+                        tile_zip: tile_zip
                     }
                     startBuild(block, callback);
                 }
@@ -139,20 +134,29 @@ var startBuild = function (param_block, callback) {
     });
 }
 
-var clearSelectMenus = function (){
+var clearSelectMenus = function () {
     var street = document.getElementById('select_street');
     var num = document.getElementById('select_streetnum');
     var zip = document.getElementById('select_zip');
 
-    var length = street.options.length;
-    for (i = 0; i < length; i++) {
-        street.options[i] = null;
-        num.options[i]    = null;
-        zip.options[i]    = null;
+    var length = street.length;
+    for (var i = 1; i < length; i++) {
+        console.log("Removed: " + i);
+        street.remove[i];
+        num.remove[i];
+        zip.remove[i];
     }
 }
 
-dataToBuilding = function (json) {
-    var maxminlist = json.pop();
+var fillSelectMenus = function (json) {
+    var street = document.getElementById('select_street');
+    var num = document.getElementById('select_streetnum');
+    var zip = document.getElementById('select_zip');
 
+    for (var key in json) {
+        console.log("Filled: " + key);
+        street.options.add(new Option(json[key], json[key]));
+        num.options.add(new Option(json[key], json[key]));
+        zip.options.add(new Option(json[key], json[key]));
+    }
 }
