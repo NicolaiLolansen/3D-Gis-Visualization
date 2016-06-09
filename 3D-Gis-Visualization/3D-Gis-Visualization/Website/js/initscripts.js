@@ -53,7 +53,9 @@ var initModal = function () {
 
         if (key == 77) {
             startViz();
-        } 
+        } else if (key == 220) {
+            document.getElementById('loader').style.display = 'none';
+        }
     }
 
     //----------------------------------------------------------------------------------------------
