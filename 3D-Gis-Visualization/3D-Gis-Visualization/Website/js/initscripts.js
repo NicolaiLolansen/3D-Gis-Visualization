@@ -52,7 +52,7 @@ var initModal = function () {
         var key = e.keyCode ? e.keyCode : e.which;
 
         if (key == 77) {
-            openVizMenu();
+            startViz();
         } 
     }
 
@@ -108,10 +108,10 @@ var startCorrelation = function (sourceURL, tile_zip, callback) {
     });
 }
 var startBuild = function (param_block, callback) {
-    var url = 'http://localhost:8085/parseCSV'; //'http://api-geovizjs.rhcloud.com/parseCSV';
+    var url = 'http://api-geovizjs.rhcloud.com/parseCSV';
     document.getElementById("build").innerHTML = "Constructing Addresses";
     document.getElementById("loader").style.display = "block";
-
+    console.log(document.getElementById("loader"));
     $.ajax({
         url: url,
         type: 'GET',
