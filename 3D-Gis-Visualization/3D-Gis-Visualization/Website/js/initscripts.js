@@ -96,8 +96,6 @@ var startCorrelation = function (sourceURL, tile_zip, callback) {
                     startBuild(block, callback);
                 }
             }
-
-
             modal.style.display = "block";
         },
         error: function (err) {
@@ -156,4 +154,4 @@ var fillSelectMenus = function (json) {
         num.options.add(new Option(json[key], json[key]));
         zip.options.add(new Option(json[key], json[key]));
     }
-}
+};
