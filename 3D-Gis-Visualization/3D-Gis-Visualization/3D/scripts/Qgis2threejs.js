@@ -1225,14 +1225,14 @@ limitations:
         /*
         TODO: faulty index, only works 1 tile out, gets imprecise after that
         */
-        alert("Row : " +  row + " " + "Column: " + column);
+        //alert("Row : " +  row + " " + "Column: " + column);
 
          row = row * 2 + 1;
          column = column * 2 + 1;
 
 
 
-        alert("Row : " + row + " " + "Column: " + column);
+        //alert("Row : " + row + " " + "Column: " + column);
         var bbox = "&Bbox=" + xmin + "," + ymin + "," + xmax + "," + ymax;
         url = url + bbox;
         app.wmsready = false;
@@ -2558,10 +2558,10 @@ limitations:
 
                 if (detail.address == true && detail.buildings > 0) { //Fail safe
                     folder.add(Q3D.gui.parameters, 'Source').name('Add Datasource').onFinishChange(function (url) {
-                        startCorrelation(url, app.project.plane[index].mesh.userData.zip, function (json) {
-                            console.log(json);
+                        startCorrelation(url, app.project.plane[index].buildings.zip, function (json) {
+
                             var maxmin = json.pop();
-                            alert("Callback finished");
+                            app.project.plane[index].buildings.maxmin = maxmin;
 
                             //For every building in the tile, if address match, add a new group of attributes uData
                             //
@@ -2572,7 +2572,6 @@ limitations:
                                         console.log("Matched data to a building!");
                                         //match
                                         app.project.plane[index].buildings.model[i].userData.uData = json;
-                                        app.project.plane[index].mesh.userData.maxmin = maxmin;
 
                                         var material = new THREE.MeshLambertMaterial({ color: 0x999900 });
                                         app.project.plane[index].buildings.model[i].material = material;
@@ -2597,15 +2596,35 @@ limitations:
                                     console.log('VIS DIS: ' + colour_data);
                                     console.log('AND DIS: ' + height_data);
 
+                                    //Spectrum image for turning normalized data to a color
+                                    var img = document.getElementById('spectrum');
+                                    var canvas = document.createElement('canvas');
+                                    canvas.width = img.width;
+                                    canvas.height = img.height;
+                                    canvas.getContext('2d').drawImage(img, 0, 0, img.width, img.height);
+
+
+                                    var pixelData = canvas.getContext('2d').getImageData(5, 5, 1, 1).data;
+
+                                    var maxminlist = app.project.plane[index].mesh.userData.maxmin;
+
                                     app.project.plane[index].buildings.model.forEach(function (model, i) {
                                         if (model.userData.uData != undefined) {
                                             //Calculate normalized value [0; 1]
 
                                             if (doColour) {
+                                                var x = model.userData.uData[colour_data];
+                                                var x_max = maxminlist[colour_data].max;
+                                                var x_min = maxminlist[colour_data].min;
+                                                if (x < x_min) {
+                                                    console.log('x: ' + x + ', x_min: ' + x_min + ', x_max: '+ x_max);
+                                                }
+                                                var x_norm = (x - x_min) / (x_max - x_min);
+
                                                 if (colour_method == 'building'){
                                                     // Translate normalized value to RGB
 
-                                                    model.material.color(/* RGB */)
+                                                    model.material.color = 0xffffff;
                                                 } else if (colour_method == 'block') {
 
                                                 }

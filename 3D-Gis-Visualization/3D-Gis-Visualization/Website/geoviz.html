@@ -205,7 +205,7 @@ $.getJSON("nordhavn.json", function (json) {
     app.loadProject(json);
     app.start();
     app.addEventListeners();
-
+    document.getElementById('loader').style.display = 'none';
     // this will show the info it in firebug console
 });
 
@@ -214,19 +214,7 @@ $.getJSON("nordhavn.json", function (json) {
 <script src="../3D/scripts/dat-gui_panel.js"></script>
 
 
-<canvas id="spectrum_canvas"></canvas>
-<script>
-   /* //<img src="spectrum.png" id="spectrum"/>
-    var myImg = new Image();
-    myImg.src = 'spectrum.png';
-    myImg.onload = function () {
-        app.spectrum = document.getElementById('spectrum_canvas');
-        canvas.width = myImg.width;
-        canvas.height = myImg.height;
-        var context = canvas.getContext('2d');
-        context.drawImage(myImg, 0, 0);
-    } */  
-</script>
+<img src="resources/spectrum.png" id="spectrum">
 
 <script>
 // initialize dat-gui panel

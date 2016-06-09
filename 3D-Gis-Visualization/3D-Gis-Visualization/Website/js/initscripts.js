@@ -96,7 +96,7 @@ var startCorrelation = function (sourceURL, tile_zip, callback) {
                 }
             }
 
-
+            document.getElementById('modal-viz').style.display = 'none';
             //Init select menus for address construction
             var modal = document.getElementById('modal-menu');
             modal.style.display = "block";
@@ -118,7 +118,6 @@ var startBuild = function (param_block, callback) {
         data: param_block,
         dataType: 'json',
         success: function (csv_as_json) {
-            console.log(csv_as_json);
             document.getElementById("build").innerHTML = "Construction Successful";
             document.getElementById("loader").style.display = "none";
             callback(csv_as_json);
@@ -164,6 +163,8 @@ var fillSelectMenus = function (json) {
 };
 
 var startViz = function (callback) {
+    // avoid having two open modal menus at once
+    document.getElementById('modal-menu').style.display = 'none';
 
     // Add button to begin visualization (created here to gain scope to callback)
     var vizButton = document.getElementById('start_viz');
@@ -187,6 +188,7 @@ var startViz = function (callback) {
             callback(colour_selected, height_selected, function () {
                 vizButton.innerHTML = 'Visualization Complete';
                 loader.style.display = 'none';
+                console.log('Finished Viz');
             });
         }
     }
