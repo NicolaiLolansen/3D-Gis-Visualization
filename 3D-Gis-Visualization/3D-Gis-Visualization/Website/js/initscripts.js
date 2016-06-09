@@ -15,6 +15,8 @@
         url: url,
         type: 'GET',
         success: function (json_scene) {
+            var loader = document.getElementById('loader');
+            loader.style.display = 'none';
             app.loadProject(JSON.parse(json_scene));
             app.start();
             app.addEventListeners();
@@ -26,33 +28,38 @@
 }
 
 var initModal = function () {
-    // Get the modal
-    var modal = document.getElementById('modal-menu');
+    // Get the modals
+    var modal1 = document.getElementById('modal-menu');
+    var modal2 = document.getElementById('modal-viz')
 
-    // Get the <span> element that closes the modal
-    var span = document.getElementsByClassName("close")[0];
+    // Get the <span> element that closes the modals
+    var spans = document.getElementsByClassName('close');
+
+    // Get the loading circle
+    var loader = document.getElementById('loader');
 
     // When the user clicks on <span> (x), close the modal
-    span.onclick = function () {
-        modal.style.display = "none";
+    spans[0].onclick = function () {
+        clearSelectMenus();
+        modal1.style.display = 'none';
     }
-
-    //Hide the modal loader
-    document.getElementById("loader").style.display = "none";
+    spans[1].onclick = function () {
+        modal2.style.display = 'none';
+    }
 
     //--------------------------------------- TESTING FUNCTIONS ------------------------------------
     window.onkeyup = function (e) {
         var key = e.keyCode ? e.keyCode : e.which;
 
         if (key == 77) {
-            startCorrelation('https://dl.dropboxusercontent.com/s/88vgr6io5q63cjg/energimaerke.csv');
+            openVizMenu();
         } 
     }
 
     //----------------------------------------------------------------------------------------------
    
 }
-var first = true;
+
 var startCorrelation = function (sourceURL, tile_zip, callback) {
     var url = 'http://api-geovizjs.rhcloud.com/getSourceHeaders?sourceURL=' + sourceURL;
     clearSelectMenus();
@@ -62,15 +69,7 @@ var startCorrelation = function (sourceURL, tile_zip, callback) {
         dataType: 'json',
         success: function (json) {
             //Clear options from previous data loads
-            if (first) {
-                first = false;
-                console.log("filled menus")
-                fillSelectMenus(json);
-            }
-           
-
-            //Init select menus for address construction
-            var modal = document.getElementById('modal-menu');
+            fillSelectMenus(json);
 
             //Init button for starting construction
             var buildbtn = document.getElementById('build');
@@ -96,6 +95,10 @@ var startCorrelation = function (sourceURL, tile_zip, callback) {
                     startBuild(block, callback);
                 }
             }
+
+
+            //Init select menus for address construction
+            var modal = document.getElementById('modal-menu');
             modal.style.display = "block";
         },
         error: function (err) {
@@ -123,7 +126,7 @@ var startBuild = function (param_block, callback) {
         error: function (err) {
             document.getElementById("build").innerHTML = "Construction Failed. Try Again?";
             document.getElementById("loader").style.display = "none";
-            console.log('ERROR: ' + err);
+            console.log(err);
 
         }
     });
@@ -134,24 +137,59 @@ var clearSelectMenus = function () {
     var num = document.getElementById('select_streetnum');
     var zip = document.getElementById('select_zip');
 
-    var length = street.length;
-    for (var i = 1; i < length; i++) {
-        console.log("Removed: " + i);
-        street.remove[i];
-        num.remove[i];
-        zip.remove[i];
-    }
+    street.options.length = 1;
+    num.options.length = 1;
+    zip.options.length = 1;
 }
 
 var fillSelectMenus = function (json) {
+    console.log(json);
+    //Address Builder Modal
     var street = document.getElementById('select_street');
     var num = document.getElementById('select_streetnum');
     var zip = document.getElementById('select_zip');
 
+    //Data Visualizer Modal
+    var colour = document.getElementById('colour_data');
+    var height = document.getElementById('height_data');
+
     for (var key in json) {
-        console.log("Filled: " + key);
         street.options.add(new Option(json[key], json[key]));
         num.options.add(new Option(json[key], json[key]));
         zip.options.add(new Option(json[key], json[key]));
+
+        colour.options.add(new Option(json[key], json[key]));
+        height.options.add(new Option(json[key], json[key]));
     }
 };
+
+var startViz = function (callback) {
+
+    // Add button to begin visualization (created here to gain scope to callback)
+    var vizButton = document.getElementById('start_viz');
+    var loader = document.getElementById('loader');
+
+    vizButton.onclick = function () {
+        // Inform user that loading has begun
+        vizButton.innerHTML = 'Loading Visualization';
+        loader.style.display = 'block';
+
+
+        var colour_data = document.getElementById('colour_data');
+        var height_data = document.getElementById('height_data');
+
+        var colour_selected = colour_data.options[colour_data.selectedIndex].value;
+        var height_selected = height_data.options[height_data.selectedIndex].value;
+
+        if (colour_selected == 'default' && height_selected == 'default') {
+            alert('No data source selected');
+        } else {
+            callback(colour_selected, height_selected, function () {
+                vizButton.innerHTML = 'Visualization Complete';
+                loader.style.display = 'none';
+            });
+        }
+    }
+    var modal = document.getElementById('modal-viz');
+    modal.style.display = 'block';
+}

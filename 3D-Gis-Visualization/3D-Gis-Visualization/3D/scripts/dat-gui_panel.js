@@ -34,8 +34,7 @@ Q3D.gui = {
   dataLoaded: false,
     saveProject: 'Type Project Name Here',
     enabled: true,
-    resolution: function () { },
-
+    resolution: function () { }
   },
   
   // initialize gui

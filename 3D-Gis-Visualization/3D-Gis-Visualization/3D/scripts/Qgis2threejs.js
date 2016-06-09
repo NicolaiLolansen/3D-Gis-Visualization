@@ -2577,6 +2577,52 @@ limitations:
                                     }
                                 });
                             });
+                            folder.add(Q3D.gui.parameters, 'resolution').name('Visualize Data').onChange(function () {
+                                startViz(function (colour_data, height_data, vizComplete) {
+
+                                    var doColour = (colour_data != 'default');
+                                    var doHeight = (height_data != 'default');
+                                    var colour_method = 'none';
+                                    var height_method = 'none';
+
+                                    if (doColour) {
+                                        colour_method = (document.getElementById('c_building').checked) ? 'building' : 'block';
+                                    }
+                                    if (doHeight) {
+                                        height_method = (document.getElementById('h_building').checked) ? 'building' : 'block';
+                                    }
+
+                                    console.log('VIS DIS: ' + colour_data);
+                                    console.log('AND DIS: ' + height_data);
+
+                                    app.project.plane[index].buildings.model.forEach(function (model, i) {
+                                        if (model.userData.uData != undefined) {
+                                            //Calculate normalized value [0; 1]
+
+                                            if (doColour) {
+                                                if (colour_method == 'building'){
+                                                    // Translate normalized value to RGB
+
+                                                    model.material.color(/* RGB */)
+                                                } else if (colour_method == 'block') {
+
+                                                }
+                                            }
+                                            if (doHeight) {
+                                                if (height_method == 'building'){
+                                                    // Translate normalized value to height
+                                                    // Height-min: 2, height-max: 4
+                                                    model.scale.set(model.scale.x, model.scale.y, model.scale.z);
+                                                } else if (height_method == 'block') {
+
+                                                }
+                                            }
+                                           
+                                        }
+                                    });
+                                    vizComplete();
+                                })
+                            });
                         });
                     });
                 }

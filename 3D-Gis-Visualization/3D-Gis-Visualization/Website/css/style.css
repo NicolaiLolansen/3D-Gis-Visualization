@@ -217,3 +217,89 @@ table {
     text-align: center;
 }
 
+
+
+.radio-buttons {
+  font-family: sans-serif;
+	font-weight: normal;
+	margin: 20px;
+	color: #FFFFFF;
+}
+
+label {
+  width: 200px;
+  border-radius: 3px;
+  border: 1px solid #5cb85c
+}
+
+/* hide input */
+input.radio:empty {
+	margin-left: -999px;
+}
+
+/* style label */
+input.radio:empty ~ label {
+	position: relative;
+	float: left;
+	line-height: 2.5em;
+	text-indent: 3.25em;
+	cursor: pointer;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+
+input.radio:empty ~ label:before {
+	position: absolute;
+	display: block;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	content: '';
+	width: 2.5em;
+	background: rgba(255, 255, 255, 0.8);
+	border-radius: 3px 0 0 3px;
+}
+
+/* toggle hover */
+input.radio:hover:not(:checked) ~ label:before {
+	content:'\2714';
+	text-indent: .9em;
+	color: #000000;
+}
+
+input.radio:hover:not(:checked) ~ label {
+	color: #000000;
+    border-color: #000000;
+}
+
+/* toggle on */
+input.radio:checked ~ label:before {
+	content:'\2714';
+	text-indent: .9em;
+	color: #000000;
+	background-color: #FFFFFF;
+}
+
+input.radio:checked ~ label {
+	color: #000000;
+    border-color: #000000;
+}
+
+/* radio focus */
+input.radio:focus ~ label:before {
+	box-shadow: 0 0 0 3px #999;
+}
+
+input[type="radio"] + label span {
+     background-color:#4DCB6D;
+}
+
+
+.radio-buttons:checked {
+  -webkit-transition:background-color 0.4s linear;
+  -o-transition:background-color 0.4s linear;
+  -moz-transition:background-color 0.4s linear;
+  transition:background-color 0.4s linear;
+}
