@@ -2309,12 +2309,12 @@ limitations:
   };
 
 
-  app.getAddress = function (index,callback) {
+  app.getAddress = function (index, callback) {
       var host = "http://dawa.aws.dk";
       var parametre = {};
       var srid = "";
-      
-      callZipCode();
+      var zipCodes = [];
+
 
       for (var i = 0; i < app.project.plane[index].buildings.model.length; i++) {
           var xCor = app.project.plane[index].buildings.model[i].mapcoords[0];
@@ -2324,7 +2324,7 @@ limitations:
           callAjax(i);
       }
 
-      function callAjax (i) {
+      function callAjax(i) {
 
           $.ajax({
               url: "http://dawa.aws.dk/adgangsadresser/reverse?x=" + xCor + "&y=" + yCor + "&srid=25832",
@@ -2336,58 +2336,48 @@ limitations:
               }
               else {
                   var address = response.vejstykke.adresseringsnavn + " " + response.husnr + ", " + response.postnummer.nr;
+                  if (app.project.plane[index].buildings.a[i] != undefined) {
+
+              
                   app.project.plane[index].buildings.a[i]["Adresse"] = address;
                   if (index == 1) { console.log(response) };
 
 
-                  
+
                   if (response.adgangspunkt.nøjagtighed == "A") {
                       app.project.plane[index].buildings.model[i].material.color.setHex(0x00ff00);
                       app.project.plane[index].buildings.a[i]["Adresse Nøjagtighed"] = "A";
                   } else if (response.adgangspunkt.nøjagtighed == "B") {
-                      app.project.plane[index].buildings.model[i].color.setHex(0xffff00);
+                      app.project.plane[index].buildings.model[i].material.color.setHex(0xffff00);
                       app.project.plane[index].buildings.a[i]["Adresse Nøjagtighed"] = "B";
                   } else if (response.adgangspunkt.nøjagtighed == "C") {
-                      app.project.plane[index].buildings.model[i].color.setHex(0xff0000);
+                      app.project.plane[index].buildings.model[i].material.color.setHex(0xff0000);
                       app.project.plane[index].buildings.a[i]["Adresse Nøjagtighed"] = "C";
                   }
-                  
+                  }
               }
-             
+
+              if ($.inArray(response.postnummer.nr, zipCodes) == -1) {
+                  zipCodes.push(response.postnummer.nr);
+              }
+              console.log(app.project.plane[index].buildings.model.length + " " + i);
               if (i == app.project.plane[index].buildings.model.length - 1) {
                   callback();
+                  console.log(zipCodes);
+                  app.project.plane[index].mesh.userData.zip = zipCodes;
               }
           })
           .fail(function (jqXHR, textStatus, errorThrown) {
               console.log("Failed jquery");
+              if (i == app.project.plane[index].buildings.model.length - 1) {
+                  callback();
+                  console.log(zipCodes);
+                  app.project.plane[index].mesh.userData.zip = zipCodes;
+              }
           });
       }
+  }
 
-
-      function callZipCode () {
-          xCor = app.project.plane[index].mesh.userData.xmin + (app.project.plane[index].mesh.userData.xmax - app.project.plane[index].mesh.userData.xmin) / 2;
-          yCor = app.project.plane[index].mesh.userData.ymin + (app.project.plane[index].mesh.userData.ymax - app.project.plane[index].mesh.userData.ymin) / 2;
-          $.ajax({
-              url: "http://dawa.aws.dk/adgangsadresser/reverse?x=" + xCor + "&y=" + yCor + "&srid=25832",
-              dataType: "json",
-          })
-          .success(function (response) {
-              if (response.length === 0) {
-                  console.log("Bad stuff");
-              }
-              else {
-                  var zip = response.postnummer.nr;
-                  app.project.plane[index].mesh.userData.zip = zip;
-              }
-
-            
-          })
-          .fail(function (jqXHR, textStatus, errorThrown) {
-              console.log("Failed jquery");
-          });
-      }
-
-  };
   app.searchBuilding = function (value) {
       console.log("Search buildign is called");
       var layertype = 0; //For polygons
@@ -2557,9 +2547,10 @@ limitations:
               if (detail.address == false && detail.buildings > 0) {
                   folder.add(Q3D.gui.parameters, 'resolution').name('Build addresses').onChange(function () {
                       app.getAddress(d.index, function () {
-                          detail.address = true;
+                          
                           app.updateTile(obj, object, layerId, featureId);
                       });
+                      detail.address = true;
                   });
               }
 
@@ -2579,10 +2570,10 @@ limitations:
                                     if (a["Adresse"] == json.addr) {
                                         console.log("Matched data to a building!");
                                         //match
-                                        app.project.plane[index].buildings.uData = json;
+                                        app.project.plane[index].buildings.model[i].userData.uData = json;
                                         app.project.plane[index].mesh.userData.maxmin = maxmin;
 
-                                        var material = THREE.MeshLambertMaterial({ color: 0x0000ff });
+                                        var material = new THREE.MeshLambertMaterial({ color: 0x999900 });
                                         app.project.plane[index].buildings.model[i].material = material;
                                     }
                                 });
