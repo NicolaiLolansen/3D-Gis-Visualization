@@ -282,7 +282,9 @@ limitations:
         project.plane.forEach(function (plane, i) {
          
             planeData.planes[i] = { detail: {}, buildings: {} };
-           
+            if (plane.detail.address == true) {
+                console.log("address was true");
+            }
             if (plane.buildings !== undefined) {
                 //If the plane has buildings, we have to save it into planeData
                 plane.buildings.model.forEach(function (model, i) {
@@ -305,12 +307,15 @@ limitations:
 
                 //Only save the meshes if details specify it
                 //We also save when addresses has been built, because it takes a !long! time during run
-                if (plane.detail.address == true || plane.detail.buildings == 2) {
-                planeData.planes[i].buildings.a = a;
-                planeData.planes[i].buildings.models = models;
-                planeData.planes[i].buildings.name = plane.buildings.name;
-                planeData.planes[i].buildings.type = plane.buildings.type;
-                planeData.planes[i].buildings.url = plane.buildings.url;
+               
+
+                if (plane.detail.address == true) {
+    
+                    planeData.planes[i].buildings.a = a;
+                    planeData.planes[i].buildings.models = models;
+                    planeData.planes[i].buildings.name = plane.buildings.name;
+                    planeData.planes[i].buildings.type = plane.buildings.type;
+                    planeData.planes[i].buildings.url = plane.buildings.url;
 
                 //Actually we dont need to save the mergedMesh, as it is transitive
                 //planeData.planes[i].buildings.mergeMesh = JSON.stringify(model.toJSON());     
@@ -391,18 +396,18 @@ limitations:
 
         app.octree = new THREE.Octree({
             // uncomment below to see the octree (may kill the fps)
-            //scene: app.scene,
+            // scene: app.scene,
             // when undeferred = true, objects are inserted immediately
             // instead of being deferred until next octree.update() call
             // this may decrease performance as it forces a matrix update
-            undeferred: false,
+            undeferred: true,
             // set the max depth of tree
             depthMax: 8,
             // max number of objects before nodes split or merge
-            objectsThreshold: 256,
+            objectsThreshold: 64,
             // percent between 0 and 1 that nodes will overlap each other
             // helps insert objects that lie over more than one node
-            overlapPct: 0.10
+            overlapPct: 0.5
         });
 
         // restore view (camera position and its target) from URL parameters
@@ -420,28 +425,6 @@ limitations:
             }
         }
 
-        // load models (Experimental at this point)
-        /*    if (project.models.length > 0) {
-              project.models.forEach(function (model, index) {
-                if (model.type == "COLLADA") {
-                  app.modelBuilders[index] = new Q3D.ModelBuilder.COLLADA(app.project, model);
-                }
-                else if (Q3D.Options.jsonLoader == "ObjectLoader") {
-                  app.modelBuilders[index] = new Q3D.ModelBuilder.JSONObject(app.project, model);
-                }
-                else {
-                  app.modelBuilders[index] = new Q3D.ModelBuilder.JSON(app.project, model);
-                }
-              });
-            } */
-
-        // build models
-
-        /* project.layers.forEach(function (layer) {
-           layer.initMaterials();
-           layer.build(app.scene);
-         });
-         */
         // wireframe mode setting
         if ("wireframe" in app.urlParams) app.setWireframeMode(true);
 
@@ -464,13 +447,60 @@ limitations:
 
         //Generate the plane
         app.calculatebbox(1);
-        
-        app.extendMap(2,projectJSON.planeData);
+        console.log(projectJSON.planeData);
+        console.log(projectJSON.planeData);
 
+        app.extendMap(2,projectJSON.planeData);
+        console.log(app.project.plane);
+        console.log(app.project.plane);
 
         var loader = new THREE.ObjectLoader();
         
+        projectJSON.planeData.planes.forEach(function (plane, i) {
+            if (plane.detail.address == true) {
+                console.log("True");
+                var models = [];
+                plane.buildings.models.forEach(function (model) {
+                    var loadedGeometry = JSON.parse(model);
+                    var loadedMesh = loader.parse(loadedGeometry);
+                    models.push(loadedMesh);
 
+                    var position = { x: 0, y: -2 };
+                    var target = { x: 0, y: 0 };
+                    var tween = new TWEEN.Tween(position).to(target, 2000);
+
+                    tween.onUpdate(function () {
+                        //loadedMesh.position.x = position.x;
+                        loadedMesh.position.z = position.y;
+                    });
+                    tween.start();
+                    app.octree.add(loadedMesh);
+                });
+
+                for (var x = 0; x < models.length; x++) {
+                    models[x].userData.layerId = i;
+                    models[x].userData.featureId = x;
+                    models[x].userData.type = "building";
+                }
+                plane.buildings.model = models;
+                console.log(plane);
+                if (app.project.plane[i] != undefined) {
+                    var mesh = app.project.plane[i].mesh;
+                    app.project.plane[i] = plane;
+                    app.project.plane[i].mesh = mesh;
+                } else {
+                    app.project.plane[i] = plane;
+                }
+              
+                
+
+                console.log(app.project.plane[i]);
+                app.mergeBuilding(plane, 1);
+            }
+        });
+
+        console.log(app.project.plane);
+        console.log(app.project.plane);
         project.layers.forEach(function (layer,i) {
             var models = [];
             layer.model.forEach(function (model) {
@@ -643,7 +673,10 @@ limitations:
         if (app.octreeNeedsUpdate) {
             //alert("Updating the octree");
             app.octree.update();
-            app.octreeObjects = app.octree.search(app.raycaster.ray.origin, 0, true, app.vector);
+            app.octreeObjects = app.octree.search(app.raycaster.ray.origin, 20, true, app.vector);
+            app.octree.update();
+            //app.octreeObjects = app.octree.search(app.camera.position,20);
+            
         }
         //If the camera lookat has changed, search the octree
         var vector = new THREE.Vector3(0, 0, -1);
@@ -663,7 +696,6 @@ limitations:
             app.octreeObjects = app.octree.search(app.raycaster.ray.origin, 100, true, app.vector);
 
             if (app.octreeObjects.length > 0) {
-                    
                     //remove layers before update
                     app.project.layers.forEach(function (layer) {
                         layer.model.forEach(function (child) {
@@ -697,12 +729,10 @@ limitations:
         
         TWEEN.update();
         app.render();
-
         app.stats.end();
 
         if (app.running) requestAnimationFrame(app.animate);
         if (app.controls) app.controls.update();
-    
     };
 
     app.render = function () {
@@ -763,7 +793,7 @@ limitations:
         var vector = new THREE.Vector3(x, y, 1);
         vector.unproject(app.camera);
         var ray = new THREE.Raycaster(app.camera.position, vector.sub(app.camera.position).normalize());
-        //  console.log(app.queryableObjects());
+        console.log(app.queryableObjects());
         return ray.intersectObjects(app.queryableObjects());
     };
 
@@ -1195,27 +1225,14 @@ limitations:
         /*
         TODO: faulty index, only works 1 tile out, gets imprecise after that
         */
-        
+        alert("Row : " +  row + " " + "Column: " + column);
 
-        if (row == 0) {
-            row = 1;
-        } else if (row < 0) {
-            row = row;
-        } else {
-            row++;
-            row++;
-        }
+         row = row * 2 + 1;
+         column = column * 2 + 1;
 
-        if (column == 0) {
-            column = 1;
-        } else if (column < 0) {
-            column = column;
-          
-        } else {
-            column++;
-            column++;
-        }
-      
+
+
+        alert("Row : " + row + " " + "Column: " + column);
         var bbox = "&Bbox=" + xmin + "," + ymin + "," + xmax + "," + ymax;
         url = url + bbox;
         app.wmsready = false;
@@ -1582,10 +1599,6 @@ limitations:
     */
     app.mergeLayer = function (layer, opacity) {
 
-
-        app.date1 = new Date();
-        console.log(app.date2 - app.date1);
-
         var mergeGeometry = new THREE.Geometry();
 
         for (var i = 0; i < layer.model.length; i++) {
@@ -1756,29 +1769,18 @@ limitations:
                         geometry.faces[j + 1].materialIndex = i % materials.length;
                     }
 
-      /*
-      Material here is an experiment for tiled tiles so to speak.
-      */
-        //var material = new THREE.MeshFaceMaterial(materials);
         var plane = new THREE.Mesh(geometry, material);
         plane.position.z = 0;
-        if (app.project.plane != undefined) {
-            app.scene.remove(app.project.plane[0]);
-        }
 
-        plane.receiveShadow = true;
         app.project.plane = [];
-      //app.octree.add(plane);
         plane.userData.index = 0;
         var planeObject = {mesh: plane, detail: { buildings: 0, address: false, style: "block", resolution: false } };
 
-        console.log(planeObject);
-        app.project.plane.push(planeObject);
-
+        app.clonePlane = planeObject;
         app.octree.update();
-        app.scene.add(app.project.plane[0].mesh);
-        app.project.plane[0].mesh.visible = false;
-        app.updateResolution(plane, num, width, height);
+        //app.scene.add(app.project.plane[0].mesh);
+        //app.project.plane[0].mesh.visible = false;
+        //app.updateResolution(plane, num, width, height);
 
 
         
@@ -1807,10 +1809,13 @@ limitations:
       var index = 0;
       for (var column = -dim; column <= dim; column++) {
           for (var row = -dim; row <= dim; row++) {
-              var tempPlane = app.project.plane[0].mesh.clone();
+
+             
+
+              var tempPlane = app.clonePlane.mesh.clone();
               tempPlane.visible = true;
               //We dont want to draw the center tile
-              
+
 
 
               THREE.ImageUtils.crossOrigin = '';
@@ -1829,8 +1834,8 @@ limitations:
               tempPlane.row = row;
 
               //Information to build buildings on the tile:
-              
-              
+
+
               tempPlane.userData.url = buildingUrl;
               tempPlane.userData.xmin = (xmin + (column * tilex));
               tempPlane.userData.ymin = (ymin + (row * tiley));
@@ -1839,17 +1844,20 @@ limitations:
               tempPlane.userData.row = row;
               tempPlane.userData.column = column;
               tempPlane.userData.index = app.project.plane.length - 1;
-              
-            //  var planeData = { tileWidth: (Math.sqrt((app.project.plane.length - 1)) - 1) / 2, planes: [{ detail: {}, buildings: {} }]};
-              if(planeData != undefined){
-                  var planeObject = { mesh: tempPlane, detail: planeData.planes[index].detail};
+
+              //  var planeData = { tileWidth: (Math.sqrt((app.project.plane.length - 1)) - 1) / 2, planes: [{ detail: {}, buildings: {} }]};
+              if (planeData != undefined) {
+                  if (planeData.planes[index].detail.address == true) {
+                      console.log("Extendmap had address to true on this index: " + index);
+                  }
+                  var planeObject = { mesh: tempPlane, detail: planeData.planes[index].detail };
 
                   //If we need to build the buildings, do it
-                  if (planeData.plane[index].detail.buildings > 0 || planeData.plane[index].detail.address == true) {
-                      if (planeData.plane[index].detail.buildings == 1) {
-                          app.getBuildings(planeObject, planeObject.userData.xmin, planeObject.userData.ymin, planeObject.userData.xmax, planeObject.userData.ymax, planeObject.userData.row, planeObject.userData.column, planeObject.userData.url, false);
-                      } else if (planeData.plane[index].detail.buildings == 2) {
-                          app.getBuildings(planeObject, planeObject.userData.xmin, planeObject.userData.ymin, planeObject.userData.xmax, planeObject.userData.ymax, planeObject.userData.row, planeObject.userData.column, planeObject.userData.url, false);
+                  if (planeObject.detail.buildings > 0 && planeObject.detail.address == false) {
+                      if (planeObject.detail.buildings == 1) {
+                          app.getBuildings(tempPlane, tempPlane.userData.xmin, tempPlane.userData.ymin, tempPlane.userData.xmax, tempPlane.userData.ymax, tempPlane.userData.row, tempPlane.userData.column, tempPlane.userData.url, false);
+                      } else if (planeObject.detail.buildings == 2) {
+                          app.getBuildings(tempPlane, tempPlane.userData.xmin, tempPlane.userData.ymin, tempPlane.userData.xmax, tempPlane.userData.ymax, tempPlane.userData.row, tempPlane.userData.column, tempPlane.userData.url, true);
                       }
                   }
 
@@ -1857,11 +1865,6 @@ limitations:
                   var planeObject = { mesh: tempPlane, detail: { buildings: 0, address: false, style: "block", resolution: false } };
 
               }
-             
-
-
-
-
 
               app.project.plane.push(planeObject);
               //var buildings = "http://services.kortforsyningen.dk/service?servicename=topo_geo_gml2&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=kms:Bygning&login=student134859&password=3dgis&maxfeatures=5000";
@@ -1869,6 +1872,7 @@ limitations:
               // app.updateResolution(tempPlane, num, width, height);
               index++;
           }
+
 
       }
   }
@@ -1970,12 +1974,11 @@ limitations:
         console.log("Found: " + response.features.length + " Features");
 
         if (response.features.length > 0) {
-            
-            app.project.layers = [];
-
+            var index = app.project.layers.length;
             app.project.layers.push(response);
-            app.project.layers[0].model = [];
-            app.project.layers[0].a = [];
+
+            app.project.layers[index].model = [];
+            app.project.layers[index].a = [];
 
             var points = [];
             for (var i = 0; i < response.features.length; i++) {
@@ -2025,9 +2028,9 @@ limitations:
                     //Okay so instead of adding a sphere to the scene, we can add the sphere to our WFSLayer geometry
 
                     //Todo create proper indexing somehow.
-                    app.project.layers[0].model[i] = sphere;
-                    app.project.layers[0].a[i] = app.project.layers[0].features[i].properties;
-                    app.octree.add(project.layers[0].model[i]);
+                    app.project.layers[index].model[i] = sphere;
+                    app.project.layers[index].a[i] = app.project.layers[index].features[i].properties;
+                    app.octree.add(project.layers[index].model[i]);
         
 
                 }
@@ -2109,17 +2112,17 @@ limitations:
                     });
 
                     var mesh = new THREE.Mesh(geometry, material);
-                    mesh.scale.set(1, 1, 5 * Math.random());
+                    mesh.scale.set(1, 1,  2 + Math.random());
                     mesh.userData.layerId = app.project.layers.length-1;
                     mesh.userData.featureId = i;
                     // app.scene.add(sphere);
                     //Okay so instead of adding a sphere to the scene, we can add the sphere to our WFSLayer geometry
 
                     //Todo create proper indexing somehow.
-                    app.project.layers[0].model[i] = mesh;
-                    app.project.layers[0].a[i] = app.project.layers[0].features[i].properties;
-                    app.octree.add(project.layers[0].model[i]);
-                   // app.scene.add(project.layers[0].model[i]);
+                    app.project.layers[index].model[i] = mesh;
+                    app.project.layers[index].a[i] = app.project.layers[index].features[i].properties;
+                    app.octree.add(app.project.layers[index].model[i]);
+                    //app.scene.add(app.project.layers[0].model[i]);
                     //  app.render();
                     points = [];
                     // var polygon = new THREE.Mesh(geometry, material);
@@ -2136,9 +2139,8 @@ limitations:
             
         }
        
-
+        app.octree.update();
         app.wmsready = true;
-        Q3D.gui.addCustomLayers(project.layers[0]);
     })
     .fail(function (jqXHR, textStatus, errorThrown) {
         console.log("Failed jquery");
@@ -2780,12 +2782,7 @@ limitations:
 
         }
 
-
-
         app.updateTile(obj, object, layerId, featureId);
-    
-     
-       
 
       return;
     }
