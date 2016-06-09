@@ -24,8 +24,8 @@
         }
     });
 }
-var initModal = function () {
 
+var initModal = function () {
     // Get the modal
     var modal = document.getElementById('modal-menu');
 
@@ -67,7 +67,7 @@ var startCorrelation = function (sourceURL, tile_zip, callback) {
                 console.log("filled menus")
                 fillSelectMenus(json);
             }
-
+           
 
             //Init select menus for address construction
             var modal = document.getElementById('modal-menu');
@@ -97,10 +97,13 @@ var startCorrelation = function (sourceURL, tile_zip, callback) {
                 }
             }
             modal.style.display = "block";
+        },
+        error: function (err) {
+            console.log('ERROR');
+            console.log(err);
         }
     });
 }
-
 var startBuild = function (param_block, callback) {
     var url = 'http://localhost:8085/parseCSV'; //'http://api-geovizjs.rhcloud.com/parseCSV';
     document.getElementById("build").innerHTML = "Constructing Addresses";
