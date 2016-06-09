@@ -234,7 +234,8 @@ label {
 
 /* hide input */
 input.radio:empty {
-	margin-left: -999px;
+    z-index: 0;
+	margin-left: -9999px;
 }
 
 /* style label */
