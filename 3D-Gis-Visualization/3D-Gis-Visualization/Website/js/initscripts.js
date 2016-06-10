@@ -52,8 +52,10 @@ var initModal = function () {
         var key = e.keyCode ? e.keyCode : e.which;
 
         if (key == 77) {
-            openVizMenu();
-        } 
+            startViz();
+        } else if (key == 220) {
+            document.getElementById('loader').style.display = 'none';
+        }
     }
 
     //----------------------------------------------------------------------------------------------
@@ -111,7 +113,7 @@ var startBuild = function (param_block, callback) {
     var url = 'http://api-geovizjs.rhcloud.com/parseCSV';
     document.getElementById("build").innerHTML = "Constructing Addresses";
     document.getElementById("loader").style.display = "block";
-
+    console.log(document.getElementById("loader"));
     $.ajax({
         url: url,
         type: 'GET',
