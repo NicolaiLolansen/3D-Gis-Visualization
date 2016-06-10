@@ -251,6 +251,9 @@ limitations:
         /*
         Save the layers
         */
+        /*
+        Legacy, is not used anymore, but kept for convinience
+        
         project.layers.forEach(function (layer) {
             var models = [];
             var a = [];
@@ -269,22 +272,55 @@ limitations:
             savedProject.layers.push(layerJSON);
         });
 
-
+        */
         /*
         Save an object that describes the planes
         */
-        var planeData = { tileWidth: (Math.sqrt((app.project.plane.length - 1)) - 1) / 2, planes: [{ detail: {}, buildings: {} }]};
+        var planeData = { tileWidth: (Math.sqrt((app.project.plane.length - 1)) - 1) / 2, planes: [{ detail: {}}]};
         console.log(planeData);
         //Iterate over the planes to fill out the planeData accordingly
 
        
         project.plane.forEach(function (plane, i) {
-        var models = [];
-        var a = [];
-            planeData.planes[i] = { detail: {}, buildings: {} };
+       
+        planeData.planes[i] = { detail: {}};
             if (plane.detail.address == true) {
                 console.log("address was true");
             }
+            if (plane.layers !== undefined) {
+                //If the plane has layers, we need to check if they have been visualized
+                //If they have, we save the geometry, else we save the url so we can load it in dynamically
+                plane.layers.forEach(function (layer, j) {
+                    var models = [];
+                    var a = [];
+                    if (plane.detail.layers[j].viz == true) {
+                        console.log("Saving a GeoJson layer to file");
+                        layer.model.forEach(function (model, k) {
+                            var geo = new THREE.Geometry();
+                            geo.vertices = model.geometry.vertices;
+                            geo.faces = model.geometry.faces;
+                            model.geometry = geo;
+                            var result = model.toJSON();
+                            var resultJSON = JSON.stringify(result);
+                            models.push(resultJSON);
+                            a.push(layer.a[k]);
+                        });
+                        if (j == 0) {
+                            planeData.planes[i].layers = [];
+                        }
+                        planeData.planes[i].layers[j] = {};
+                        planeData.planes[i].layers[j].a = a;
+                        planeData.planes[i].layers[j].model = models;
+                        planeData.planes[i].layers[j].name = plane.layers[j].name;
+                        planeData.planes[i].layers[j].type = plane.layers[j].type;
+                        planeData.planes[i].layers[j].features = plane.layers[j].features;
+                        planeData.planes[i].layers[j].crs = plane.layers[j].crs;
+                    }
+                    //If Viz is not true, we dont do anything here, as we can just load from the url which is saved in detail
+                });
+            }
+            var models = [];
+            var a = [];
             if (plane.buildings !== undefined) {
                 //If the plane has buildings, we have to save it into planeData
                 plane.buildings.model.forEach(function (model, i) {
@@ -310,7 +346,7 @@ limitations:
                
 
                 if (plane.detail.address == true) {
-    
+                    planeData.planes[i].buildings = {};
                     planeData.planes[i].buildings.a = a;
                     planeData.planes[i].buildings.models = models;
                     planeData.planes[i].buildings.name = plane.buildings.name;
@@ -357,9 +393,6 @@ limitations:
     Loads a project from a JSON formatted file (has to be called from saveProject) (Implement a verification method)
     */
     app.loadProject = function (projectJSON) {
-    
-
-
         projectJSON.baseExtent[0] = projectJSON.baseExtent[0];
         projectJSON.baseExtent[1] = projectJSON.baseExtent[1];
         projectJSON.baseExtent[2] = projectJSON.baseExtent[2];
@@ -400,14 +433,14 @@ limitations:
             // when undeferred = true, objects are inserted immediately
             // instead of being deferred until next octree.update() call
             // this may decrease performance as it forces a matrix update
-            undeferred: true,
+            undeferred: false,
             // set the max depth of tree
-            depthMax: 8,
+            depthMax: Infinity,
             // max number of objects before nodes split or merge
-            objectsThreshold: 64,
+            objectsThreshold: 256,
             // percent between 0 and 1 that nodes will overlap each other
             // helps insert objects that lie over more than one node
-            overlapPct: 0.5
+            overlapPct: 0.1
         });
 
         // restore view (camera position and its target) from URL parameters
@@ -447,17 +480,12 @@ limitations:
 
         //Generate the plane
         app.calculatebbox(1);
-        console.log(projectJSON.planeData);
-        console.log(projectJSON.planeData);
 
         app.extendMap(2,projectJSON.planeData);
-        console.log(app.project.plane);
-        console.log(app.project.plane);
-
         var loader = new THREE.ObjectLoader();
         
         projectJSON.planeData.planes.forEach(function (plane, i) {
-            if (plane.detail.address == true) {
+            if (plane.detail.address == true && plane.buildings !== undefined){
                 console.log("True");
                 var models = [];
                 plane.buildings.models.forEach(function (model) {
@@ -487,53 +515,62 @@ limitations:
                 }
                 plane.buildings.model = models;
                 console.log(plane);
-                if (app.project.plane[i] != undefined) {
+                /* if (app.project.plane[i] != undefined) {
                     var mesh = app.project.plane[i].mesh;
                     app.project.plane[i] = plane;
                     app.project.plane[i].mesh = mesh;
                 } else {
                     app.project.plane[i] = plane;
-                }
-              
-                
-
+                } */
+             
                 console.log(app.project.plane[i]);
                 app.mergeBuilding(plane, 1);
             }
-        });
+           if (plane.layers != undefined) {
+               console.log("plane.layers was not undefined");
+                plane.layers.forEach(function (layer, j) {
+                    if (plane.detail.layers[j].viz == false) {
+                        console.log("Viz was false");
+                        //If viz is false, get the url, and just call the geoJSON using the method
 
-        project.layers.forEach(function (layer,i) {
-            var models = [];
-            layer.model.forEach(function (model) {
-                var loadedGeometry = JSON.parse(model);
-                var loadedMesh = loader.parse(loadedGeometry);
-                models.push(loadedMesh);
+                    } else {
+                        console.log("Viz was true");
 
-                var position = { x: 0, y: -2 };
-                var target = { x: 0, y: 0 };
-                var tween = new TWEEN.Tween(position).to(target, 2000);
+                        //If viz is true, load the object from the file
+                        var models = [];
+                        layer.model.forEach(function (model) {
+                            var loadedGeometry = JSON.parse(model);
+                            var loadedMesh = loader.parse(loadedGeometry);
+                            models.push(loadedMesh);
+                            app.octree.add(loadedMesh);
+                        });
 
-                tween.onUpdate(function () {
-                    //loadedMesh.position.x = position.x;
-                    loadedMesh.position.z = position.y;
+                        for (var x = 0; x < models.length; x++) {
+                            models[x].userData.layerId = j;
+                            models[x].userData.featureId = x;
+                            models[x].userData.type = "layer";
+                        }
+                        layer.model = models;
+                        console.log(plane);
+                      
+                    }
                 });
-                tween.start();
-                app.octree.add(loadedMesh);
-            });
-
-            for (var x = 0; x < models.length; x++) {
-                models[x].userData.layerId = i;
-                models[x].userData.featureId = x;
-            }
-            layer.model = models;
-            app.mergeLayer(layer);
-            project.layers[i] = layer;
-            //app.scene.add(layer.mergeMesh);
+           }
+           if (app.project.plane[i] != undefined) {
+               var mesh = app.project.plane[i].mesh;
+               app.project.plane[i] = plane;
+               app.project.plane[i].mesh = mesh;
+           } else {
+               app.project.plane[i] = plane;
+           }
         });
 
+     
         app.octree.update();
         app.octreeNeedsUpdate = true;
         app.wmsready = true;
+        app.queryObjNeedsUpdate = true;
+        app.queryableObjects();
         app.frustum = new THREE.Frustum();
     };
 
@@ -698,7 +735,7 @@ limitations:
 
             if (app.octreeObjects.length > 0) {
                     //remove layers before update
-                    app.project.layers.forEach(function (layer) {
+                  /*  app.project.layers.forEach(function (layer) {
                         layer.model.forEach(function (child) {
                             if (child instanceof THREE.Mesh) {
                                 app.scene.remove(child);
@@ -706,7 +743,7 @@ limitations:
                             }
                         });
                     });
-
+                */
                     //remove buildings before update
                     app.project.plane.forEach(function (plane) {
                         if (plane.buildings !== undefined) {
@@ -715,6 +752,17 @@ limitations:
                                     app.scene.remove(child);
                                     //app.octree.remove(child);
                                 }
+                            });
+                        }
+
+                        if (plane.layers !== undefined) {
+                            plane.layers.forEach(function (layer) {
+                                layer.model.forEach(function(child){
+                                    if (child instanceof THREE.Mesh) {
+                                        app.scene.remove(child);
+                                        //app.octree.remove(child);
+                                    }
+                                    });
                             });
                         }
                         
@@ -753,49 +801,52 @@ limitations:
     };
 
     app.queryableObjects = function () {
+        
         if (app.queryObjNeedsUpdate) {
             app._queryableObjects = [];
-            app.project.layers.forEach(function (layer) {
+          /*  app.project.layers.forEach(function (layer) {
                 if (layer.visible && layer.queryableObjects.length) {
                     app._queryableObjects = app._queryableObjects.concat(layer.queryableObjects);
                     // console.log("Added the queryable objects for normal layer");
                 }
-            });
-            //Custom WFS layer addition - Nicolai
-            if (app.project.layers != undefined) {
-                app.project.layers.forEach(function (layer) {
-                    if (layer.model.length) {
-                        app._queryableObjects = app._queryableObjects.concat(layer.model);
-                        // console.log("Added the queryable Objects for WFS");
+            }); */
+            //Make the plane tiles queryable
+            if (app.project.plane != undefined) {
+                app.project.plane.forEach(function (plane) {
+                    if (plane.buildings != undefined) {
+                        plane.buildings.model.forEach(function (model) {
+                            app._queryableObjects = app._queryableObjects.concat(model);
+                        });
                     }
-                });
-            }
-        }
-        //Make the plane tiles queryable
-        if (app.project.plane != undefined) {
-            app.project.plane.forEach(function (plane) {
-                if (plane.buildings != undefined) {
-                    plane.buildings.model.forEach(function (model) {
-                        app._queryableObjects = app._queryableObjects.concat(model);
-                    });
-                }
+                    if (plane.layers != undefined) {
+     
+                        plane.layers.forEach(function (layer) {
+                            layer.model.forEach(function (model) {
+                                app._queryableObjects = app._queryableObjects.concat(model);
+                            });
+                        });
+                    }
 
-                     app._queryableObjects = app._queryableObjects.concat(plane.mesh);
-               
-            });
+                    app._queryableObjects = app._queryableObjects.concat(plane.mesh);
+
+                });
         }
+        }
+        app.queryObjNeedsUpdate = false;
        
         return app._queryableObjects;
     };
 
     app.intersectObjects = function (offsetX, offsetY) {
+
         var x = (offsetX / app.width) * 2 - 1;
         var y = -(offsetY / app.height) * 2 + 1;
         var vector = new THREE.Vector3(x, y, 1);
         vector.unproject(app.camera);
         var ray = new THREE.Raycaster(app.camera.position, vector.sub(app.camera.position).normalize());
-        console.log(app.queryableObjects());
+       
         return ray.intersectObjects(app.queryableObjects());
+      
     };
 
     app._offset = function (elm) {
@@ -881,7 +932,7 @@ limitations:
         app.popup.show();
     };
 
-    app.showQueryResult = function (point, layerId, featureId,type) {
+    app.showQueryResult = function (point, layerId, featureId,type,planeId) {
         var layer, r = [];
         
         if (layerId !== undefined) {
@@ -895,7 +946,10 @@ limitations:
 
             } else if(type == "layer") {
                 // layer name
-                layer = app.project.layers[layerId];
+                //TODO: create userData to figure out WHAT layer it is on WHAT tile (layerId is not sufficient)
+                console.log(layerId);
+                console.log(app.project.plane[planeId]);
+                layer = app.project.plane[planeId].layers[layerId];
                 r.push('<table class="layer">');
                 r.push("<caption>Layer name</caption>");
                 r.push("<tr><td>" + layer.name + "</td></tr>");
@@ -911,7 +965,6 @@ limitations:
      
         }
 
-        console.log(layer);
 
         // clicked coordinates
         var pt = app.project.toMapCoordinates(point.x, point.y, point.z);
@@ -1049,7 +1102,7 @@ limitations:
         }
     };
 
-    app.highlightFeature = function (layerId, featureId, type) {
+    app.highlightFeature = function (layerId, featureId, type,planeId) {
 
         if (app.highlightObject) {
             // remove highlight object from the scene
@@ -1078,8 +1131,9 @@ limitations:
 
       
         if (layerId === null || featureId === null) return;
+
         if (type == "layer"){
-            var layer = app.project.layers[layerId];
+            var layer =app.project.plane[planeId].layers[layerId];
         } else if (type == "building"){
             var layer = app.project.plane[layerId].buildings;
         }
@@ -1118,33 +1172,37 @@ limitations:
                  var pColor = color.replace('#', '0x');
                  model.material.color.setHex(pColor);             
         });
+
         folder.addColor(Q3D.gui.parameters, 'color').name('Color layer').onChange(function (color) {
 
             var pColor = color.replace('#', '0x');
                 for (var i = 0; i < layer.model.length; i++) {
                     layer.model[i].material.color.setHex(pColor);
-                    layer.mergeMesh.material.color.setHex(pColor);
+                    if (type == "building") {
+                        ////layer.mergeMesh.material.color.setHex(pColor);
+                    }
+                   
                 }
-   
-            
-          
-
         });
         
         folder.add(Q3D.gui.parameters, 'height').min(1).max(5).name('Height').onChange(function (height) {
-
-           
-            //  model.position.z = height;
-            var geo = new THREE.Geometry();
-            geo.vertices = model.geometry.vertices;
-            geo.faces = model.geometry.faces;
-            
-           
-            geo.scale(1, 1, height);
-            model.geometry = geo;
-            
+            model.scale.set(model.scale.x, model.scale.y, height);
         }); 
 
+        if (type == "layer") {
+            folder.add(Q3D.gui.parameters, 'resolution').name('Delete').onChange(function () {
+                layer.model.forEach(function (model) {
+                    app.scene.remove(model);
+                    app.octree.remove(model);
+                    app.project.plane[planeId].layers.splice(layerId, 1);
+                    app.project.plane[planeId].detail.layers.splice(layerId, 1);
+
+                });
+                app.queryObjNeedsUpdate = true;
+                app.queryableObjects();
+            });
+
+        }
 
         var high_mat = app.highlightMaterial;
         var setMaterial = function (obj) {
@@ -1226,7 +1284,8 @@ limitations:
         /*
         TODO: faulty index, only works 1 tile out, gets imprecise after that
         */
-
+        console.log(plane);
+        console.log(plane);
          row = row * 2 + 1;
          column = column * 2 + 1;
 
@@ -1420,7 +1479,8 @@ limitations:
                            plane.buildings.type = "GML";
 
                            app.mergeBuilding(plane, 1);
-
+                           app.queryObjNeedsUpdate = true;
+                           app.queryableObjects();
                            callback();
                            
                        }
@@ -1534,8 +1594,7 @@ limitations:
                    }
                    */
                }
-               
-               Q3D.gui.addCustomLayers(project.layers[index]);
+          
            }
       
        
@@ -1852,14 +1911,14 @@ limitations:
                   //If we need to build the buildings, do it
                   if (planeObject.detail.buildings > 0 && planeObject.detail.address == false) {
                       if (planeObject.detail.buildings == 1) {
-                          app.getBuildings(tempPlane, tempPlane.userData.xmin, tempPlane.userData.ymin, tempPlane.userData.xmax, tempPlane.userData.ymax, tempPlane.userData.row, tempPlane.userData.column, tempPlane.userData.url, false);
+                          app.getBuildings(planeObject, tempPlane.userData.xmin, tempPlane.userData.ymin, tempPlane.userData.xmax, tempPlane.userData.ymax, tempPlane.userData.row, tempPlane.userData.column, tempPlane.userData.url, false);
                       } else if (planeObject.detail.buildings == 2) {
-                          app.getBuildings(tempPlane, tempPlane.userData.xmin, tempPlane.userData.ymin, tempPlane.userData.xmax, tempPlane.userData.ymax, tempPlane.userData.row, tempPlane.userData.column, tempPlane.userData.url, true);
+                          app.getBuildings(planeObject, tempPlane.userData.xmin, tempPlane.userData.ymin, tempPlane.userData.xmax, tempPlane.userData.ymax, tempPlane.userData.row, tempPlane.userData.column, tempPlane.userData.url, true);
                       }
                   }
 
               } else {
-                  var planeObject = { mesh: tempPlane, detail: { buildings: 0, address: false, style: "block", resolution: false } };
+                  var planeObject = { mesh: tempPlane, detail: { buildings: 0, address: false, style: "block", resolution: false, layers: [] } };
 
               }
 
@@ -1869,8 +1928,9 @@ limitations:
               // app.updateResolution(tempPlane, num, width, height);
               index++;
           }
+          app.queryObjNeedsUpdate = true;
 
-
+          app.queryableObjects();
       }
   }
   app.updateResolution = function (plane,num, width, height) {
@@ -1984,7 +2044,7 @@ limitations:
                     //If point, create a point object. 
                     //Point object is defined as a yellow sphere for simplicity
 
-                    var geometry = new THREE.CylinderGeometry(5, 5, 20, 32);
+                    var geometry = new THREE.SphereGeometry(5,32,32);
                     var material = new THREE.MeshLambertMaterial({
                         color: 0xffaaaa
                     });
@@ -2014,10 +2074,8 @@ limitations:
                     // var pt = app.project.toMapCoordinates(x, y, z);
 
 
-
-                    sphere.position.set(ptx, pty, 0.5);
-                   
-                    sphere.scale.set(0.05, 0.25, 0.05);
+                    sphere.position.set(ptx, pty, z);
+                    sphere.scale.set(1,1,1);
                     //LayerID 100 until we figure out proper indentation - Nicolai
                     sphere.userData.layerId = app.project.layers.length-1;
                     sphere.userData.featureId = i;
@@ -2138,6 +2196,8 @@ limitations:
        
         app.octree.update();
         app.wmsready = true;
+        app.queryObjNeedsUpdate = true;
+        app.queryableObjects();
     })
     .fail(function (jqXHR, textStatus, errorThrown) {
         console.log("Failed jquery");
@@ -2429,7 +2489,7 @@ limitations:
           }
 
       
-      if (object.userData.url != undefined) {
+      if (object.userData.url != undefined) { //Plane is clicked
           if (app.highlightObject) {
               app.scene.remove(app.highlightObject);
               app.highlightObject = null;
@@ -2477,6 +2537,14 @@ limitations:
               var detail = app.project.plane[index].detail;
 
               console.log(detail);
+          
+              //Add geoJSON file to the current tile
+              folder.add(Q3D.gui.parameters, 'getbounds').name('geoJSON').onFinishChange(function (url) {
+                  app.getGeoJson(index, url);
+                  //TODO do this in the callback to make sure it doesnt go wrong
+                  detail.layers.push({ url: url, viz: true });
+              });
+
               //No buildings are present, give the opportunity to create them
               if (detail.buildings == 0) {
 
@@ -2610,9 +2678,15 @@ limitations:
                             var canvas = document.createElement('canvas');
                             canvas.width = img.width;
                             canvas.height = img.height;
-                            canvas.getContext('2d').drawImage(img, 0, 0, img.width, img.height);
+                            var ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, img.width, img.height);
 
-
+                            var colour = ctx.getImageData(0, 5, 1, 1);
+                            console.log(ctx.getImageData(0, 5, 1, 1));
+                            console.log(ctx.getImageData(canvas.width * 0.25, 5, 1, 1));
+                            console.log(ctx.getImageData(canvas.width * 0.50, 5, 1, 1));
+                            console.log(ctx.getImageData(canvas.width * 0.75, 5, 1, 1));
+                            console.log(ctx.getImageData(canvas.width * 1, 5, 1, 1));
                            // var pixelData = canvas.getContext('2d').getImageData(5, 5, 1, 1).data;
 
                             var maxminlist = app.project.plane[index].buildings.maxmin;
@@ -2627,14 +2701,16 @@ limitations:
                                         var x_min = maxminlist[colour_data].min;
                                         var x_norm = (x - x_min) / (x_max - x_min);
 
-                                        var x_img = (x_norm * img.width) | 0;
-                                        var colour = canvas.getContext('2d').getImageData(x_img, 5, 1, 1);
+                                        var x_img = (x_norm * canvas.width) | 0;
+                                        var colour = ctx.getImageData(x_img, 5, 1, 1);
 
                                         if (colour_method == 'building') {
                                             // Translate normalized value to RGB
-                                        
+                                            var material = new THREE.MeshBasicMaterial({color: 0xffffff,
+                                            });
+                                            model.material = material;
                                             model.material.color.setRGB(colour.data[0], colour.data[1], colour.data[2]);
-                                            console.log(model.material.color);
+                                        
                                         } else if (colour_method == 'block') {
 
                                         }
@@ -2701,6 +2777,7 @@ limitations:
 
       } else if (object.userData.type == "building") {
 
+      
           while (object) {
               layerId = object.userData.layerId,
               featureId = object.userData.featureId;
@@ -2730,30 +2807,28 @@ limitations:
                              (featureId === undefined) ? null : featureId, "building");
 
       } else {
-
-
           while (object) {
               layerId = object.userData.layerId,
               featureId = object.userData.featureId;
+              var planeId = object.userData.planeId;
               if (layerId !== undefined) break;
-              object = object.parent;
           }
 
           if (app.highlightObject == null) {
-              app.showQueryResult(obj.point, layerId, featureId, "layer");
-              // highlight clicked object
+              app.showQueryResult(obj.point, layerId, featureId, "layer", planeId);
           } else {
               if (featureId == app.highlightObject.userData.featureId) {
                   layerId = undefined;
                   featureId = undefined;
+                  var planeId = undefined;
                   app.closePopup();
               } else {
-                  app.showQueryResult(obj.point, layerId, featureId, "layer");
+                  app.showQueryResult(obj.point, layerId, featureId, "layer", planeId);
               }
           }
 
           app.highlightFeature((layerId === undefined) ? null : layerId,
-                              (featureId === undefined) ? null : featureId, "layer");
+                              (featureId === undefined) ? null : featureId, "layer",planeId);
 
 
           if (Q3D.Options.debugMode && object instanceof THREE.Mesh) {
@@ -2774,11 +2849,32 @@ limitations:
   };
   // Called from *Controls.js when canvas is clicked
   app.canvasClicked = function (e) {
-    var canvasOffset = app._offset(app.renderer.domElement);
-    var objs = app.intersectObjects(e.clientX - canvasOffset.left, e.clientY - canvasOffset.top);
-    for (var i = 0, l = objs.length; i < l; i++) {
-        var obj = objs[i];
-        if (!obj.object.visible) continue;
+      var canvasOffset = app._offset(app.renderer.domElement);
+      var offsetX = e.clientX - canvasOffset.left
+      var offsetY = e.clientY - canvasOffset.top
+    //var objs = app.intersectObjects(e.clientX - canvasOffset.left, e.clientY - canvasOffset.top);
+
+
+    var x = (offsetX / app.width) * 2 - 1;
+    var y = -(offsetY / app.height) * 2 + 1;
+    var vector = new THREE.Vector3(x, y, 1);
+    vector.unproject(app.camera);
+    var ray = new THREE.Raycaster(app.camera.position, vector.sub(app.camera.position).normalize());
+    
+
+    var start = new Date().getTime();
+
+    var objs = ray.intersectObjects(app.queryableObjects());
+    console.log(app._queryableObjects);
+
+    var end = new Date().getTime();
+    var time = end - start;
+    console.log('Execution time: ' + time);
+
+
+    //for (var i = 0, l = objs.length; i < l; i++) {
+    var obj = objs[0];
+       
 
         // query marker
         //app.queryMarker.position.set(obj.point.x, obj.point.y, obj.point.z);
@@ -2821,7 +2917,7 @@ limitations:
         app.updateTile(obj, object, layerId, featureId);
 
       return;
-    }
+  //  }
     app.closePopup();
   };
 
@@ -2933,17 +3029,23 @@ limitations:
 
 
 
-  app.getGeoJson = function (plane,url) {
+  app.getGeoJson = function (indexPlane, url) {
 
-      var xmin = app.project.baseExtent[0];
-      var ymin = app.project.baseExtent[1];
-      var xmax = app.project.baseExtent[2];
-      var ymax = app.project.baseExtent[3];
+      if (app.BufferBox == undefined) {
+          var pGeometry = new THREE.BoxGeometry(1, 1, 1);
+          app.BufferBox = new THREE.BufferGeometry().fromGeometry(pGeometry);
+      }
+      var plane = app.project.plane[indexPlane];
 
+      var xmin = plane.mesh.userData.xmin;
+      var ymin = plane.mesh.userData.ymin;
+      var xmax = plane.mesh.userData.xmax;
+      var ymax = plane.mesh.userData.ymax;
+      var row = plane.mesh.userData.row * 2 + 1;
+      var column = plane.mesh.userData.column * 2 + 1;
       var bbox = "&Bbox=" + xmin + "," + ymin + "," + xmax + "," + ymax
 
       app.wmsready = false;
-
       $.ajax({
           url: url + bbox,
           dataType: "json",
@@ -2953,25 +3055,31 @@ limitations:
          console.log("Found: " + response.features.length + " Features");
 
          if (response.features.length > 0) {
-             var index = app.project.layers.length;
-             app.project.layers.push(response);
+             if (plane.layers == undefined) {
+                 alert("Plane was empty for geoJSON");
+                 plane.layers = [];
+             }
 
-             app.project.layers[index].model = [];
-             app.project.layers[index].a = [];
+             var index = plane.layers.length;
+             plane.layers.push(response);
+             console.log(plane.layers);
+             plane.layers[index].model = [];
+             plane.layers[index].a = [];
+             plane.layers[index].name = "GeoJson " + index;
 
              var points = [];
+         
              for (var i = 0; i < response.features.length; i++) {
                  //Determine geometry type
                  if (response.features[i].geometry.type == "Point" || response.features[i].geometry.type == "MultiPoint") {
                      //If point, create a point object. 
-                     //Point object is defined as a yellow sphere for simplicity
-
-                     var geometry = new THREE.CylinderGeometry(5, 5, 20, 32);
+                    
                      var material = new THREE.MeshLambertMaterial({
-                         color: 0xffaaaa
+                         color: 0xffaaaa,
                      });
-                     var sphere = new THREE.Mesh(geometry, material);
-                     sphere.rotation.x = Math.PI / 2;
+                  //   var pGeometry = new THREE.BoxGeometry(1,1,1);
+                     var point = new THREE.Mesh(app.BufferBox, material);
+                     point.rotation.x = Math.PI / 2;
                      var x = response.features[i].geometry.coordinates[0];
                      var y = response.features[i].geometry.coordinates[1];
                      var z = 1;
@@ -2979,7 +3087,9 @@ limitations:
                      //Okay we have the width and height, plus the bounding box
                      //Figure out how to calculate mapcoordinates to project coordinates.
 
-                     //In each direction
+                     /*
+                     TODO: put GetBuildings Logic here
+                     */
                      var widthP = app.project.width;
                      var heightP = app.project.height;
 
@@ -2989,29 +3099,26 @@ limitations:
                      var factorX = widthP / widthM;
                      var factorY = heightP / heightM;
 
+                     var ptx = (widthP * (column) / 2) - (((xmax - x) * factorX));
+                     var pty = (heightP * (row) / 2) - (((ymax - y) * factorY));
 
-                     var ptx = widthP / 2 - ((xmax - x) * factorX);
-                     var pty = heightP / 2 - ((ymax - y) * factorY);
+                     //var point = new THREE.Vector3(ptx, pty, z);
+                     //points.push(point);
 
-                     // var pt = app.project.toMapCoordinates(x, y, z);
-
-
-
-                     sphere.position.set(ptx, pty, 0.5);
-
-                     sphere.scale.set(0.05, 0.25, 0.05);
+                     point.position.set(ptx, pty, 0.5);
+                     
                      //LayerID 100 until we figure out proper indentation - Nicolai
-                     sphere.userData.layerId = app.project.layers.length - 1;
-                     sphere.userData.featureId = i;
+                     point.userData.layerId = index;
+                     point.userData.planeId = indexPlane;
+                     point.userData.featureId = i;
                      // app.scene.add(sphere);
                      //Okay so instead of adding a sphere to the scene, we can add the sphere to our WFSLayer geometry
 
                      //Todo create proper indexing somehow.
-                     app.project.layers[index].model[i] = sphere;
-                     app.project.layers[index].a[i] = app.project.layers[index].features[i].properties;
-                     app.octree.add(project.layers[index].model[i]);
-
-
+                     plane.layers[index].model[i] = point;
+                     plane.layers[index].a[i] = plane.layers[index].features[i].properties;
+                     app.octree.add(point);
+                   //  app.scene.add(point);
                  }
                  else if (response.features[i].geometry.type == "Polygon" || response.features[i].geometry.type == "MultiPolygon") {
 
@@ -3052,8 +3159,8 @@ limitations:
                          var factorX = widthP / widthM;
                          var factorY = heightP / heightM;
 
-                         var ptx = widthP / 2 - ((xmax - x) * factorX);
-                         var pty = heightP / 2 - ((ymax - y) * factorY);
+                         var ptx = (widthP * (column) / 2) - (((xmax - x) * factorX));
+                         var pty = (heightP * (row) / 2) - (((ymax - y) * factorY));
 
                          var point = new THREE.Vector2(ptx, pty);
                          points.push(point);
@@ -3075,49 +3182,32 @@ limitations:
                      //build a geometry (ExtrudeGeometry) from the shape and extrude settings
                      var geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
                      geometry.dynamic = true;
-
-                     var hex = 0xff0000;
-                     var hex2 = 0xaa0011;
-                     var hex3 = 0x990033;
                      var color = 0xffffff;
-
-                     var colorlist = [hex, hex2, hex3];
-
-
-                     //  color = colorlist[Math.floor(Math.random() * colorlist.length)];
 
                      var material = new THREE.MeshPhongMaterial({
                          color: color
                      });
 
                      var mesh = new THREE.Mesh(geometry, material);
-                     mesh.scale.set(1, 1, 2 + Math.random());
-                     mesh.userData.layerId = app.project.layers.length - 1;
+                     mesh.scale.set(1, 1, 2 * Math.random());
+                     mesh.userData.planeId = indexPlane;
+                     mesh.userData.layerId = index;
                      mesh.userData.featureId = i;
-                     // app.scene.add(sphere);
-                     //Okay so instead of adding a sphere to the scene, we can add the sphere to our WFSLayer geometry
-
+   
                      //Todo create proper indexing somehow.
-                     app.project.layers[index].model[i] = mesh;
-                     app.project.layers[index].a[i] = app.project.layers[index].features[i].properties;
-                     app.octree.add(app.project.layers[index].model[i]);
-                     //app.scene.add(app.project.layers[0].model[i]);
-                     //  app.render();
+                     plane.layers[index].model[i] = mesh;
+                     plane.layers[index].a[i] = plane.layers[index].features[i].properties;
+                     app.octree.add(mesh);
+
                      points = [];
-                     // var polygon = new THREE.Mesh(geometry, material);
-
-                     // var x = response.features[i].geometry.coordinates[0];
-                     // var y = response.features[i].geometry.coordinates[1];
-                     // var z = 1;
-
-                     //Okay we have the width and height, plus the bounding box
-                     //Figure out how to calculate mapcoordinates to project coordinates.
-
                  }
              }
 
          }
+         app.queryObjNeedsUpdate = true;
 
+         app.queryableObjects();
+         app.octreeNeedsUpdate = true;
          app.octree.update();
          app.wmsready = true;
      })
@@ -3133,10 +3223,6 @@ limitations:
       //Crs - properties - code (EPSG)
       //features - objects - geometry - coordinates - 0 1
       //                              - type (point, polygon etc)
-
-
-
-
   };
 
 

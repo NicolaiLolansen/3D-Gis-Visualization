@@ -117,7 +117,7 @@
     <Content Include="Website\resources\ms-icon-150x150.png" />
     <Content Include="Website\resources\ms-icon-310x310.png" />
     <Content Include="Website\resources\ms-icon-70x70.png" />
-    <Content Include="Website\resources\spectrum.png" />
+    <Content Include="Website\resources\spectrum.PNG" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
