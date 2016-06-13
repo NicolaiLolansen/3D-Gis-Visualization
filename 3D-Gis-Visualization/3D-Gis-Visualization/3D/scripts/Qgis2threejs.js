@@ -1139,7 +1139,7 @@ limitations:
         if (layerId === null || featureId === null) return;
 
         if (type == "layer"){
-            var layer =app.project.plane[planeId].layers[layerId];
+            var layer = app.project.plane[planeId].layers[layerId];
         } else if (type == "building"){
             var layer = app.project.plane[layerId].buildings;
         }
@@ -1187,10 +1187,96 @@ limitations:
                     if (type == "building") {
                         ////layer.mergeMesh.material.color.setHex(pColor);
                 }
-   
-                }
+            }
         });
         
+        folder.add(Q3D.gui.parameters, 'resolution').name('Visualize GeoJSON').onChange(function () {
+            initVizMenu(layer.maxmin);
+
+            startViz(function (colour_data, height_data, vizComplete) {
+
+                var doColour = (colour_data != 'default');
+                var doHeight = (height_data != 'default');
+                var colour_method = 'none';
+                var height_method = 'none';
+
+                if (doColour) {
+                    colour_method = (document.getElementById('c_building').checked) ? 'building' : 'block';
+                }
+                if (doHeight) {
+                    height_method = (document.getElementById('h_building').checked) ? 'building' : 'block';
+                }
+
+                //Spectrum image for turning normalized data to a color
+                var img = document.getElementById('spectrum');
+                var canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                var ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, img.width, img.height);
+
+
+                var maxminlist = layer.maxmin;
+
+                
+                layer.model.forEach(function (model, i) {
+                        if (doColour) {
+                            var x = layer.a[i][colour_data];
+                            if (x != undefined) {
+
+                                //Calculate normalized value [0; 1]
+                                var x_max = maxminlist[colour_data].max;
+                                var x_min = maxminlist[colour_data].min;
+                                var x_norm = (x - x_min) / (x_max - x_min);
+
+                                var x_img = (x_norm * canvas.width - 1) | 0;
+
+                                var colour = {};
+                                if (!isNaN(x_img)) {
+                                    colour = ctx.getImageData(x_img, 5, 1, 1);
+                                } else {
+                                    colour.data = [0, 0, 0];
+                                }
+
+                                console.log(x + " -> " + x_img + " -> " + colour.data);
+                                if (colour_method == 'building') {
+                                    // Translate normalized value to RGB
+                                    var material = new THREE.MeshBasicMaterial({color: 0xffffff,
+                                    });
+                                    model.material = material;
+                                    model.material.color.setRGB(colour.data[0], colour.data[1], colour.data[2]);
+                                        
+                                } else if (colour_method == 'block') {
+
+                                } // Add other methods of colour viz here
+                            }
+                        }
+                        if (doHeight) {
+                            var x = layer.a[i][height_data];
+                            if (x != undefined) {
+                                var x_max = maxminlist[height_data].max;
+                                var x_min = maxminlist[height_data].min;
+                                var x_norm = (x - x_min) / (x_max - x_min);
+
+                                var max_height = 5;
+                                var min_height = 2;
+                                var x_height = min_height + (max_height - min_height) * x_norm;
+
+                                if (height_method == 'building') {
+                                    // Translate normalized value to height
+                                    // Height-min: 2, height-max: 4
+                                    model.scale.set(model.scale.x, model.scale.y, x_height);
+                                } else if (height_method == 'block') {
+
+                                } // Add other methods of height viz here
+                            }
+
+                        } // Add other visiualization techniques here (Opacity? Sprites above buildings?)
+                });
+                vizComplete();
+            })
+        });
+
         folder.add(Q3D.gui.parameters, 'height').min(1).max(5).name('Height').onChange(function (height) {
             model.scale.set(model.scale.x, model.scale.y, height);
         }); 
@@ -2641,7 +2727,6 @@ limitations:
 
                             var maxmin = json.pop();
                             app.project.plane[index].buildings.maxmin = maxmin;
-                            fillVizOptions(maxmin);
                             //For every building in the tile, if address match, add a new group of attributes uData
                             //
                             console.log(json);
@@ -2659,6 +2744,9 @@ limitations:
                         
                     });
                     folder.add(Q3D.gui.parameters, 'resolution').name('Visualize Data').onChange(function () {
+                        var maxminlist = app.project.plane[index].buildings.maxmin;
+                        initVizMenu(maxminlist);
+
                         startViz(function (colour_data, height_data, vizComplete) {
 
                             var doColour = (colour_data != 'default');
@@ -2681,15 +2769,7 @@ limitations:
                             var ctx = canvas.getContext('2d');
                             ctx.drawImage(img, 0, 0, img.width, img.height);
 
-                            var colour = ctx.getImageData(0, 5, 1, 1);
-                            console.log(ctx.getImageData(0, 5, 1, 1));
-                            console.log(ctx.getImageData(canvas.width * 0.25, 5, 1, 1));
-                            console.log(ctx.getImageData(canvas.width * 0.50, 5, 1, 1));
-                            console.log(ctx.getImageData(canvas.width * 0.75, 5, 1, 1));
-                            console.log(ctx.getImageData(canvas.width * 1, 5, 1, 1));
                            // var pixelData = canvas.getContext('2d').getImageData(5, 5, 1, 1).data;
-
-                            var maxminlist = app.project.plane[index].buildings.maxmin;
 
                             app.project.plane[index].buildings.model.forEach(function (model, i) {
                                 if (model.userData.uData != undefined) {
@@ -2703,9 +2783,16 @@ limitations:
                                         var x_min = maxminlist[colour_data].min;
                                         var x_norm = (x - x_min) / (x_max - x_min);
 
-                                        var x_img = (x_norm * canvas.width) | 0;
-                                        var colour = ctx.getImageData(x_img, 5, 1, 1);
-
+                                        var x_img = (x_norm * canvas.width - 1) | 0;
+                                        
+                                        var colour = {};
+                                        if (!isNaN(x_img)) {
+                                            colour = ctx.getImageData(x_img, 5, 1, 1);
+                                        } else {
+                                            colour.data = [0, 0, 0];
+                                        }
+                                       
+                                        console.log(x + "-> " + x_img + "-> " + colour.data);
                                         if (colour_method == 'building') {
                                             // Translate normalized value to RGB
                                             var material = new THREE.MeshBasicMaterial({color: 0xffffff,
