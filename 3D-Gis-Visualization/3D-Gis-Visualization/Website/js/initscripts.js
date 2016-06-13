@@ -241,13 +241,16 @@ var startViz = function (callback) {
     document.getElementById('modal-viz').style.display = 'block';
 }
 
-var fillVizOptions = function (maxminlist) {
+var initVizMenu = function (featurelist) {
+
     //Data Visualizer Modal
     var colour = document.getElementById('colour_data');
     var height = document.getElementById('height_data');
 
-    for (var key in maxminlist) {
+    colour.options.length = 1;
+    height.options.length = 1;
 
+    for (var key in featurelist) {
         colour.options.add(new Option(key, key));
         height.options.add(new Option(key, key));
     }
