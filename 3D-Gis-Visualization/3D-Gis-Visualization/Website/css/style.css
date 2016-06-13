@@ -304,3 +304,63 @@ input[type="radio"] + label span {
   -moz-transition:background-color 0.4s linear;
   transition:background-color 0.4s linear;
 }
+.textfield-container {
+    width: 100%
+}
+.menu-button-container {
+    width: 100%
+}
+.menu-button {
+  font-family: "Roboto", sans-serif;
+  text-transform: uppercase;
+  outline: black;
+  background: #4CAF50;
+  width: 100%;
+  border: 0;
+  margin: 5px 0 5px;
+  padding: 15px;
+  color: #FFFFFF;
+  font-size: 14px;
+  -webkit-transition: all 0.3 ease;
+  transition: all 0.3 ease;
+  cursor: pointer;
+  display: inline-block;
+}
+
+.menu-button:hover,.menu-button:active,.menu-button:focus {
+  background: #43A047;
+}
+ 
+.textbox { 
+    -webkit-border-radius: 5px; 
+    -moz-border-radius: 5px; 
+    border-radius: 5px; 
+    border: 1px solid #848484; 
+    outline:0; 
+    height:25px;
+    width: 80%; 
+    padding-left:10px; 
+    padding-right:10px;
+    margin: 20px 20px 20px 20px;
+} 
+
+#filedrag
+{
+	display: none;
+	font-weight: bold;
+	text-align: center;
+	padding: 1em 0;
+	margin: 1em 0;
+	color: #555;
+	border: 2px dashed #555;
+	border-radius: 7px;
+	cursor: default;
+}
+
+#filedrag.hover
+{
+	color: #f00;
+	border-color: #f00;
+	border-style: solid;
+	box-shadow: inset 0 3px 4px #888;
+}

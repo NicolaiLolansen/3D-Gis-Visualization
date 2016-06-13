@@ -522,7 +522,7 @@ limitations:
                 } else {
                     app.project.plane[i] = plane;
                 } */
-             
+              
                 console.log(app.project.plane[i]);
                 app.mergeBuilding(plane, 1);
             }
@@ -537,24 +537,24 @@ limitations:
                         console.log("Viz was true");
 
                         //If viz is true, load the object from the file
-                        var models = [];
-                        layer.model.forEach(function (model) {
-                            var loadedGeometry = JSON.parse(model);
-                            var loadedMesh = loader.parse(loadedGeometry);
-                            models.push(loadedMesh);
-                            app.octree.add(loadedMesh);
-                        });
+            var models = [];
+            layer.model.forEach(function (model) {
+                var loadedGeometry = JSON.parse(model);
+                var loadedMesh = loader.parse(loadedGeometry);
+                models.push(loadedMesh);
+                app.octree.add(loadedMesh);
+            });
 
-                        for (var x = 0; x < models.length; x++) {
+            for (var x = 0; x < models.length; x++) {
                             models[x].userData.layerId = j;
-                            models[x].userData.featureId = x;
+                models[x].userData.featureId = x;
                             models[x].userData.type = "layer";
-                        }
-                        layer.model = models;
+            }
+            layer.model = models;
                         console.log(plane);
                       
                     }
-                });
+        });
            }
            if (app.project.plane[i] != undefined) {
                var mesh = app.project.plane[i].mesh;
@@ -754,7 +754,7 @@ limitations:
                                 }
                             });
                         }
-
+                        
                         if (plane.layers !== undefined) {
                             plane.layers.forEach(function (layer) {
                                 if (layer.model != undefined) {
@@ -768,7 +768,7 @@ limitations:
                              
                             });
                         }
-                        
+                
                     });
                 
                 
@@ -813,16 +813,16 @@ limitations:
                     // console.log("Added the queryable objects for normal layer");
                 }
             }); */
-            //Make the plane tiles queryable
-            if (app.project.plane != undefined) {
-                app.project.plane.forEach(function (plane) {
-                    if (plane.buildings != undefined) {
-                        plane.buildings.model.forEach(function (model) {
-                            app._queryableObjects = app._queryableObjects.concat(model);
-                        });
-                    }
+        //Make the plane tiles queryable
+        if (app.project.plane != undefined) {
+            app.project.plane.forEach(function (plane) {
+                if (plane.buildings != undefined) {
+                    plane.buildings.model.forEach(function (model) {
+                        app._queryableObjects = app._queryableObjects.concat(model);
+                    });
+                }
                     if (plane.layers != undefined) {
-     
+
                         plane.layers.forEach(function (layer) {
                             if (layer.model != undefined) {
                                 layer.model.forEach(function (model) {
@@ -833,9 +833,9 @@ limitations:
                         });
                     }
 
-                    app._queryableObjects = app._queryableObjects.concat(plane.mesh);
-
-                });
+                     app._queryableObjects = app._queryableObjects.concat(plane.mesh);
+               
+            });
         }
         }
         app.queryObjNeedsUpdate = false;
@@ -1186,8 +1186,8 @@ limitations:
                     layer.model[i].material.color.setHex(pColor);
                     if (type == "building") {
                         ////layer.mergeMesh.material.color.setHex(pColor);
-                    }
-                   
+                }
+   
                 }
         });
         
@@ -1602,7 +1602,7 @@ limitations:
                    }
                    */
                }
-          
+               
            }
       
        
@@ -2081,7 +2081,7 @@ limitations:
 
                     // var pt = app.project.toMapCoordinates(x, y, z);
 
-
+                   
                     sphere.position.set(ptx, pty, z);
                     sphere.scale.set(1,1,1);
                     //LayerID 100 until we figure out proper indentation - Nicolai
@@ -2641,7 +2641,7 @@ limitations:
 
                             var maxmin = json.pop();
                             app.project.plane[index].buildings.maxmin = maxmin;
-
+                            fillVizOptions(maxmin);
                             //For every building in the tile, if address match, add a new group of attributes uData
                             //
                             console.log(json);
@@ -2650,12 +2650,7 @@ limitations:
                                 json.forEach(function (json) {
                                     if (a != null) {
                                         if (a["Adresse"] == json.addr) {
-                                            console.log("Matched data to a building!");
-                                            //match
                                             app.project.plane[index].buildings.model[i].userData.uData = json;
-
-                                            var material = new THREE.MeshLambertMaterial({ color: 0x999900 });
-                                            app.project.plane[index].buildings.model[i].material = material;
                                         }
                                     }
                                 });
@@ -2677,9 +2672,6 @@ limitations:
                             if (doHeight) {
                                 height_method = (document.getElementById('h_building').checked) ? 'building' : 'block';
                             }
-
-                            console.log('VIS DIS: ' + colour_data);
-                            console.log('AND DIS: ' + height_data);
 
                             //Spectrum image for turning normalized data to a color
                             var img = document.getElementById('spectrum');
@@ -2705,6 +2697,8 @@ limitations:
 
                                     if (doColour) {
                                         var x = model.userData.uData[colour_data];
+                                        if (x != undefined) {
+
                                         var x_max = maxminlist[colour_data].max;
                                         var x_min = maxminlist[colour_data].min;
                                         var x_norm = (x - x_min) / (x_max - x_min);
@@ -2721,10 +2715,12 @@ limitations:
                                         
                                         } else if (colour_method == 'block') {
 
+                                            } // Add other methods of colour viz here
                                         }
                                     }
                                     if (doHeight) {
                                         var x = model.userData.uData[height_data];
+                                        if (x != undefined) {
                                         var x_max = maxminlist[height_data].max;
                                         var x_min = maxminlist[height_data].min;
                                         var x_norm = (x - x_min) / (x_max - x_min);
@@ -2739,8 +2735,10 @@ limitations:
                                             model.scale.set(model.scale.x, model.scale.y, x_height);
                                         } else if (height_method == 'block') {
 
-                                        }
+                                            } // Add other methods of height viz here
                                     }
+
+                                    } // Add other visiualization techniques here (Opacity? Sprites above buildings?)
 
                                 }
                             });
@@ -2857,7 +2855,7 @@ limitations:
   };
   // Called from *Controls.js when canvas is clicked
   app.canvasClicked = function (e) {
-      var canvasOffset = app._offset(app.renderer.domElement);
+    var canvasOffset = app._offset(app.renderer.domElement);
       var offsetX = e.clientX - canvasOffset.left
       var offsetY = e.clientY - canvasOffset.top
     //var objs = app.intersectObjects(e.clientX - canvasOffset.left, e.clientY - canvasOffset.top);
@@ -3082,7 +3080,7 @@ limitations:
                  //Determine geometry type
                  if (response.features[i].geometry.type == "Point" || response.features[i].geometry.type == "MultiPoint") {
                      //If point, create a point object. 
-                    
+
                      var material = new THREE.MeshLambertMaterial({
                          color: 0xffaaaa,
                      });
@@ -3115,7 +3113,7 @@ limitations:
                      //points.push(point);
 
                      point.position.set(ptx, pty, 0.5);
-                     
+
                      //LayerID 100 until we figure out proper indentation - Nicolai
                      point.userData.layerId = index;
                      point.userData.planeId = indexPlane;
@@ -3202,7 +3200,7 @@ limitations:
                      mesh.userData.planeId = indexPlane;
                      mesh.userData.layerId = index;
                      mesh.userData.featureId = i;
-   
+
                      //Todo create proper indexing somehow.
                      plane.layers[index].model[i] = mesh;
                      plane.layers[index].a[i] = plane.layers[index].features[i].properties;
