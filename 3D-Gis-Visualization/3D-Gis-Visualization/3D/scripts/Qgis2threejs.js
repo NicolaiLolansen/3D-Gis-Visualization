@@ -1191,8 +1191,7 @@ limitations:
         });
         
         folder.add(Q3D.gui.parameters, 'resolution').name('Visualize GeoJSON').onChange(function () {
-            var attributelist = layer.a[0];
-            initVizMenu(attributelist);
+            initVizMenu(layer.maxmin);
 
             startViz(function (colour_data, height_data, vizComplete) {
 
@@ -1221,10 +1220,8 @@ limitations:
 
                 
                 layer.model.forEach(function (model, i) {
-                    if (model.userData.uData != undefined) {
-
                         if (doColour) {
-                            var x = model.userData.uData[colour_data];
+                            var x = layer.a[i][colour_data];
                             if (x != undefined) {
 
                                 //Calculate normalized value [0; 1]
@@ -1232,9 +1229,16 @@ limitations:
                                 var x_min = maxminlist[colour_data].min;
                                 var x_norm = (x - x_min) / (x_max - x_min);
 
-                                var x_img = (x_norm * canvas.width) | 0;
-                                var colour = ctx.getImageData(x_img, 5, 1, 1);
+                                var x_img = (x_norm * canvas.width - 1) | 0;
 
+                                var colour = {};
+                                if (!isNaN(x_img)) {
+                                    colour = ctx.getImageData(x_img, 5, 1, 1);
+                                } else {
+                                    colour.data = [0, 0, 0];
+                                }
+
+                                console.log(x + " -> " + x_img + " -> " + colour.data);
                                 if (colour_method == 'building') {
                                     // Translate normalized value to RGB
                                     var material = new THREE.MeshBasicMaterial({color: 0xffffff,
@@ -1248,7 +1252,7 @@ limitations:
                             }
                         }
                         if (doHeight) {
-                            var x = model.userData.uData[height_data];
+                            var x = layer.a[i][height_data];
                             if (x != undefined) {
                                 var x_max = maxminlist[height_data].max;
                                 var x_min = maxminlist[height_data].min;
@@ -1268,8 +1272,6 @@ limitations:
                             }
 
                         } // Add other visiualization techniques here (Opacity? Sprites above buildings?)
-
-                    }
                 });
                 vizComplete();
             })
@@ -2781,7 +2783,7 @@ limitations:
                                         var x_min = maxminlist[colour_data].min;
                                         var x_norm = (x - x_min) / (x_max - x_min);
 
-                                        var x_img = (x_norm * canvas.width) | 0;
+                                        var x_img = (x_norm * canvas.width - 1) | 0;
                                         
                                         var colour = {};
                                         if (!isNaN(x_img)) {
