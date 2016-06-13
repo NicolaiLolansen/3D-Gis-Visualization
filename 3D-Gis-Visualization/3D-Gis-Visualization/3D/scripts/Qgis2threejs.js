@@ -2565,7 +2565,7 @@ limitations:
 
                             var maxmin = json.pop();
                             app.project.plane[index].buildings.maxmin = maxmin;
-
+                            fillVizOptions(maxmin);
                             //For every building in the tile, if address match, add a new group of attributes uData
                             //
                             console.log(json);
@@ -2574,12 +2574,7 @@ limitations:
                                 json.forEach(function (json) {
                                     if (a != null) {
                                         if (a["Adresse"] == json.addr) {
-                                            console.log("Matched data to a building!");
-                                            //match
                                             app.project.plane[index].buildings.model[i].userData.uData = json;
-
-                                            var material = new THREE.MeshLambertMaterial({ color: 0x999900 });
-                                            app.project.plane[index].buildings.model[i].material = material;
                                         }
                                     }
                                 });
@@ -2602,9 +2597,6 @@ limitations:
                                 height_method = (document.getElementById('h_building').checked) ? 'building' : 'block';
                             }
 
-                            console.log('VIS DIS: ' + colour_data);
-                            console.log('AND DIS: ' + height_data);
-
                             //Spectrum image for turning normalized data to a color
                             var img = document.getElementById('spectrum');
                             var canvas = document.createElement('canvas');
@@ -2623,40 +2615,46 @@ limitations:
 
                                     if (doColour) {
                                         var x = model.userData.uData[colour_data];
-                                        var x_max = maxminlist[colour_data].max;
-                                        var x_min = maxminlist[colour_data].min;
-                                        var x_norm = (x - x_min) / (x_max - x_min);
+                                        if (x != undefined) {
 
-                                        var x_img = (x_norm * img.width) | 0;
-                                        var colour = canvas.getContext('2d').getImageData(x_img, 5, 1, 1);
+                                            var x_max = maxminlist[colour_data].max;
+                                            var x_min = maxminlist[colour_data].min;
+                                            var x_norm = (x - x_min) / (x_max - x_min);
 
-                                        if (colour_method == 'building') {
-                                            // Translate normalized value to RGB
-                                        
-                                            model.material.color.setRGB(colour.data[0], colour.data[1], colour.data[2]);
-                                            console.log(model.material.color);
-                                        } else if (colour_method == 'block') {
+                                            var x_img = (x_norm * img.width) | 0;
+                                            var colour = canvas.getContext('2d').getImageData(x_img, 5, 1, 1);
 
+                                            if (colour_method == 'building') {
+                                                // Translate normalized value to RGB
+
+                                                model.material.color.setRGB(colour.data[0], colour.data[1], colour.data[2]);
+                                                console.log(model.material.color);
+                                            } else if (colour_method == 'block') {
+
+                                            } // Add other methods of colour viz here
                                         }
                                     }
                                     if (doHeight) {
                                         var x = model.userData.uData[height_data];
-                                        var x_max = maxminlist[height_data].max;
-                                        var x_min = maxminlist[height_data].min;
-                                        var x_norm = (x - x_min) / (x_max - x_min);
+                                        if (x != undefined) {
+                                            var x_max = maxminlist[height_data].max;
+                                            var x_min = maxminlist[height_data].min;
+                                            var x_norm = (x - x_min) / (x_max - x_min);
 
-                                        var max_height = 5;
-                                        var min_height = 2;
-                                        var x_height = min_height + (max_height - min_height) * x_norm;
+                                            var max_height = 5;
+                                            var min_height = 2;
+                                            var x_height = min_height + (max_height - min_height) * x_norm;
 
-                                        if (height_method == 'building') {
-                                            // Translate normalized value to height
-                                            // Height-min: 2, height-max: 4
-                                            model.scale.set(model.scale.x, model.scale.y, x_height);
-                                        } else if (height_method == 'block') {
+                                            if (height_method == 'building') {
+                                                // Translate normalized value to height
+                                                // Height-min: 2, height-max: 4
+                                                model.scale.set(model.scale.x, model.scale.y, x_height);
+                                            } else if (height_method == 'block') {
 
+                                            } // Add other methods of height viz here
                                         }
-                                    }
+
+                                    } // Add other visiualization techniques here (Opacity? Sprites above buildings?)
 
                                 }
                             });

@@ -7,6 +7,7 @@
     <link rel="stylesheet" type="text/css" href="css/Qgis2threejs.css">
     <link rel="stylesheet" type="text/css" href="css/style.css" >
     <link rel="stylesheet" type="text/css" href="css/loaderstyle.css"> <!-- http://codepen.io/jackrugile/full/JddmaX -->
+    <link rel="stylesheet" type="text/css" href="css/dropzone.css" /> <!-- http://www.dropzonejs.com/-->
     <link rel="apple-touch-icon" sizes="57x57" href="./resources/apple-icon-57x57.png">
     <link rel="apple-touch-icon" sizes="60x60" href="./resources/apple-icon-60x60.png">
     <link rel="apple-touch-icon" sizes="72x72" href="./resources/apple-icon-72x72.png">
@@ -62,6 +63,7 @@
         </div>
     </div>
 </div>
+
 <!-- visualization modal -->
 <div id="modal-viz" class="modal">
     <!-- Modal content -->
@@ -130,6 +132,75 @@
     </div>
 </div>
 
+<!-- builder start-up menu -->
+<div id="start-modal" class="modal">
+    <!-- Modal content -->
+    <div class="modal-content">
+        <div class="modal-header">
+            <span class="close" id="close-start-menu">×</span>
+            <h2>Welcome to GeoViz</h2>
+        </div>
+        <div class="modal-body">
+            <div class="menu-button-container" id="new-scene-div">
+                <button id="new-scene" type="button" class="menu-button">Create New Scene</button>
+                <button id="load-scene" type="button" class="menu-button">Load Saved Scene</button>
+            </div>
+
+            <div id="enter-address" class="textfield-container">
+                <input type="text" id="address-field" placeholder="Address of scene area" class="textbox"/>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="start-scene" type="button">Enter Scene (Gently)</button>
+        </div>
+    </div>
+</div>
+
+<!-- save scene menu -->
+<div id="save-modal" class="modal">
+    <!-- Modal content -->
+    <div class="modal-content">
+        <div class="modal-header">
+            <span class="close" id="close-save-menu">×</span>
+            <h2>Save Scene</h2>
+        </div>
+        <div class="modal-body">
+            <input type="text" class="textbox" id="scene-name-input" placeholder="Scene Name">
+        </div>
+        <div class="modal-footer">
+            <div class="save-buttons">
+                <button id="save-local" type="button" class="save-btn">Local Save</button>
+                <button id="save-remote" type="button" class="save-btn">Remote Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- load menu -->
+<div id="load-modal" class="modal">
+    <!-- Modal content -->
+    <div class="modal-content">
+        <div class="modal-header">
+            <span class="close" id="close-load-menu">×</span>
+            <h2>Load Scene</h2>
+        </div>
+        <div class="menu-button-container">
+            <button id="load-local" type="button" class="menu-button">Load From Local</button>
+            <button id="load-remote" type="button" class="menu-button">Load From Remote</button>
+        </div>
+        <div id="scene-uploader">
+            <form
+                  class="dropzone"
+                  id="dropzone">
+
+            </form>
+        </div>
+        <div class="modal-footer">
+                <button id="start-load" type="button" class="start-load-btn">Load</button>
+        </div>
+    </div>
+</div>
+
 <!-- loading circle -->
 <div id="loader" class="loader">
     <div class="loader-inner">
@@ -175,6 +246,7 @@ and uses the following library:
 
 <!-- footer -->
 <div id="footer"></div>
+<script src="js/dropzone.js"></script>
 <script src="./js/initscripts.js"></script>
 <script src="../3D/scripts/parser.js"></script>
 <script src="../3D/threejs/three.min.js"></script>
@@ -196,10 +268,9 @@ var container = document.getElementById("webgl");
 var app = Q3D.application;
 app.init(container);
 //project = new Q3D.Project({ crs: "EPSG:25832", title: "Untitled Project", baseExtent: [719777, 6187092, 722250, 6188663], rotation: 0, zShift: 0.0, width: 100.0, zExaggeration: 1.5 });
-initModal();
+initGUI();
 //initScene();
-
-
+    
 //LOKAL VERSION TIL TESTING
 $.getJSON("nordhavn.json", function (json) {
     app.loadProject(json);
@@ -208,11 +279,10 @@ $.getJSON("nordhavn.json", function (json) {
     document.getElementById('loader').style.display = 'none';
     // this will show the info it in firebug console
 });
-
+    
 </script>
 <script src="../3D/dat-gui/dat.gui.min.js"></script>
 <script src="../3D/scripts/dat-gui_panel.js"></script>
-
 
 <img src="resources/spectrum.png" id="spectrum">
 
