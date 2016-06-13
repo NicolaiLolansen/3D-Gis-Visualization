@@ -757,12 +757,15 @@ limitations:
                         
                         if (plane.layers !== undefined) {
                             plane.layers.forEach(function (layer) {
-                                layer.model.forEach(function(child){
-                                    if (child instanceof THREE.Mesh) {
-                                        app.scene.remove(child);
-                                        //app.octree.remove(child);
-                                    }
-                    });
+                                if (layer.model != undefined) {
+                                    layer.model.forEach(function (child) {
+                                        if (child instanceof THREE.Mesh) {
+                                            app.scene.remove(child);
+                                            //app.octree.remove(child);
+                                        }
+                                    });
+                                }
+                             
                             });
                         }
                 
@@ -821,9 +824,12 @@ limitations:
                     if (plane.layers != undefined) {
 
                         plane.layers.forEach(function (layer) {
-                            layer.model.forEach(function (model) {
-                                app._queryableObjects = app._queryableObjects.concat(model);
-                            });
+                            if (layer.model != undefined) {
+                                layer.model.forEach(function (model) {
+                                    app._queryableObjects = app._queryableObjects.concat(model);
+                                });
+                            }
+                          
                         });
                     }
 
@@ -1278,10 +1284,12 @@ limitations:
                 layer.model.forEach(function (model) {
                     app.scene.remove(model);
                     app.octree.remove(model);
-                    app.project.plane[planeId].layers.splice(layerId, 1);
-                    app.project.plane[planeId].detail.layers.splice(layerId, 1);
-           
-        }); 
+                    console.log("splicing layer: " + layerId);
+                 
+                });
+                app.project.plane[planeId].layers[layerId] = [];
+                app.project.plane[planeId].detail.layers[layerId] = [];
+                console.log(app.project.plane[planeId].layers);
                 app.queryObjNeedsUpdate = true;
                 app.queryableObjects();
             });
@@ -3149,6 +3157,7 @@ limitations:
              plane.layers[index].model = [];
              plane.layers[index].a = [];
              plane.layers[index].name = "GeoJson " + index;
+             plane.layers[index].maxmin = {};
 
              var points = [];
          
@@ -3200,8 +3209,8 @@ limitations:
                      //Todo create proper indexing somehow.
                      plane.layers[index].model[i] = point;
                      plane.layers[index].a[i] = plane.layers[index].features[i].properties;
-                     app.octree.add(point);
-                   //  app.scene.add(point);
+                     //app.octree.add(point);
+                     app.scene.add(point);
                  }
                  else if (response.features[i].geometry.type == "Polygon" || response.features[i].geometry.type == "MultiPolygon") {
 
@@ -3280,12 +3289,41 @@ limitations:
                      //Todo create proper indexing somehow.
                      plane.layers[index].model[i] = mesh;
                      plane.layers[index].a[i] = plane.layers[index].features[i].properties;
-                     app.octree.add(mesh);
-
+                     //app.octree.add(mesh);
+                     app.scene.add(mesh);
                      points = [];
+                 }
+                 //First iteration, and we need to build the max min object
+                 if (i == 0) {
+                     for (var key in plane.layers[index].a[i]) {
+                         
+                         plane.layers[index].maxmin[key] = {max: 0, min: Infinity};
+                     }
+                 } 
+                 for (var key in plane.layers[index].a[i]) {
+                     if (isNumeric(plane.layers[index].a[i][key])) {
+                         if (plane.layers[index].a[i][key] > plane.layers[index].maxmin[key].max) {
+                             plane.layers[index].maxmin[key].max = plane.layers[index].a[i][key];
+
+                         } else if (plane.layers[index].a[i][key] < plane.layers[index].maxmin[key].min) {
+
+                             plane.layers[index].maxmin[key].min = plane.layers[index].a[i][key];
+                         }
+                     }
+                 }
+               
+                 //Will return strings as numbers, if they can be interpreted as such
+                 function isNumeric(n) {
+                     //var noComma = (n.toString().indexOf(',') == -1);
+                     return !isNaN(parseFloat(n)) && isFinite(n); //&& noComma;
                  }
              }
 
+         }
+         for (var key in plane.layers[index].maxmin) {
+             if (plane.layers[index].maxmin[key].min == Infinity || plane.layers[index].maxmin[key].max == 0) {
+                 delete plane.layers[index].maxmin[key];
+             }
          }
          app.queryObjNeedsUpdate = true;
 
