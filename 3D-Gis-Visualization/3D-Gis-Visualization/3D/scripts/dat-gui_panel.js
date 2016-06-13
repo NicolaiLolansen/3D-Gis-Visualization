@@ -19,7 +19,7 @@ Q3D.gui = {
     Source: 'https://dl.dropboxusercontent.com/s/88vgr6io5q63cjg/energimaerke.csv',
     getParseResult: getAllData,
     getParseSources: getSources,
-    getbounds: "http://wfs-kbhkort.kk.dk/k101/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=k101:karre&outputFormat=json",
+    getbounds: "http://wfs-kbhkort.kk.dk/k101/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=k101:gadetraer&outputFormat=json",
     layers: [],
     opacity: 1.0,
     color: "#445566",
@@ -333,7 +333,17 @@ Q3D.gui = {
                                   
                               });
                           }
-                         
+                          if (plane.layers !== undefined) {
+                              plane.layers.forEach(function (layer) {
+                                  layer.model.forEach(function (child) {
+                                      app.scene.remove(child);
+                                      app.octree.remove(child);
+                                      delete child;
+                                  })
+                            
+
+                              });
+                          }
                       });
                   }
                   app.octreeNeedsUpdate = true;
