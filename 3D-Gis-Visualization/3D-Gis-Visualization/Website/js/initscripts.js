@@ -11,7 +11,8 @@ var initScene = function () {
     var _scene = 'default.json'; //Name of default scene
     if (window.sessionStorage.userRole == "builder") {
         // Load default scene
-        var c = confirm('JEG ER KUN EN BOX UNDER TESTING\nOK -> Local Load\nCancel -> Server Load');
+        //TODO: REMOVE CONFIRMATION BOX BEFORE FINAL RELEASE
+        var c = confirm('JEG ER KUN EN BOX UNDER TESTING\nOK -> Local Load (nordhavn.json)\nCancel -> Server Load (kastellet.json)');
         if (c) {
             localLoad();
         } else {
