@@ -4,6 +4,9 @@
 */
 
 var initScene = function () {
+    //TODO: REMOVE THIS LINE!!!!!!!!!
+    window.sessionStorage.userRole = 'builder';
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     var url = 'https://api-geovizjs.rhcloud.com/loadScene/';
     var _scene = 'default.json'; //Name of default scene
