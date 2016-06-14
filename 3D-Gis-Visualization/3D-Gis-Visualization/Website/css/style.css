@@ -158,14 +158,27 @@ body {
     text-decoration: none;
     cursor: pointer;
 }
+/* The Back Button */
+.back_arrow {
+    color: white;
+    float:left;
+    font-size: 28px;
+    font-weight: bold;
+}
 
+.back_arrow:hover,
+.back_arrow:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+}
 .modal-header {
     padding: 2px 16px;
     background-color: #5cb85c;
     color: white;
 }
 
-.modal-body {padding: 2px 16px;}
+.modal-body {padding: 2px 2px;}
 
 .modal-footer {
     padding: 16px 16px;
@@ -307,8 +320,13 @@ input[type="radio"] + label span {
 .textfield-container {
     width: 100%
 }
+.textfield-container textbox {
+    width: 90%;
+    margin: 5px; 
+}
+
 .menu-button-container {
-    width: 100%
+    padding: 5px;
 }
 .menu-button {
   font-family: "Roboto", sans-serif;
@@ -344,23 +362,133 @@ input[type="radio"] + label span {
     margin: 20px 20px 20px 20px;
 } 
 
-#filedrag
-{
-	display: none;
-	font-weight: bold;
-	text-align: center;
-	padding: 1em 0;
-	margin: 1em 0;
-	color: #555;
-	border: 2px dashed #555;
-	border-radius: 7px;
-	cursor: default;
+.spectrum-menu {
+    display: inline-block;
 }
 
-#filedrag.hover
-{
-	color: #f00;
-	border-color: #f00;
-	border-style: solid;
-	box-shadow: inset 0 3px 4px #888;
+.spectrum-div {
+  display:inline-block;
+  background:rgba(255, 255, 255, 0.7);
+  border-radius: 5px;
+  padding-left: 15px;
+  padding-right: 15px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  border: 2px solid #000000;
+  position:absolute;
+  bottom: 10px;
+  left: 10px;
+}
+.min-val {
+  display: inline;
+  font-size: 30px;
+  vertical-align: middle;
+}
+.spectrum {
+  display: inline;
+  vertical-align: middle;
+  border: 2px solid #000000;
+}
+
+.max-val {
+  display: inline;
+  vertical-align: middle;
+  font-size: 30px;
+}
+
+.download-field button{
+  font-family: "Roboto", sans-serif;
+  text-transform: uppercase;
+  outline: 0;
+  background: #3e8e41;
+  width: 100%;
+  border: 0;
+  margin: 0 0 5px;
+  padding: 15px;
+  color: #FFFFFF;
+  font-size: 14px;
+  -webkit-transition: all 0.3 ease;
+  transition: all 0.3 ease;
+  cursor: pointer;
+}
+.download-field button:hover,.download-field button:active,.download-field button:focus {
+  background: #43A047;
+}
+
+#progress_bar {
+    padding: 3px;
+    border: 1px solid #000;
+    position:absolute;
+    bottom:10px;
+    left:0;
+    right:0;
+    width: 90%;
+    margin:auto;
+    font-size: 14px;
+    clear: both;
+    opacity: 0;
+    -moz-transition: opacity 1s linear;
+    -o-transition: opacity 1s linear;
+    -webkit-transition: opacity 1s linear;
+}
+#progress_bar.loading {
+    opacity: 1.0;
+}
+#progress_bar .percent {
+    background-color: #3e8e41;
+    height: auto;
+    width: 0;
+}
+
+.scene-uploader {
+    position: relative;
+    overflow: hidden;
+    font-family: "Roboto", sans-serif;
+    text-transform: uppercase;
+    outline: 0;
+    background: #FFFFFF;
+    width: auto;
+    height: 150px;
+    border: 2px dashed #737373;
+    padding: 5px 5px 5px 5px;
+    margin: 5px 5px 5px 5px;
+    color: #000000;
+    font-size: 14px;
+    -webkit-transition: all 0.3 ease;
+    transition: all 0.3 ease;
+    cursor: pointer;
+}
+
+.scene-uploader button{
+  font-family: "Roboto", sans-serif;
+  text-transform: uppercase;
+  outline: 0;
+  position: absolute;
+  bottom: 0;
+  background: #3e8e41;
+  width: auto;
+  border: 0;
+  margin: 0 auto;
+  color: #FFFFFF;
+  font-size: 14px;
+  -webkit-transition: all 0.3 ease;
+  transition: all 0.3 ease;
+  cursor: pointer;
+}
+
+.scene-uploader button:hover,.scene-uploader button:active,.scene-uploader button:focus {
+  background: #43A047;
+}
+
+.scene-uploader input.file-picker {
+    position: absolute;
+    height: 150px;
+    top: 0;
+    right: 0;
+    margin: 0;
+    padding: 0;
+    font-size: 20px;
+    cursor: pointer;
+    opacity: 0;
+    filter: alpha(opacity=0);
 }
