@@ -3285,7 +3285,7 @@ limitations:
                      });
 
                      var mesh = new THREE.Mesh(geometry, material);
-                     mesh.scale.set(1, 1, 2 * Math.random());
+                     mesh.scale.set(1, 1, 2);
                      mesh.userData.planeId = indexPlane;
                      mesh.userData.layerId = index;
                      mesh.userData.featureId = i;
