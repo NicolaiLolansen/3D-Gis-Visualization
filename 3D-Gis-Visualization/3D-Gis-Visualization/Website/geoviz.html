@@ -274,6 +274,7 @@ initGUI();
 //LOKAL VERSION TIL TESTING
 $.getJSON("nordhavn.json", function (json) {
     app.loadProject(json);
+   
     app.start();
     app.addEventListeners();
     document.getElementById('loader').style.display = 'none';
