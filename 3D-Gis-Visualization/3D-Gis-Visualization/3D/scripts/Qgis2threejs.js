@@ -373,7 +373,8 @@ limitations:
             width: projectJSON.width, height: projectJSON.height, zExaggeration: projectJSON.zExaggeration, layers: projectJSON.layers
         });
         project.layers = projectJSON.layers;
-       
+        return projectParsed;
+        /*
         var json = projectString;
         var blob = new Blob([json], { type: "application/json" });
         var url = URL.createObjectURL(blob);
@@ -385,7 +386,7 @@ limitations:
         
         console.log(a);
 
-      
+      */
         //Eventually when we are done, try to load the project (If done live, should just reload the entire scene correctly):
        // app.loadProject(projectParsed);
     }
@@ -2756,6 +2757,7 @@ limitations:
 
                             if (doColour) {
                                 colour_method = (document.getElementById('c_building').checked) ? 'building' : 'block';
+                                initSpectrum(maxminlist[colour_data]);
                             }
                             if (doHeight) {
                                 height_method = (document.getElementById('h_building').checked) ? 'building' : 'block';
@@ -2798,10 +2800,10 @@ limitations:
                                             var material = new THREE.MeshBasicMaterial({color: 0xffffff,
                                             });
                                             model.material = material;
-                                            model.material.color.setRGB(colour.data[0], colour.data[1], colour.data[2]);
+                                            model.material.color.setRGB(colour.data[0]/255, colour.data[1]/255, colour.data[2]/255);
                                         
                                         } else if (colour_method == 'block') {
-
+                                            
                                             } // Add other methods of colour viz here
                                         }
                                     }
