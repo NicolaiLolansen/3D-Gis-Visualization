@@ -8,35 +8,57 @@ var initScene = function () {
     window.sessionStorage.userRole = 'builder';
     //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    var url = 'https://api-geovizjs.rhcloud.com/loadScene/';
     var _scene = 'default.json'; //Name of default scene
     if (window.sessionStorage.userRole == "builder") {
         // Load default scene
-        document.getElementById('loader').style.display = 'none';
-        openStartMenu();
-
+        var c = confirm('JEG ER KUN EN BOX UNDER TESTING\nOK -> Local Load\nCancel -> Server Load');
+        if (c) {
+            localLoad();
+        } else {
+            loadScene('kastellet', function () {
+                document.getElementById('loader').style.display = 'none';
+                openStartMenu();
+            });
+        }
     }
     else if (window.sessionStorage.userRole == "observer") {
         // Load scene chosen at login screen (window.sessionStorage.scene)
         _scene = window.sessionStorage.scene;
 
         //EKSTERN LOAD
-        url = url + '?scene=' + _scene;
-        $.ajax({
-            url: url,
-            type: 'GET',
-            success: function (json_scene) {
-                var loader = document.getElementById('loader');
-                loader.style.display = 'none';
-                app.loadProject(JSON.parse(json_scene));
-                app.start();
-                app.addEventListeners();
-            },
-            error: function (err) {
-                console.log(err);;
-            }
-        });
+        loadScene(_scene);
     }
+}
+
+loadScene = function (scene_name, callback) {
+    var url = 'https://api-geovizjs.rhcloud.com/loadScene/';
+    url = url + '?scene=' + scene_name;
+    $.ajax({
+        url: url,
+        type: 'GET',
+        success: function (json_scene) {
+            var loader = document.getElementById('loader');
+            loader.style.display = 'none';
+            app.loadProject(JSON.parse(json_scene));
+            app.start();
+            app.addEventListeners();
+            callback();
+        },
+        error: function (err) {
+            console.log(err);;
+        }
+    });
+}
+
+localLoad = function () {
+    //LOKAL VERSION TIL TESTING
+    $.getJSON("nordhavn.json", function (json) {
+        app.loadProject(json);
+        app.start();
+        app.addEventListeners();
+        document.getElementById('loader').style.display = 'none';
+        // this will show the info it in firebug console
+    });
 }
 
 /*
@@ -398,7 +420,6 @@ openSaveMenu = function () {
     btn_save_remote.onclick = function () {
        
         var scene_name = scene_name_textbox.value;
-        console.log("SCENE NAME: " + scene_name);
         if (scene_name != null && scene_name.length > 1) {
             loader.style.display = 'block';
             $.ajax({
@@ -406,10 +427,10 @@ openSaveMenu = function () {
                 url: 'https://api-geovizjs.rhcloud.com/checkName/',
                 data: {'scene_name' : scene_name },
                 success: function (data) {
-
+                    var project = app.saveProject(scene_name);
                     var block = {
                         scene_name: scene_name,
-                        scene: app.saveProject(scene_name)
+                        scene: project
                     };
 
                     var saveBlock = JSON.stringify(block);
@@ -605,6 +626,7 @@ addressToScene = function (address) {
             /*
             CREATE A STOP RENDER INSTEAD OF 10 RUNTHROUGHS OF THIS
             */
+
             for (var i = 0; i < 20; i++){
                 app.scene.children.forEach(function (child) {
                     if (child instanceof THREE.Mesh) {
