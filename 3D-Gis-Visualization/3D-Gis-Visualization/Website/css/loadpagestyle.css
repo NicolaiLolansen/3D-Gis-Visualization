@@ -1,0 +1,122 @@
+﻿.load-page {
+  width:100%;
+  height:100%;
+  margin:auto;
+  text-align:center;
+  font-size: 25px;
+}
+.remote-load {
+  float:left;
+  width:50%;
+  padding-right:20px;
+}
+.local-load {
+  width:50%;
+  margin-left: 50%;
+  padding:20px;
+}
+
+button {
+  font-family: "Roboto", sans-serif;
+  text-transform: uppercase;
+  outline: black;
+  background: #4CAF50;
+  width: 92%;
+  border: 0;
+  margin: 0 0 5px;
+  padding: 15px;
+  color: #FFFFFF;
+  font-size: 14px;
+  -webkit-transition: all 0.3 ease;
+  transition: all 0.3 ease;
+  cursor: pointer;
+}
+button:hover,button:active,button:focus {
+  background: #43A047;
+}
+.local-load input.file-picker {
+    position: absolute;
+    width:100%;
+    height: 100%;
+    top: 0;
+    right: 0;
+    margin: 0;
+    padding: 0;
+    font-size: 20px;
+    cursor: pointer;
+    opacity: 0;
+    filter: alpha(opacity=0);
+}
+.local-load {
+    position: relative;
+    overflow: hidden;
+    font-family: "Roboto", sans-serif;
+    text-transform: uppercase;
+    text-align: center;
+    outline: 0;
+    background: rgba(255,255,255,0.2);
+    width: auto;
+    height: 150px;
+    border: 2px dashed #737373;
+    padding: 10px 10px 10px 10px;
+    margin: 15px 15px 15px 15px;
+    color: #000000;
+    font-size: 14px;
+    -webkit-transition: all 0.3 ease;
+    transition: all 0.3 ease;
+    cursor: pointer;
+}
+table {
+  margin-top:15px;
+  width: 100%;
+}
+
+table td {
+  margin-top:15px;
+  width: 30%;
+}
+
+body {
+  background: #76b852; /* fallback for old browsers */
+  background: -webkit-linear-gradient(right, #76b852, #8DC26F);
+  background: -moz-linear-gradient(right, #76b852, #8DC26F);
+  background: -o-linear-gradient(right, #76b852, #8DC26F);
+  background: linear-gradient(to left, #76b852, #8DC26F);
+  font-family: "Roboto", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;      
+}
+
+.status-message {
+    font-family: "Roboto", sans-serif;
+    font-size: 45px;
+}
+
+#progress_bar {
+    padding: 3px;
+    border: 1px solid #000;
+    position:absolute;
+    bottom:10px;
+    left:0;
+    right:0;
+    width: 90%;
+    margin:auto;
+    font-size: 14px;
+    clear: both;
+    opacity: 0;
+    -moz-transition: opacity 1s linear;
+    -o-transition: opacity 1s linear;
+    -webkit-transition: opacity 1s linear;
+}
+#progress_bar.loading {
+    opacity: 1.0;
+}
+#progress_bar .percent {
+    background-color: #3e8e41;
+    height: auto;
+    width: 0;
+}
+.load-scenes-btn {
+    margin-top: 70px;
+    width: 50%;
+}
