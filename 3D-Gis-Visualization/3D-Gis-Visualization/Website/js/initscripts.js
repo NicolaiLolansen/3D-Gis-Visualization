@@ -520,13 +520,24 @@ toggleSpectrum = function (attribute) {
         spec.style.display = 'none';
     }
 }
+closeSpectrum = function (attribute) {
+    var spec = document.getElementById('spectrum-div');
+        spec.style.display = 'none';
+    
+}
+openSpectrum = function (attribute) {
+    var spec = document.getElementById('spectrum-div');
+    spec.style.display = 'block';
 
-initSpectrum = function (attribute) {
+}
+initSpectrum = function (attribute,type,field) {
     if (attribute != null) {
         var max = attribute.max;
         var min = attribute.min;
         document.getElementById('max-val').innerHTML = max;
         document.getElementById('min-val').innerHTML = min;
+        document.getElementById('field-val').innerHTML = field;
+        document.getElementById('type').innerHTML = type + ": ";
     }
     document.getElementById('spectrum-div').style.display = 'block';
 }

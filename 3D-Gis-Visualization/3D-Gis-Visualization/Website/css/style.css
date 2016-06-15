@@ -395,6 +395,16 @@ input[type="radio"] + label span {
   vertical-align: middle;
   font-size: 30px;
 }
+.type {
+  display: inline;
+  vertical-align: middle;
+  font-size: 30px;
+}
+.field-val {
+  display: inline;
+  vertical-align: middle;
+  font-size: 30px;
+}
 
 .download-field button{
   font-family: "Roboto", sans-serif;

@@ -399,6 +399,7 @@ limitations:
                     planeData.planes[i].buildings.zip = plane.buildings.zip;
                     planeData.planes[i].buildings.userData = userData;
                     planeData.planes[i].buildings.block = blocks;
+                    planeData.planes[i].buildings.maxmin = plane.buildings.maxmin;
                 //Actually we dont need to save the mergedMesh, as it is transitive
                 //planeData.planes[i].buildings.mergeMesh = JSON.stringify(model.toJSON());     
                 }
@@ -531,9 +532,13 @@ limitations:
         var loader = new THREE.ObjectLoader();
         var geoList = [];
         projectJSON.planeData.planes.forEach(function (plane, i) {
+            if (plane.detail.resolution == true) {
+                app.updateResolution(plane, 1, 512, 512);
+            }
             if (plane.detail.address == true && plane.buildings !== undefined){
                 console.log("True");
                 var models = [];
+                var blocks = [];
                 plane.buildings.model.forEach(function (model) {
                     var loadedGeometry = JSON.parse(model);
                     var loadedMesh = loader.parse(loadedGeometry);
@@ -561,6 +566,7 @@ limitations:
                     plane.buildings.block.forEach(function (block) {
                         var loadedGeometry = JSON.parse(block);
                         var loadedMesh = loader.parse(loadedGeometry);
+                        blocks.push(loadedMesh);
                         var position = { x: 0, y: -5 };
                         var target = { x: 0, y: 0 };
                         var tween = new TWEEN.Tween(position).to(target, 5000);
@@ -580,6 +586,7 @@ limitations:
                     models[x].userData = plane.buildings.userData[x];
                 }
                 plane.buildings.model = models;
+                plane.buildings.block = blocks;
                 /* if (app.project.plane[i] != undefined) {
                     var mesh = app.project.plane[i].mesh;
                     app.project.plane[i] = plane;
@@ -1085,6 +1092,19 @@ limitations:
                     }
                 }
         }
+        r.push('<table class="attrs">');
+        r.push("<caption>User Data</caption>");
+        if (type == "building") {
+            layer.buildings.model.forEach(function (model, i) {
+                if (model.userData.uData != undefined && i == featureId) {
+                    for (var prop in model.userData.uData) {
+                        r.push("<tr><td>" + prop + "</td><td>" + model.userData.uData[prop] + "</td></tr>");
+                    }
+
+                }
+            });
+        }
+      
         app.popup.show(r.join(""));
     };
 
@@ -1214,8 +1234,12 @@ limitations:
 
         if (type == "layer"){
             var layer = app.project.plane[planeId].layers[layerId];
+
+            initSpectrum(layer.maxmin[layer.spectrumData],"GeoJSON", layer.spectrumData);
+
         } else if (type == "building"){
             var layer = app.project.plane[layerId].buildings;
+            initSpectrum(layer.maxmin[app.project.plane[layerId].spectrumData], "Building", app.project.plane[layerId].spectrumData);
         }
 
         if (layer === undefined) return;
@@ -1253,13 +1277,13 @@ limitations:
                  model.material.color.setHex(pColor);             
         });
 
-        folder.addColor(Q3D.gui.parameters, 'color').name('Color layer').onChange(function (color) {
+        folder.addColor(Q3D.gui.parameters, 'color').name('Color Layer').onChange(function (color) {
 
             var pColor = color.replace('#', '0x');
                 for (var i = 0; i < layer.model.length; i++) {
                     layer.model[i].material.color.setHex(pColor);
                     if (type == "building") {
-                        ////layer.mergeMesh.material.color.setHex(pColor);
+                    // layer.mergeMesh.material.color.setHex(pColor);
                 }
             }
         });
@@ -1278,6 +1302,8 @@ limitations:
 
                 if (doColour) {
                     colour_method = (document.getElementById('c_building').checked) ? 'building' : 'block';
+                    initSpectrum(layer.maxmin[colour_data],"GeoJSON", colour_data);
+                    layer.spectrumData = colour_data;
                 }
                 if (doHeight) {
                     height_method = (document.getElementById('h_building').checked) ? 'building' : 'block';
@@ -1320,7 +1346,7 @@ limitations:
                     if (doColour) {
                         var x = layer.a[i][colour_data];
                         if (x != undefined) {
-
+                       
                             //Calculate normalized value [0; 1]
                             var x_max = maxminlist[colour_data].max;
                             var x_min = maxminlist[colour_data].min;
@@ -2620,15 +2646,27 @@ limitations:
               var index = d.index;
               var detail = app.project.plane[index].detail;
 
-              console.log(detail);
-          
+           
+            
               //Add geoJSON file to the current tile
               folder.add(Q3D.gui.parameters, 'getbounds').name('geoJSON').onFinishChange(function (url) {
                   app.getGeoJson(index, url);
                   //TODO do this in the callback to make sure it doesnt go wrong
                   detail.layers.push({ url: url, viz: false });
               });
+              /*
+           Display the spectrum if there is a maxmin list on the plane
 
+           */
+              
+              if (app.project.plane[index].buildings != undefined) {
+                  if (app.project.plane[index].buildings.maxmin != undefined) {
+                      if (app.project.plane[index].buildings.maxmin[app.project.plane[index].spectrumData] != undefined) {
+                          initSpectrum(app.project.plane[index].buildings.maxmin[app.project.plane[index].spectrumData], "Building", app.project.plane[index].spectrumData);
+                      }
+                  }
+              }
+             
               //No buildings are present, give the opportunity to create them
               if (detail.buildings == 0) {
 
@@ -2644,6 +2682,7 @@ limitations:
 
                   //Merged buildings are present, give the opportunity to add them to the octree, or to to level 0 again.
               } else if (detail.buildings == 1) {
+
                   folder.add(Q3D.gui.parameters, 'resolution').name('Add to octree').onChange(function () {
                       app.project.plane[index].buildings.model.forEach(function (building) {
                           app.octree.add(building);
@@ -2659,6 +2698,12 @@ limitations:
                           app.octree.remove(building);
                           app.scene.remove(building);
                       });
+                      if (app.project.plane[index].buildings.block != undefined) {
+                          app.project.plane[index].buildings.block.forEach(function (building) {
+                              app.octree.remove(building);
+                              app.scene.remove(building);
+                          });
+                      }
                       app.octreeNeedsUpdate = true;
                       delete app.project.plane[index].buildings;
                       app.scene.remove(app.project.plane[index].mergeMesh);
@@ -2687,6 +2732,12 @@ limitations:
                           app.scene.remove(building);
 
                       });
+                      if (app.project.plane[index].buildings.block != undefined) {
+                          app.project.plane[index].buildings.block.forEach(function (building) {
+                              app.octree.remove(building);
+                              app.scene.remove(building);
+                          });
+                      }
                       app.octreeNeedsUpdate = true;
                       delete app.project.plane[index].buildings;
                       app.scene.remove(app.project.plane[index].mergeMesh);
@@ -2735,6 +2786,7 @@ limitations:
                     });
                     folder.add(Q3D.gui.parameters, 'resolution').name('Visualize Data').onChange(function () {
                         var maxminlist = app.project.plane[index].buildings.maxmin;
+
                         initVizMenu(maxminlist);
 
                         startViz(function (colour_data, height_data, vizComplete) {
@@ -2746,7 +2798,8 @@ limitations:
 
                             if (doColour) {
                                 colour_method = (document.getElementById('c_building').checked) ? 'building' : 'block';
-                                initSpectrum(maxminlist[colour_data]);
+                                initSpectrum(maxminlist[colour_data], "Building", colour_data);
+                                app.project.plane[index].spectrumData = colour_data;
                             }
                             if (doHeight) {
                                 height_method = (document.getElementById('h_building').checked) ? 'building' : 'block';
