@@ -80,7 +80,6 @@ onmessage = function (e) {
     
    
     //Compute the center coordinate of the box that bounds the object:
-
     var xminMap = Math.min.apply(null, xs);
     var xmaxMap = Math.max.apply(null, xs);
     var yminMap = Math.min.apply(null, ys);
