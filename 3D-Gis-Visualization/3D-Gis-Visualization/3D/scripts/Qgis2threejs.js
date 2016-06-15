@@ -362,6 +362,7 @@ limitations:
         });
         console.log(planeData);
         savedProject.planeData = planeData;
+        /*
         //Test how it goes
         var projectString = JSON.stringify(savedProject);
         //console.log(projectString);
@@ -372,8 +373,8 @@ limitations:
             crs: projectJSON.crs, title: projectJSON.title, baseExtent: projectJSON.baseExtent, rotation: projectJSON.rotation, zshift: projectJSON.zshift,
             width: projectJSON.width, height: projectJSON.height, zExaggeration: projectJSON.zExaggeration, layers: projectJSON.layers
         });
-        project.layers = projectJSON.layers;
-        return projectParsed;
+        project.layers = projectJSON.layers;*/
+        return savedProject;
         /*
         var json = projectString;
         var blob = new Blob([json], { type: "application/json" });

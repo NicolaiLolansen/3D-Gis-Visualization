@@ -93,18 +93,18 @@
             </table>
         </div>
         <div class="modal-footer">
-            <div class="radio-buttons">
+            <div class="checkboxes">
                 <table>
                     <tr>
                         <td>
                             <div>
-                                <input type="radio" name="radio_colour" id="c_building" class="radio" checked />
+                                <input type="checkbox" name="radio_colour" id="c_building" class="checkbox" checked />
                                 <label for="c_building">Buildings</label>
                             </div>
                         </td>
                         <td>
                             <div>
-                                <input type="radio" name="radio_height" id="h_building" class="radio" checked />
+                                <input type="checkbox" name="radio_height" id="h_building" class="checkbox" checked />
                                 <label for="h_building">Buildings</label>
                             </div>
                         </td>
@@ -112,13 +112,13 @@
                     <tr>
                         <td>
                             <div>
-                                <input type="radio" name="radio_colour" id="c_block" class="radio" />
+                                <input type="checkbox" name="radio_colour" id="c_block" class="checkbox" />
                                 <label for="c_block">Blocks</label>
                             </div>
                         </td>
                         <td>
                             <div>
-                                <input type="radio" name="radio_height" id="h_block" class="radio" />
+                                <input type="checkbox" name="radio_height" id="h_block" class="checkbox" />
                                 <label for="h_block">Blocks</label>
                             </div>
                         </td>
@@ -153,7 +153,7 @@
             </div>
         </div>
         <div class="modal-footer">
-            <button id="start-scene" type="button">Enter Scene (Gently)</button>
+            <button id="start-scene" type="button">Enter Scene</button>
         </div>
     </div>
 </div>
@@ -203,6 +203,16 @@
                 <button id="back-btn">Back</button>
         </div>
     </div>
+</div>
+
+<div id="saved-scenes" class="modal">
+    <div class="modal-header">
+
+    </div>
+    <table class="scene-table">
+
+    </table>
+
 </div>
 
 <!-- loading circle -->
@@ -263,6 +273,8 @@ and uses the following library:
 <script src="../3D/stats/build/stats.min.js"></script>
 <script src="../3D/scripts/tween.js"></script>
 <script src="../3D/scripts/Octree.js"></script>
+<script src="../3D/dat-gui/dat.gui.min.js"></script>
+<script src="../3D/scripts/dat-gui_panel.js"></script>
 <script>
 var option = Q3D.Options;
 </script>
@@ -277,13 +289,6 @@ app.init(container);
 //project = new Q3D.Project({ crs: "EPSG:25832", title: "Untitled Project", baseExtent: [719777, 6187092, 722250, 6188663], rotation: 0, zShift: 0.0, width: 100.0, zExaggeration: 1.5 });
 initGUI();
 initScene();
-</script>
-<script src="../3D/dat-gui/dat.gui.min.js"></script>
-<script src="../3D/scripts/dat-gui_panel.js"></script>
-
-<script>
-// initialize dat-gui panel
-Q3D.gui.init();
 </script>
 </body>
 </html>

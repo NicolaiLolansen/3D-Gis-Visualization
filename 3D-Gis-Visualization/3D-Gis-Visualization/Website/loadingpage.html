@@ -1,0 +1,46 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+	<meta charset="utf-8" />
+    <link rel="stylesheet" type="text/css" href="css/loadpagestyle.css" />
+    <script src="../3D/scripts/jquery-2.2.0.js"></script>
+    <link rel="apple-touch-icon" sizes="57x57" href="./resources/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="./resources/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="./resources/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="./resources/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="./resources/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="./resources/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="./resources/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="./resources/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="./resources/apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="./resources/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="./resources/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="./resources/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="./resources/favicon-16x16.png">
+</head>
+<body>
+    <div class="load-page">
+        <div class="remote-load">
+            <div>Saved Projects</div>
+            <button id="empty-list" onclick="initLoadTable();" class="load-scenes-btn">No Scenes Loaded. Reload?</button>
+            <table id="btn-table">
+
+            </table>
+        </div>
+        Upload Project
+        <div class="local-load">
+            <span class="upload-span">Choose File</span>
+            <input type="file" id="files" class="file-picker" name="scene_file" accept=".json"/>
+            <div id="progress_bar"><div class="percent">0%</div></div>
+        </div>
+    </div>
+    <div id="status-message" class="status-message" style="text-align:center; position:fixed; bottom:30px; width:100%">
+    
+    </div>
+    <script src="js/loadingscripts.js"></script>
+    <script>
+        initLoadTable();
+    </script>
+</body>
+</html>

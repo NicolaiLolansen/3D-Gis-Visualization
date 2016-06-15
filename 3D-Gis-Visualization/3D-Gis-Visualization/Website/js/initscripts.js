@@ -7,7 +7,7 @@ var initScene = function () {
     //TODO: REMOVE THIS LINE!!!!!!!!!
     window.sessionStorage.userRole = 'builder';
     //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+    document.getElementById('loader').style.display = 'block';
     var _scene = 'default.json'; //Name of default scene
     if (window.sessionStorage.userRole == "builder") {
         // Load default scene
@@ -15,12 +15,15 @@ var initScene = function () {
         var c = confirm('JEG ER KUN EN BOX UNDER TESTING\nOK -> Local Load (nordhavn.json)\nCancel -> Server Load (kastellet.json)');
         if (c) {
             localLoad();
+            document.getElementById('loader').style.display = 'none';
+            openStartMenu();
         } else {
             loadScene('kastellet', function () {
                 document.getElementById('loader').style.display = 'none';
                 openStartMenu();
             });
         }
+        Q3D.gui.init();
     }
     else if (window.sessionStorage.userRole == "observer") {
         // Load scene chosen at login screen (window.sessionStorage.scene)
@@ -348,8 +351,9 @@ var openStartMenu = function () {
     }
 
     btn_loadScene.onclick = function () {
-        closeStartMenu();
-        openLoadMenu();
+        if (c) {
+            window.location = 'loadingpage.html';
+        }
     }
 
     startScene.onclick = function () {
@@ -529,86 +533,6 @@ initSpectrum = function (attribute) {
     }
     document.getElementById('spectrum-div').style.display = 'block';
 }
-
-// --------------------------------------- START D&D READER --------------------------------------------- 
-// DRAG AND DROP FILEREADER. source: http://www.html5rocks.com/en/tutorials/file/dndfiles/
-var reader;
-var progress = document.querySelector('.percent');
-
-function abortRead() {
-    reader.abort();
-}
-
-function errorHandler(evt) {
-    switch (evt.target.error.code) {
-        case evt.target.error.NOT_FOUND_ERR:
-            alert('File Not Found!');
-            break;
-        case evt.target.error.NOT_READABLE_ERR:
-            alert('File is not readable');
-            break;
-        case evt.target.error.ABORT_ERR:
-            break; // noop
-        default:
-            alert('An error occurred reading this file.');
-    };
-}
-
-function updateProgress(evt) {
-    // evt is an ProgressEvent.
-    if (evt.lengthComputable) {
-        var percentLoaded = Math.round((evt.loaded / evt.total) * 100);
-        // Increase the progress bar length.
-        if (percentLoaded < 100) {
-            progress.style.width = percentLoaded + '%';
-            progress.textContent = percentLoaded + '%';
-        }
-    }
-}
-
-function handleFileSelect(evt) {
-    // Reset progress indicator on new file selection.
-    progress.style.width = '0%';
-    progress.textContent = '0%';
-    var back_btn = document.getElementById('back-btn');
-    reader = new FileReader();
-    reader.onerror = errorHandler;
-    reader.onprogress = updateProgress;
-    reader.onabort = function (e) {
-        back_btn.innerHTML = 'Upload Cancelled. Back?';
-        back_btn.onclick = function () {
-            closeLoadMenu();
-            openLoadMenu();
-        }
-        alert('File read cancelled');
-    };
-    reader.onloadstart = function (e) {
-        back_btn.onclick = function () {
-            abortRead();
-        };
-        back_btn.innerHTML = 'Cancel Upload';
-        document.getElementById('progress_bar').className = 'loading';
-    };
-    reader.onload = function (e) {
-        // Ensure that the progress bar displays 100% at the end.
-        progress.style.width = '100%';
-        progress.textContent = '100%';
-        app.loadProject(JSON.parse(e.target.result));
-        app.start();
-        app.addEventListeners();
-        back_btn.innerHTML = 'Upload Finished. Click To Enter Scene';
-        back_btn.onclick = function () {
-           closeLoadMenu();
-        }
-    }
-
-    // Read in the image file as a binary string.
-    reader.readAsBinaryString(evt.target.files[0]);
-}
-
-document.getElementById('files').addEventListener('change', handleFileSelect, false);
-
-// --------------------------------------- END D&D READER --------------------------------------------- 
 
 // ------------------------------------- ADDRESS TO SCENE ---------------------------------------------
 addressToScene = function (address) {

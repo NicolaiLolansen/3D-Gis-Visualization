@@ -79,6 +79,7 @@
     <Content Include="Website\css\dropzone.css" />
     <Content Include="Website\css\loaderreset.css" />
     <Content Include="Website\css\loaderstyle.css" />
+    <Content Include="Website\css\loadpagestyle.css" />
     <Content Include="Website\js\blowfish.js" />
     <Content Include="Website\js\dropzone.js" />
     <Content Include="Website\js\initscripts.js" />
@@ -89,6 +90,7 @@
     <Content Include="Website\css\style.css" />
     <Content Include="Website\index.html" />
     <Content Include="Website\js\index.js" />
+    <Content Include="Website\js\loadingscripts.js" />
     <Content Include="Website\js\loginscripts.js" />
     <Content Include="3D\aavej9.json" />
     <Content Include="3D\hej.json" />
@@ -116,6 +118,7 @@
     <Content Include="Website\resources\favicon-32x32.png" />
     <Content Include="Website\resources\favicon-96x96.png" />
     <Content Include="Website\resources\favicon.ico" />
+    <Content Include="Website\loadingpage.html" />
     <Content Include="Website\resources\ms-icon-144x144.png" />
     <Content Include="Website\resources\ms-icon-150x150.png" />
     <Content Include="Website\resources\ms-icon-310x310.png" />
