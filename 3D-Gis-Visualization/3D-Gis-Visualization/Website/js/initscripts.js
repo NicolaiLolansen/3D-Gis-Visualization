@@ -53,7 +53,7 @@ loadScene = function (scene_name, callback) {
 
 localLoad = function () {
     //LOKAL VERSION TIL TESTING
-    $.getJSON("nordhavn.json", function (json) {
+    $.getJSON("Blocktest.json", function (json) {
         app.loadProject(json);
         app.start();
         app.addEventListeners();
@@ -250,6 +250,7 @@ var startViz = function (callback) {
                 vizButton.innerHTML = 'Visualization Complete';
                 loader.style.display = 'none';
                 console.log('Finished Viz');
+
             });
         }
     }
@@ -593,9 +594,11 @@ function handleFileSelect(evt) {
         // Ensure that the progress bar displays 100% at the end.
         progress.style.width = '100%';
         progress.textContent = '100%';
+
         app.loadProject(JSON.parse(e.target.result));
         app.start();
         app.addEventListeners();
+
         back_btn.innerHTML = 'Upload Finished. Click To Enter Scene';
         back_btn.onclick = function () {
            closeLoadMenu();
@@ -662,13 +665,13 @@ addressToScene = function (address) {
                     }
                     if (plane.layers !== undefined) {
                         plane.layers.forEach(function (layer) {
-                            layer.model.forEach(function (child) {
-                                app.scene.remove(child);
-                                app.octree.remove(child);
-                                delete child;
-                            })
-                            
-
+                            if (layer.model != undefined) {
+                                layer.model.forEach(function (child) {
+                                    app.scene.remove(child);
+                                    app.octree.remove(child);
+                                    delete child;
+                                })
+                            }
                         });
                     }
                 });
