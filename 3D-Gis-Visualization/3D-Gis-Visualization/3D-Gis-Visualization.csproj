@@ -131,6 +131,7 @@
       <DependentUpon>Web.config</DependentUpon>
     </None>
     <Content Include="Website\nordhavn.json" />
+    <Content Include="Website\Blocktest.json" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="3D\scripts\dat-gui_panel.js" />

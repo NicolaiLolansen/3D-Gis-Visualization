@@ -178,7 +178,7 @@ body {
     color: white;
 }
 
-.modal-body {padding: 2px 2px;}
+.modal-body {padding: 8px 16px;}
 
 .modal-footer {
     padding: 16px 16px;
@@ -337,9 +337,6 @@ input[type="checkbox"] + label span {
 
 }
 
-.menu-button-container {
-    padding: 5px;
-}
 .menu-button {
   font-family: "Roboto", sans-serif;
   text-transform: uppercase;
@@ -403,6 +400,16 @@ input[type="checkbox"] + label span {
 }
 
 .max-val {
+  display: inline;
+  vertical-align: middle;
+  font-size: 30px;
+}
+.type {
+  display: inline;
+  vertical-align: middle;
+  font-size: 30px;
+}
+.field-val {
   display: inline;
   vertical-align: middle;
   font-size: 30px;

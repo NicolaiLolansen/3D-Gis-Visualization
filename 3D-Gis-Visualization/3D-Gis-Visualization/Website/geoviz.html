@@ -182,29 +182,6 @@
     </div>
 </div>
 
-<!-- load menu -->
-<div id="load-modal" class="modal">
-    <!-- Modal content -->
-    <div class="modal-content">
-        <div class="modal-header">
-            <span class="close" id="close-load-menu">×</span>
-            <h2>Load Scene</h2>
-        </div>
-        <div class="menu-button-container">
-            <button id="load-local" type="button" class="menu-button">Load From Local</button>
-            <button id="load-remote" type="button" class="menu-button">Load From Remote</button>
-            <div id="scene-uploader" class="scene-uploader">
-                <span class="upload-span">Choose File</span>
-                <input type="file" id="files" class="file-picker" />
-                <div id="progress_bar"><div class="percent">0%</div></div>
-            </div>
-        </div>
-        <div class="modal-footer">
-                <button id="back-btn">Back</button>
-        </div>
-    </div>
-</div>
-
 <div id="saved-scenes" class="modal">
     <div class="modal-header">
 
@@ -240,6 +217,8 @@
     <div class="min-val" id="min-val">0</div>
     <img class="spectrum" src="resources/spectrum.png" id="spectrum">
     <div class="max-val" id="max-val">1</div>
+    <div class="type" id="type">"Type"</div>
+    <div class="field-val" id="field-val">"Column"</div>
 </div>
 <div id="popup" style="display:none;">
 <div id="closebtn">&times;</div>
@@ -279,16 +258,17 @@ and uses the following library:
 var option = Q3D.Options;
 </script>
 <script>
+    if (typeof proj4 !== "undefined") document.getElementById("lib_proj4js").style.display = "list-item";
+    var container = document.getElementById("webgl");
+    document.getElementById('loader').style.display = 'block';
 
-if (typeof proj4 !== "undefined") document.getElementById("lib_proj4js").style.display = "list-item";
-var container = document.getElementById("webgl");
+    // initialize application
+    var app = Q3D.application;
+    app.init(container);
 
-// initialize application
-var app = Q3D.application;
-app.init(container);
-//project = new Q3D.Project({ crs: "EPSG:25832", title: "Untitled Project", baseExtent: [719777, 6187092, 722250, 6188663], rotation: 0, zShift: 0.0, width: 100.0, zExaggeration: 1.5 });
-initGUI();
-initScene();
+    //project = new Q3D.Project({ crs: "EPSG:25832", title: "Untitled Project", baseExtent: [719777, 6187092, 722250, 6188663], rotation: 0, zShift: 0.0, width: 100.0, zExaggeration: 1.5 });
+    initGUI();
+    initScene();
 </script>
 </body>
 </html>

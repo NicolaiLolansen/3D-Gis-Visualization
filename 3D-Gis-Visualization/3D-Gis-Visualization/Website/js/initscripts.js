@@ -4,9 +4,7 @@
 */
 
 var initScene = function () {
-    //TODO: REMOVE THIS LINE!!!!!!!!!
-    window.sessionStorage.userRole = 'builder';
-    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
     document.getElementById('loader').style.display = 'block';
     var _scene = 'default.json'; //Name of default scene
     if (window.sessionStorage.userRole == "builder") {
@@ -14,9 +12,10 @@ var initScene = function () {
         //TODO: REMOVE CONFIRMATION BOX BEFORE FINAL RELEASE
         var c = confirm('JEG ER KUN EN BOX UNDER TESTING\nOK -> Local Load (nordhavn.json)\nCancel -> Server Load (kastellet.json)');
         if (c) {
-            localLoad();
-            document.getElementById('loader').style.display = 'none';
-            openStartMenu();
+            localLoad(function () {
+                document.getElementById('loader').style.display = 'none';
+                openStartMenu();
+            });
         } else {
             loadScene('kastellet', function () {
                 document.getElementById('loader').style.display = 'none';
@@ -41,8 +40,6 @@ loadScene = function (scene_name, callback) {
         url: url,
         type: 'GET',
         success: function (json_scene) {
-            var loader = document.getElementById('loader');
-            loader.style.display = 'none';
             app.loadProject(JSON.parse(json_scene));
             app.start();
             app.addEventListeners();
@@ -54,13 +51,13 @@ loadScene = function (scene_name, callback) {
     });
 }
 
-localLoad = function () {
+localLoad = function (callback) {
     //LOKAL VERSION TIL TESTING
-    $.getJSON("nordhavn.json", function (json) {
+    $.getJSON("Blocktest.json", function (json) {
         app.loadProject(json);
         app.start();
         app.addEventListeners();
-        document.getElementById('loader').style.display = 'none';
+        callback();
         // this will show the info it in firebug console
     });
 }
@@ -74,7 +71,6 @@ var initGUI = function () {
     var modal2 = document.getElementById('modal-viz');
     var modal3 = document.getElementById('start-modal');
     var modal4 = document.getElementById('save-modal');
-    var modal5 = document.getElementById('load-modal');
 
     // Get the <span> element that closes the modals
     var spans = document.getElementsByClassName('close');
@@ -97,17 +93,12 @@ var initGUI = function () {
     spans[3].onclick = function () {
         closeSaveMenu();
     }
-    spans[4].onclick = function () {
-        closeLoadMenu();
-    }
 
     //--------------------------------------- TESTING FUNCTIONS ------------------------------------
     window.onkeyup = function (e) {
         var key = e.keyCode ? e.keyCode : e.which;
 
-        if (key == 77) {
-            startViz();
-        } else if (key == 220) {
+        if (key == 220) {
             document.getElementById('loader').style.display = 'none';
         }
     }
@@ -253,6 +244,7 @@ var startViz = function (callback) {
                 vizButton.innerHTML = 'Visualization Complete';
                 loader.style.display = 'none';
                 console.log('Finished Viz');
+
             });
         }
     }
@@ -317,8 +309,6 @@ var initTextfield = function () {
 }
 
 var closeStartMenu = function () {
-    document.getElementById('new-scene').disabled = false;
-    document.getElementById('start-scene').disabled = true;
     document.getElementById('load-scene').style.display = 'block';
     document.getElementById('new-scene').style.display = 'block';
     document.getElementById('address-field').style.display = 'none';
@@ -332,7 +322,7 @@ var openStartMenu = function () {
     var address_div = document.getElementById('new-scene-div');
     var startScene = document.getElementById('start-scene');
     var back_arrow = document.getElementById('back_to_start');
-    startScene.disabled = true;
+    address_field.value = '';
     address_field.style.display = 'none';
     back_arrow.style.display = 'none';
 
@@ -344,71 +334,29 @@ var openStartMenu = function () {
     btn_newScene.onclick = function () {
         btn_loadScene.style.display = 'none';
         btn_newScene.style.display = 'none';
-        btn_newScene.disabled = true;
-        startScene.disabled = false;
         address_field.style.display = 'block';
         back_arrow.style.display = 'block';
+        startScene.onclick = function () {
+            var input = address_field.value;
+            if (input != null && input.length > 1) {
+                addressToScene(input);
+            } else {
+                alert('Invalid Address');
+            }
+        }
     }
 
     btn_loadScene.onclick = function () {
+        var c = confirm('Loading a new scene will cancel the current one.\nContinue?');
         if (c) {
             window.location = 'loadingpage.html';
         }
     }
 
     startScene.onclick = function () {
-        var input = address_field.value;
-        if (input != null && input.length > 1) {
-            addressToScene(input);
-        } else {
-            alert('Invalid Address');
-        }
+        closeStartMenu();
     }
     document.getElementById('start-modal').style.display = 'block';
-}
-
-var closeLoadMenu = function () {
-    var load_modal = document.getElementById('load-modal');
-    var uploader = document.getElementById('scene-uploader');
-    var local_btn = document.getElementById('load-local');
-    var remote_btn = document.getElementById('load-remote');
-    var back_btn = document.getElementById('back-btn');
-    uploader.style.display = 'none';
-    local_btn.style.display = 'block';
-    remote_btn.style.display = 'block';
-    load_modal.style.display = 'none';
-    back_btn.innerHTML = 'Back';
-}
-
-var openLoadMenu = function () {
-    var load_modal = document.getElementById('load-modal');
-    var uploader = document.getElementById('scene-uploader');
-    var local_btn = document.getElementById('load-local');
-    var remote_btn = document.getElementById('load-remote');
-    var back_btn = document.getElementById('back-btn');
-
-    uploader.style.display = 'none';
-
-    back_btn.onclick = function () {
-        closeLoadMenu();
-        openLoadMenu();
-    }
-
-    local_btn.onclick = function () {
-        if (window.File && window.FileReader && window.FileList && window.Blob) {
-            
-            local_btn.style.display = 'none';
-            remote_btn.style.display = 'none';
-            uploader.style.display = 'block';
-
-        } else {
-            alert('Scene upload not supported in this browser.');
-        }
-    }
-    remote_btn.onclick = function () {
-
-    }
-    load_modal.style.display = 'block';
 }
 
 openSaveMenu = function () {
@@ -523,13 +471,24 @@ toggleSpectrum = function (attribute) {
         spec.style.display = 'none';
     }
 }
+closeSpectrum = function (attribute) {
+    var spec = document.getElementById('spectrum-div');
+        spec.style.display = 'none';
+    
+}
+openSpectrum = function (attribute) {
+    var spec = document.getElementById('spectrum-div');
+    spec.style.display = 'block';
 
-initSpectrum = function (attribute) {
+}
+initSpectrum = function (attribute,type,field) {
     if (attribute != null) {
         var max = attribute.max;
         var min = attribute.min;
         document.getElementById('max-val').innerHTML = max;
         document.getElementById('min-val').innerHTML = min;
+        document.getElementById('field-val').innerHTML = field;
+        document.getElementById('type').innerHTML = type + ": ";
     }
     document.getElementById('spectrum-div').style.display = 'block';
 }
@@ -537,7 +496,7 @@ initSpectrum = function (attribute) {
 // ------------------------------------- ADDRESS TO SCENE ---------------------------------------------
 addressToScene = function (address) {
     var url = "http://dawa.aws.dk/datavask/adresser?betegnelse=" + address;
-
+    document.getElementById('loader').style.display = 'block';
     $.ajax({
         url: url,
         dataType: "json",
@@ -564,12 +523,9 @@ addressToScene = function (address) {
                 app.project.layers.forEach(function (layer) {
                           
                     layer.model.forEach(function(child){
-
-                         
                         app.scene.remove(child);
                         app.octree.remove(child);
-                        delete child;
-                          
+                        delete child;                   
                     });
                 });
             }
@@ -586,13 +542,13 @@ addressToScene = function (address) {
                     }
                     if (plane.layers !== undefined) {
                         plane.layers.forEach(function (layer) {
-                            layer.model.forEach(function (child) {
-                                app.scene.remove(child);
-                                app.octree.remove(child);
-                                delete child;
-                            })
-                            
-
+                            if (layer.model != undefined) {
+                                layer.model.forEach(function (child) {
+                                    app.scene.remove(child);
+                                    app.octree.remove(child);
+                                    delete child;
+                                })
+                            }
                         });
                     }
                 });
@@ -629,6 +585,9 @@ addressToScene = function (address) {
     }).fail(function(error){ 
           
           
+    })
+    .done(function (e) {
+        document.getElementById('loader').style.display = 'none';
     });
 
 }
