@@ -1235,12 +1235,16 @@ limitations:
 
         if (type == "layer"){
             var layer = app.project.plane[planeId].layers[layerId];
-
-            initSpectrum(layer.maxmin[layer.spectrumData],"GeoJSON", layer.spectrumData);
-
+            if (layer.spectrumData != undefined) {
+                initSpectrum(layer.maxmin[layer.spectrumData], "GeoJSON", layer.spectrumData);
+            }
+            
         } else if (type == "building"){
             var layer = app.project.plane[layerId].buildings;
-            initSpectrum(layer.maxmin[app.project.plane[layerId].spectrumData], "Building", app.project.plane[layerId].spectrumData);
+            if (app.project.plane[layerId].spectrumData != undefined) {
+                initSpectrum(layer.maxmin[app.project.plane[layerId].spectrumData], "Building", app.project.plane[layerId].spectrumData);
+            }
+            
         }
 
         if (layer === undefined) return;
@@ -1288,153 +1292,98 @@ limitations:
                 }
             }
         });
-        
-        folder.add(Q3D.gui.parameters, 'resolution').name('Visualize GeoJSON').onChange(function () {
-            initVizMenu(layer.maxmin);
+        if (type == "layer") {
+            folder.add(Q3D.gui.parameters, 'resolution').name('Visualize GeoJSON').onChange(function () {
+                initVizMenu(layer.maxmin);
 
-            /* TODO method that resets the viz back to the original configuration
-            */
-            startViz(function (colour_data, height_data, vizComplete) {
+                /* TODO method that resets the viz back to the original configuration
+                */
+                startViz(function (colour_data, height_data, vizComplete) {
 
-                var doColour = (colour_data != 'default');
-                var doHeight = (height_data != 'default');
-                var colour_method = 'none';
-                var height_method = 'none';
+                    var doColour = (colour_data != 'default');
+                    var doHeight = (height_data != 'default');
+                    var colour_method = 'none';
+                    var height_method = 'none';
 
-                if (doColour) {
-                    colour_method = (document.getElementById('c_building').checked) ? 'building' : 'block';
-                    initSpectrum(layer.maxmin[colour_data],"GeoJSON", colour_data);
-                    layer.spectrumData = colour_data;
-                }
-                if (doHeight) {
-                    height_method = (document.getElementById('h_building').checked) ? 'building' : 'block';
-                }
-
-                //Spectrum image for turning normalized data to a color
-                var img = document.getElementById('spectrum');
-                var canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                var ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, img.width, img.height);
-
-
-                var maxminlist = layer.maxmin;
-
-                //Reset the block list upon new visualization
-                if (layer.block != undefined) {
-                    layer.block.forEach(function (block) {
-                        app.scene.remove(block);
-                    });
-                    delete layer.block;
-                }
-
-                //Reset the viz 
-                layer.model.forEach(function (model, i) {
-                    var color = 0xffffff;
-                    var material = new THREE.MeshLambertMaterial({
-                        color: color,
-                        polygonOffset: true,
-                        polygonOffsetFactor: 0.2,
-                        polygonOffsetUnits: 1.0
-                    });
-
-                    model.scale.set(1, 1, 1);
-                    model.material = material;
-                });
-
-                layer.model.forEach(function (model, i) {
                     if (doColour) {
-                        var x = layer.a[i][colour_data];
-                        if (x != undefined) {
-                       
-                            //Calculate normalized value [0; 1]
-                            var x_max = maxminlist[colour_data].max;
-                            var x_min = maxminlist[colour_data].min;
-                            var x_norm = (x - x_min) / (x_max - x_min);
-
-                            var x_img = (x_norm * canvas.width - 1) | 0;
-
-                            var colour = {};
-                            if (!isNaN(x_img)) {
-                                colour = ctx.getImageData(x_img, 5, 1, 1);
-                            } else {
-                                colour.data = [0, 0, 0];
-                            }
-
-                            console.log(x + " -> " + x_img + " -> " + colour.data);
-                            if (colour_method == 'building') {
-                                // Translate normalized value to RGB
-                                var color = 0xffffff;
-                                var material = new THREE.MeshLambertMaterial({
-                                    color: color,
-                                    polygonOffset: true,
-                                    polygonOffsetFactor: 0.2,
-                                    polygonOffsetUnits: 1.0
-                                });
-
-                                model.material = material;
-                                model.material.color.setRGB(colour.data[0] / 255, colour.data[1] / 255, colour.data[2] / 255);
-
-                            } else if (colour_method == 'block') {
-                                if (layer.block == undefined) {
-                                    layer.block = [];
-                                }
-                                var color = 0xffffff;
-                                var material = new THREE.MeshLambertMaterial({
-                                    color: color,
-                                    polygonOffset: true,
-                                    polygonOffsetFactor: 0.2,
-                                    polygonOffsetUnits: 1.0
-                                });
-
-                                var geometry = new THREE.BoxGeometry(1, 1, 1);
-                                var cube = new THREE.Mesh(geometry, material);
-
-                                //Compute the buildings bounding box so we can get the center point
-                                //If the model is just a block, we get the same block
-                                model.geometry.computeBoundingBox();
-
-                                var boundingBox = model.geometry.boundingBox;
-
-                                var position = new THREE.Vector3();
-                                position.subVectors(boundingBox.max, boundingBox.min);
-                                position.multiplyScalar(0.5);
-                                position.add(boundingBox.min);
-
-                                position.applyMatrix4(model.matrixWorld);
-                                cube.material = material;
-                                //Divide by 255 as setRGB takes values between 0 - 1
-                                cube.material.color.setRGB(colour.data[0] / 255, colour.data[1] / 255, colour.data[2] / 255);
-
-                                cube.position.set(position.x, position.y, 1);
-                                app.scene.add(cube);
-                                layer.block.push(cube);
-                            }
-                        }
+                        colour_method = (document.getElementById('c_building').checked) ? 'building' : 'block';
+                        initSpectrum(layer.maxmin[colour_data], "GeoJSON", colour_data);
+                        layer.spectrumData = colour_data;
                     }
                     if (doHeight) {
-                        var x = layer.a[i][height_data];
-                        if (x != undefined) {
-                            var x_max = maxminlist[height_data].max;
-                            var x_min = maxminlist[height_data].min;
-                            var x_norm = (x - x_min) / (x_max - x_min);
+                        height_method = (document.getElementById('h_building').checked) ? 'building' : 'block';
+                    }
 
-                            //These values are magicnumbers, but defines how extreme values are depicted
-                            var max_height = 20;
-                            var min_height = 2;
-                            var x_height = min_height + (max_height - min_height) * x_norm;
+                    //Spectrum image for turning normalized data to a color
+                    var img = document.getElementById('spectrum');
+                    var canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    var ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, img.width, img.height);
 
-                            if (height_method == 'building') {
-                                // Translate normalized value to height
-                                model.scale.set(1, 1, x_height);
-                            } else if (height_method == 'block') {
-                                if (layer.block == undefined) {
-                                    layer.block = [];
+
+                    var maxminlist = layer.maxmin;
+
+                    //Reset the block list upon new visualization
+                    if (layer.block != undefined) {
+                        layer.block.forEach(function (block) {
+                            app.scene.remove(block);
+                        });
+                        delete layer.block;
+                    }
+
+                    //Reset the viz 
+                    layer.model.forEach(function (model, i) {
+                        var color = 0xffffff;
+                        var material = new THREE.MeshLambertMaterial({
+                            color: color,
+                            polygonOffset: true,
+                            polygonOffsetFactor: 0.2,
+                            polygonOffsetUnits: 1.0
+                        });
+
+                        model.scale.set(1, 1, 1);
+                        model.material = material;
+                    });
+
+                    layer.model.forEach(function (model, i) {
+                        if (doColour) {
+                            var x = layer.a[i][colour_data];
+                            if (x != undefined) {
+
+                                //Calculate normalized value [0; 1]
+                                var x_max = maxminlist[colour_data].max;
+                                var x_min = maxminlist[colour_data].min;
+                                var x_norm = (x - x_min) / (x_max - x_min);
+
+                                var x_img = (x_norm * canvas.width - 1) | 0;
+
+                                var colour = {};
+                                if (!isNaN(x_img)) {
+                                    colour = ctx.getImageData(x_img, 5, 1, 1);
+                                } else {
+                                    colour.data = [0, 0, 0];
                                 }
 
-                                //If we dident already use blocks for the previous method
-                                if (cube == undefined) {
+                                console.log(x + " -> " + x_img + " -> " + colour.data);
+                                if (colour_method == 'building') {
+                                    // Translate normalized value to RGB
+                                    var color = 0xffffff;
+                                    var material = new THREE.MeshLambertMaterial({
+                                        color: color,
+                                        polygonOffset: true,
+                                        polygonOffsetFactor: 0.2,
+                                        polygonOffsetUnits: 1.0
+                                    });
+
+                                    model.material = material;
+                                    model.material.color.setRGB(colour.data[0] / 255, colour.data[1] / 255, colour.data[2] / 255);
+
+                                } else if (colour_method == 'block') {
+                                    if (layer.block == undefined) {
+                                        layer.block = [];
+                                    }
                                     var color = 0xffffff;
                                     var material = new THREE.MeshLambertMaterial({
                                         color: color,
@@ -1446,6 +1395,8 @@ limitations:
                                     var geometry = new THREE.BoxGeometry(1, 1, 1);
                                     var cube = new THREE.Mesh(geometry, material);
 
+                                    //Compute the buildings bounding box so we can get the center point
+                                    //If the model is just a block, we get the same block
                                     model.geometry.computeBoundingBox();
 
                                     var boundingBox = model.geometry.boundingBox;
@@ -1456,33 +1407,88 @@ limitations:
                                     position.add(boundingBox.min);
 
                                     position.applyMatrix4(model.matrixWorld);
-                                    cube.position.set(position.x, position.y, 1);
-                                    cube.scale.set(1, 1, x_height);
-                                    cube.translateZ(x_height / 2);
+                                    cube.material = material;
+                                    //Divide by 255 as setRGB takes values between 0 - 1
+                                    cube.material.color.setRGB(colour.data[0] / 255, colour.data[1] / 255, colour.data[2] / 255);
 
+                                    cube.position.set(position.x, position.y, 1);
                                     app.scene.add(cube);
                                     layer.block.push(cube);
-                                } else { //If we already created a block, we dont create it twice, we just change its height
-                                    cube.scale.set(1, 1, x_height);
-                                    cube.translateZ(x_height / 2);
                                 }
-
-
-                            } // Add other methods of height viz here
+                            }
                         }
+                        if (doHeight) {
+                            var x = layer.a[i][height_data];
+                            if (x != undefined) {
+                                var x_max = maxminlist[height_data].max;
+                                var x_min = maxminlist[height_data].min;
+                                var x_norm = (x - x_min) / (x_max - x_min);
 
-                    } // Add other visiualization techniques here (Opacity? Sprites above buildings?)
+                                //These values are magicnumbers, but defines how extreme values are depicted
+                                var max_height = 20;
+                                var min_height = 2;
+                                var x_height = min_height + (max_height - min_height) * x_norm;
+
+                                if (height_method == 'building') {
+                                    // Translate normalized value to height
+                                    model.scale.set(1, 1, x_height);
+                                } else if (height_method == 'block') {
+                                    if (layer.block == undefined) {
+                                        layer.block = [];
+                                    }
+
+                                    //If we dident already use blocks for the previous method
+                                    if (cube == undefined) {
+                                        var color = 0xffffff;
+                                        var material = new THREE.MeshLambertMaterial({
+                                            color: color,
+                                            polygonOffset: true,
+                                            polygonOffsetFactor: 0.2,
+                                            polygonOffsetUnits: 1.0
+                                        });
+
+                                        var geometry = new THREE.BoxGeometry(1, 1, 1);
+                                        var cube = new THREE.Mesh(geometry, material);
+
+                                        model.geometry.computeBoundingBox();
+
+                                        var boundingBox = model.geometry.boundingBox;
+
+                                        var position = new THREE.Vector3();
+                                        position.subVectors(boundingBox.max, boundingBox.min);
+                                        position.multiplyScalar(0.5);
+                                        position.add(boundingBox.min);
+
+                                        position.applyMatrix4(model.matrixWorld);
+                                        cube.position.set(position.x, position.y, 1);
+                                        cube.scale.set(1, 1, x_height);
+                                        cube.translateZ(x_height / 2);
+
+                                        app.scene.add(cube);
+                                        layer.block.push(cube);
+                                    } else { //If we already created a block, we dont create it twice, we just change its height
+                                        cube.scale.set(1, 1, x_height);
+                                        cube.translateZ(x_height / 2);
+                                    }
+
+
+                                } // Add other methods of height viz here
+                            }
+
+                        } // Add other visiualization techniques here (Opacity? Sprites above buildings?)
+                    });
+                    var plane = app.project.plane[planeId];
+                    var detail = plane.detail;
+                    console.log(layerId);
+                    console.log(detail.layers[layerId]);
+                    detail.layers[layerId].viz = true;
+                    vizComplete();
                 });
-                var plane = app.project.plane[planeId];
-                var detail = plane.detail;
-                console.log(layerId);
-                console.log(detail.layers[layerId]);
-                detail.layers[layerId].viz = true;
-                vizComplete();
+
             });
 
-        });
-
+        }
+     
         folder.add(Q3D.gui.parameters, 'height').min(1).max(5).name('Height').onChange(function (height) {
             model.scale.set(model.scale.x, model.scale.y, height);
         }); 
@@ -2671,7 +2677,7 @@ limitations:
               //No buildings are present, give the opportunity to create them
               if (detail.buildings == 0) {
 
-                  folder.add(Q3D.gui.parameters, 'resolution').name('Add merged buildings').onChange(function () {
+                  folder.add(Q3D.gui.parameters, 'resolution').name('Add Buildings').onChange(function () {
                       app.getBuildings(app.project.plane[index], object.userData.xmin, object.userData.ymin, object.userData.xmax, object.userData.ymax, object.userData.row, object.userData.column, object.userData.url, false,
                       function () {
                           detail.buildings = 1;
@@ -2684,7 +2690,7 @@ limitations:
                   //Merged buildings are present, give the opportunity to add them to the octree, or to to level 0 again.
               } else if (detail.buildings == 1) {
 
-                  folder.add(Q3D.gui.parameters, 'resolution').name('Add to octree').onChange(function () {
+                  folder.add(Q3D.gui.parameters, 'resolution').name('Toggle Octree').onChange(function () {
                       app.project.plane[index].buildings.model.forEach(function (building) {
                           app.octree.add(building);
                       });
@@ -2694,7 +2700,7 @@ limitations:
                       app.updateTile(obj, object, layerId, featureId);
                   });
 
-                  folder.add(Q3D.gui.parameters, 'resolution').name('Remove buildings').onChange(function () {
+                  folder.add(Q3D.gui.parameters, 'resolution').name('Remove Buildings').onChange(function () {
                       app.project.plane[index].buildings.model.forEach(function (building) {
                           app.octree.remove(building);
                           app.scene.remove(building);
@@ -2712,12 +2718,13 @@ limitations:
                       app.octreeNeedsUpdate = true;
                       delete app.project.plane[index].mergeMesh;
                       detail.buildings = 0;
+                      detail.address = false;
                       app.updateTile(obj, object, layerId, featureId);
                   });
 
                   //Buildings are in the octree, give the opportunity to remove them from the octree, or remove them completely
               } else if (detail.buildings == 2) {
-                  folder.add(Q3D.gui.parameters, 'resolution').name('Remove from octree').onChange(function () {
+                  folder.add(Q3D.gui.parameters, 'resolution').name('Toggle Octree').onChange(function () {
                       app.project.plane[index].buildings.model.forEach(function (building) {
                           app.octree.remove(building);
                           app.scene.remove(building);
@@ -2727,7 +2734,7 @@ limitations:
                       app.updateTile(obj, object, layerId, featureId);
                   });
 
-                  folder.add(Q3D.gui.parameters, 'resolution').name('Remove buildings').onChange(function () {
+                  folder.add(Q3D.gui.parameters, 'resolution').name('Remove Buildings').onChange(function () {
                       app.project.plane[index].buildings.model.forEach(function (building) {
                           app.octree.remove(building);
                           app.scene.remove(building);
@@ -2747,13 +2754,14 @@ limitations:
                       delete app.project.plane[index].mergeMesh;
                       app.octreeNeedsUpdate = true;
                       detail.buildings = 0;
+                      detail.address = false;
                       app.updateTile(obj, object, layerId, featureId);
                   });
               }
 
 
               if (detail.address == false && detail.buildings > 0) {
-                  folder.add(Q3D.gui.parameters, 'resolution').name('Build addresses').onChange(function () {
+                  folder.add(Q3D.gui.parameters, 'resolution').name('Get Addresses').onChange(function () {
                       app.getAddress(d.index, function () {
                           
                           app.updateTile(obj, object, layerId, featureId);
@@ -2785,192 +2793,197 @@ limitations:
                         });
                         
                     });
-                    folder.add(Q3D.gui.parameters, 'resolution').name('Visualize Data').onChange(function () {
-                        var maxminlist = app.project.plane[index].buildings.maxmin;
+                    if (app.project.plane[index].buildings != undefined) {
+                        if (app.project.plane[index].buildings.maxmin != undefined) {
+                            folder.add(Q3D.gui.parameters, 'resolution').name('Visualize Data').onChange(function () {
+                                var maxminlist = app.project.plane[index].buildings.maxmin;
 
-                        initVizMenu(maxminlist);
+                                initVizMenu(maxminlist);
 
-                        startViz(function (colour_data, height_data, vizComplete) {
+                                startViz(function (colour_data, height_data, vizComplete) {
 
-                            var doColour = (colour_data != 'default');
-                            var doHeight = (height_data != 'default');
-                            var colour_method = 'none';
-                            var height_method = 'none';
+                                    var doColour = (colour_data != 'default');
+                                    var doHeight = (height_data != 'default');
+                                    var colour_method = 'none';
+                                    var height_method = 'none';
 
-                            if (doColour) {
-                                colour_method = (document.getElementById('c_building').checked) ? 'building' : 'block';
-                                initSpectrum(maxminlist[colour_data], "Building", colour_data);
-                                app.project.plane[index].spectrumData = colour_data;
-                            }
-                            if (doHeight) {
-                                height_method = (document.getElementById('h_building').checked) ? 'building' : 'block';
-                            }
-
-                            //Spectrum image for turning normalized data to a color
-                            var img = document.getElementById('spectrum');
-                            var canvas = document.createElement('canvas');
-                            canvas.width = img.width;
-                            canvas.height = img.height;
-                            var ctx = canvas.getContext('2d');
-                            ctx.drawImage(img, 0, 0, img.width, img.height);
-
-                            //Define buildings for easier variables
-                            var buildings = app.project.plane[index].buildings;
-
-                            //Reset blocks
-                            if (buildings.block != undefined) {
-                                buildings.block.forEach(function (block) {
-                                    app.scene.remove(block);
-                                });
-                            }
-                            //Reset viz
-                            buildings.model.forEach(function (model, i) {
-                                var color = 0xffffff;
-                                var material = new THREE.MeshLambertMaterial({
-                                    color: color,
-                                    polygonOffset: true,
-                                    polygonOffsetFactor: 0.2,
-                                    polygonOffsetUnits: 1.0
-                                });
-
-                                model.scale.set(1, 1, 1);
-                                model.material = material;
-                            });
-
-                            buildings.model.forEach(function (model, i) {
-                                if (model.userData.uData != undefined) {
-                                    //Calculate normalized value [0; 1]
                                     if (doColour) {
-                                        var x = model.userData.uData[colour_data];
-                                        if (x != undefined) {
-
-                                        var x_max = maxminlist[colour_data].max;
-                                        var x_min = maxminlist[colour_data].min;
-                                        var x_norm = (x - x_min) / (x_max - x_min);
-
-                                        var x_img = (x_norm * canvas.width - 1) | 0;
-                                        
-                                        var colour = {};
-                                        if (!isNaN(x_img)) {
-                                            colour = ctx.getImageData(x_img, 5, 1, 1);
-                                        } else {
-                                            colour.data = [0, 0, 0];
-                                        }
-                                       
-                                        console.log(x + "-> " + x_img + "-> " + colour.data);
-                                        if (colour_method == 'building') {
-                                            // Translate normalized value to RGB
-                                            var color = 0xffffff;
-                                            var material = new THREE.MeshLambertMaterial({
-                                                color: color,
-                                                polygonOffset: true,
-                                                polygonOffsetFactor: 0.2,
-                                                polygonOffsetUnits: 1.0
-                                            });
-                                            model.material = material;
-                                            model.material.color.setRGB(colour.data[0]/255, colour.data[1]/255, colour.data[2]/255);
-                                        
-                                        } else if (colour_method == 'block') {
-                                            if (buildings.block == undefined) {
-                                                buildings.block = [];
-                                            }
-                                            var color = 0xffffff;
-                                            var material = new THREE.MeshLambertMaterial({
-                                                color: color,
-                                                polygonOffset: true,
-                                                polygonOffsetFactor: 0.2,
-                                                polygonOffsetUnits: 1.0
-                                            });
-
-                                            var geometry = new THREE.BoxGeometry(1, 1, 1);
-                                            var cube = new THREE.Mesh(geometry, material);
-                                            cube.scale.set(0.5, 0.5, 1);
-                                            //Compute the buildings bounding box so we can get the center point
-                                            //If the model is just a block, we get the same block
-                                            model.geometry.computeBoundingBox();
-
-                                            var boundingBox = model.geometry.boundingBox;
-
-                                            var position = new THREE.Vector3();
-                                            position.subVectors(boundingBox.max, boundingBox.min);
-                                            position.multiplyScalar(0.5);
-                                            position.add(boundingBox.min);
-
-                                            position.applyMatrix4(model.matrixWorld);
-                                            cube.material = material;
-                                            //Divide by 255 as setRGB takes values between 0 - 1
-                                            cube.material.color.setRGB(colour.data[0] / 255, colour.data[1] / 255, colour.data[2] / 255);
-
-                                            cube.position.set(position.x, position.y, 0);
-                                            app.scene.add(cube);
-                                            buildings.block.push(cube);
-                                          }
-                                        }
+                                        colour_method = (document.getElementById('c_building').checked) ? 'building' : 'block';
+                                        initSpectrum(maxminlist[colour_data], "Building", colour_data);
+                                        app.project.plane[index].spectrumData = colour_data;
                                     }
                                     if (doHeight) {
-                                        var x = model.userData.uData[height_data];
-                                        if (x != undefined) {
-                                        var x_max = maxminlist[height_data].max;
-                                        var x_min = maxminlist[height_data].min;
-                                        var x_norm = (x - x_min) / (x_max - x_min);
-
-                                        var max_height = 20;
-                                        var min_height = 2;
-                                        var x_height = min_height + (max_height - min_height) * x_norm;
-
-                                        if (height_method == 'building') {
-                                            // Translate normalized value to height
-                                            // Height-min: 2, height-max: 4
-                                            model.scale.set(model.scale.x, model.scale.y, x_height);
-                                        } else if (height_method == 'block') {
-
-                                            if (buildings.block == undefined) {
-                                                buildings.block = [];
-                                            }
-
-                                            //If we dident already use blocks for the previous method
-                                            if (cube == undefined) {
-                                                var color = 0xffffff;
-                                                var material = new THREE.MeshLambertMaterial({
-                                                    color: color,
-                                                    polygonOffset: true,
-                                                    polygonOffsetFactor: 0.2,
-                                                    polygonOffsetUnits: 1.0
-                                                });
-
-                                                var geometry = new THREE.BoxGeometry(1, 1, 1);
-                                                var cube = new THREE.Mesh(geometry, material);
-
-                                                model.geometry.computeBoundingBox();
-
-                                                var boundingBox = model.geometry.boundingBox;
-
-                                                var position = new THREE.Vector3();
-                                                position.subVectors(boundingBox.max, boundingBox.min);
-                                                position.multiplyScalar(0.5);
-                                                position.add(boundingBox.min);
-
-                                                position.applyMatrix4(model.matrixWorld);
-                                                cube.position.set(position.x, position.y, 0);
-                                                cube.scale.set(0.5, 0.5, x_height);
-                                                cube.translateZ(x_height / 2);
-
-                                                app.scene.add(cube);
-                                                buildings.block.push(cube);
-                                            } else { //If we already created a block, we dont create it twice, we just change its height
-                                                cube.scale.set(0.5, 0.5, x_height);
-                                                cube.translateZ(x_height / 2);
-                                            }
-                                        } // Add other methods of height viz here
+                                        height_method = (document.getElementById('h_building').checked) ? 'building' : 'block';
                                     }
 
-                                    } // Add other visiualization techniques here (Opacity? Sprites above buildings?)
+                                    //Spectrum image for turning normalized data to a color
+                                    var img = document.getElementById('spectrum');
+                                    var canvas = document.createElement('canvas');
+                                    canvas.width = img.width;
+                                    canvas.height = img.height;
+                                    var ctx = canvas.getContext('2d');
+                                    ctx.drawImage(img, 0, 0, img.width, img.height);
 
-                                }
+                                    //Define buildings for easier variables
+                                    var buildings = app.project.plane[index].buildings;
+
+                                    //Reset blocks
+                                    if (buildings.block != undefined) {
+                                        buildings.block.forEach(function (block) {
+                                            app.scene.remove(block);
+                                        });
+                                    }
+                                    //Reset viz
+                                    buildings.model.forEach(function (model, i) {
+                                        var color = 0xffffff;
+                                        var material = new THREE.MeshLambertMaterial({
+                                            color: color,
+                                            polygonOffset: true,
+                                            polygonOffsetFactor: 0.2,
+                                            polygonOffsetUnits: 1.0
+                                        });
+
+                                        model.scale.set(1, 1, 1);
+                                        model.material = material;
+                                    });
+
+                                    buildings.model.forEach(function (model, i) {
+                                        if (model.userData.uData != undefined) {
+                                            //Calculate normalized value [0; 1]
+                                            if (doColour) {
+                                                var x = model.userData.uData[colour_data];
+                                                if (x != undefined) {
+
+                                                    var x_max = maxminlist[colour_data].max;
+                                                    var x_min = maxminlist[colour_data].min;
+                                                    var x_norm = (x - x_min) / (x_max - x_min);
+
+                                                    var x_img = (x_norm * canvas.width - 1) | 0;
+
+                                                    var colour = {};
+                                                    if (!isNaN(x_img)) {
+                                                        colour = ctx.getImageData(x_img, 5, 1, 1);
+                                                    } else {
+                                                        colour.data = [0, 0, 0];
+                                                    }
+
+                                                    console.log(x + "-> " + x_img + "-> " + colour.data);
+                                                    if (colour_method == 'building') {
+                                                        // Translate normalized value to RGB
+                                                        var color = 0xffffff;
+                                                        var material = new THREE.MeshLambertMaterial({
+                                                            color: color,
+                                                            polygonOffset: true,
+                                                            polygonOffsetFactor: 0.2,
+                                                            polygonOffsetUnits: 1.0
+                                                        });
+                                                        model.material = material;
+                                                        model.material.color.setRGB(colour.data[0] / 255, colour.data[1] / 255, colour.data[2] / 255);
+
+                                                    } else if (colour_method == 'block') {
+                                                        if (buildings.block == undefined) {
+                                                            buildings.block = [];
+                                                        }
+                                                        var color = 0xffffff;
+                                                        var material = new THREE.MeshLambertMaterial({
+                                                            color: color,
+                                                            polygonOffset: true,
+                                                            polygonOffsetFactor: 0.2,
+                                                            polygonOffsetUnits: 1.0
+                                                        });
+
+                                                        var geometry = new THREE.BoxGeometry(1, 1, 1);
+                                                        var cube = new THREE.Mesh(geometry, material);
+                                                        cube.scale.set(0.5, 0.5, 1);
+                                                        //Compute the buildings bounding box so we can get the center point
+                                                        //If the model is just a block, we get the same block
+                                                        model.geometry.computeBoundingBox();
+
+                                                        var boundingBox = model.geometry.boundingBox;
+
+                                                        var position = new THREE.Vector3();
+                                                        position.subVectors(boundingBox.max, boundingBox.min);
+                                                        position.multiplyScalar(0.5);
+                                                        position.add(boundingBox.min);
+
+                                                        position.applyMatrix4(model.matrixWorld);
+                                                        cube.material = material;
+                                                        //Divide by 255 as setRGB takes values between 0 - 1
+                                                        cube.material.color.setRGB(colour.data[0] / 255, colour.data[1] / 255, colour.data[2] / 255);
+
+                                                        cube.position.set(position.x, position.y, 0);
+                                                        app.scene.add(cube);
+                                                        buildings.block.push(cube);
+                                                    }
+                                                }
+                                            }
+                                            if (doHeight) {
+                                                var x = model.userData.uData[height_data];
+                                                if (x != undefined) {
+                                                    var x_max = maxminlist[height_data].max;
+                                                    var x_min = maxminlist[height_data].min;
+                                                    var x_norm = (x - x_min) / (x_max - x_min);
+
+                                                    var max_height = 20;
+                                                    var min_height = 2;
+                                                    var x_height = min_height + (max_height - min_height) * x_norm;
+
+                                                    if (height_method == 'building') {
+                                                        // Translate normalized value to height
+                                                        // Height-min: 2, height-max: 4
+                                                        model.scale.set(model.scale.x, model.scale.y, x_height);
+                                                    } else if (height_method == 'block') {
+
+                                                        if (buildings.block == undefined) {
+                                                            buildings.block = [];
+                                                        }
+
+                                                        //If we dident already use blocks for the previous method
+                                                        if (cube == undefined) {
+                                                            var color = 0xffffff;
+                                                            var material = new THREE.MeshLambertMaterial({
+                                                                color: color,
+                                                                polygonOffset: true,
+                                                                polygonOffsetFactor: 0.2,
+                                                                polygonOffsetUnits: 1.0
+                                                            });
+
+                                                            var geometry = new THREE.BoxGeometry(1, 1, 1);
+                                                            var cube = new THREE.Mesh(geometry, material);
+
+                                                            model.geometry.computeBoundingBox();
+
+                                                            var boundingBox = model.geometry.boundingBox;
+
+                                                            var position = new THREE.Vector3();
+                                                            position.subVectors(boundingBox.max, boundingBox.min);
+                                                            position.multiplyScalar(0.5);
+                                                            position.add(boundingBox.min);
+
+                                                            position.applyMatrix4(model.matrixWorld);
+                                                            cube.position.set(position.x, position.y, 0);
+                                                            cube.scale.set(0.5, 0.5, x_height);
+                                                            cube.translateZ(x_height / 2);
+
+                                                            app.scene.add(cube);
+                                                            buildings.block.push(cube);
+                                                        } else { //If we already created a block, we dont create it twice, we just change its height
+                                                            cube.scale.set(0.5, 0.5, x_height);
+                                                            cube.translateZ(x_height / 2);
+                                                        }
+                                                    } // Add other methods of height viz here
+                                                }
+
+                                            } // Add other visiualization techniques here (Opacity? Sprites above buildings?)
+
+                                        }
+                                    });
+                                    vizComplete();
+                                })
                             });
-                            vizComplete();
-                        })
-                    });
+                        }
+                    }
+                  
                 }
 
 
@@ -2979,7 +2992,7 @@ limitations:
               Change resolution
               */
               if (detail.resolution == false) {
-                  folder.add(Q3D.gui.parameters, 'resolution').name('Enhance resolution').onChange(function () {
+                  folder.add(Q3D.gui.parameters, 'resolution').name('Enhance Resolution').onChange(function () {
                       app.updateResolution(object, 1, 512, 512);
                       detail.resolution = true;
                       app.updateTile(obj, object, layerId, featureId);
@@ -2987,7 +3000,7 @@ limitations:
               }
 
 
-              folder.addColor(Q3D.gui.parameters, 'color').name('Color selected').onChange(function (color) {
+              folder.addColor(Q3D.gui.parameters, 'color').name('Color Selected').onChange(function (color) {
                   var pColor = color.replace('#', '0x');
                   object.material.color.setHex(pColor);
               });
@@ -3360,6 +3373,10 @@ limitations:
                      //get points from feature
                      //console.log("There are this many coordinates in feature " + i + " " + response.features[i].geometry.coordinates[0][0].length);
 
+                     var fxmin = Infinity;
+                     var fxmax = 0
+                     var fymin = Infinity;
+                     var fymax = 0;
                      if (response.features[i].geometry.type == "Polygon") {
                          var length = response.features[i].geometry.coordinates[0].length;
                          var polygon = "Polygon";
@@ -3377,6 +3394,19 @@ limitations:
                              var x = response.features[i].geometry.coordinates[0][j][0];
                              var y = response.features[i].geometry.coordinates[0][j][1];
                          }
+                         if (x < fxmin) {
+                             fxmin = x;
+                         }
+                         if (x > fxmax) {
+                             fxmax = x;
+                         }
+                         if (y < fymin) {
+                             fymin = y;
+                         }
+                         if (y > fymax) {
+                             fymax = y;
+                         }
+                         
                          //Okay we have the width and height, plus the bounding box
                          //Figure out how to calculate mapcoordinates to project coordinates.
 
@@ -3398,39 +3428,52 @@ limitations:
 
                      }
 
-                     var shape = new THREE.Shape(points);
-                     var extrudeSettings = {
-                         amount: 1.2,
-                         steps: 1,
-                         material: 0,
-                         extrudeMaterial: 1,
-                         bevelEnabled: false
-                     };
+                     //Create a center point
+                     var centerX = fxmin + ((fxmax - fxmin) / 2);
+                     var centerY = fymin + ((fymax - fymin) / 2);
+                     console.log(bbox);
+                    
+                     if (centerX > xmin && centerX < xmax && centerY > ymin && centerY < ymax) {
 
-                     //use points to build shape
+                       
+                         var shape = new THREE.Shape(points);
+                         var extrudeSettings = {
+                             amount: 1.2,
+                             steps: 1,
+                             material: 0,
+                             extrudeMaterial: 1,
+                             bevelEnabled: false
+                         };
+
+                         //build a geometry (ExtrudeGeometry) from the shape and extrude settings
+                         var geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+                         geometry.dynamic = true;
+
+                         var color = 0xffffff;
+                         var material = new THREE.MeshPhongMaterial({
+                             color: color
+                         });
+
+                         var mesh = new THREE.Mesh(geometry, material);;
+                         mesh.userData.planeId = indexPlane;
+                         mesh.userData.layerId = index;
+                         mesh.userData.featureId = plane.layers[index].model.length;
+
+                         //Todo create proper indexing somehow.
+                         plane.layers[index].model.push(mesh);
+                         plane.layers[index].a.push(plane.layers[index].features[i].properties);
+                         //app.octree.add(mesh);
+                         mesh.position.z = -2
 
 
 
-                     //build a geometry (ExtrudeGeometry) from the shape and extrude settings
-                     var geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-                     geometry.dynamic = true;
-                     var color = 0xffffff;
 
-                     var material = new THREE.MeshPhongMaterial({
-                         color: color
-                     });
-
-                     var mesh = new THREE.Mesh(geometry, material);;
-                     mesh.userData.planeId = indexPlane;
-                     mesh.userData.layerId = index;
-                     mesh.userData.featureId = i;
-
-                     //Todo create proper indexing somehow.
-                     plane.layers[index].model[i] = mesh;
-                     plane.layers[index].a[i] = plane.layers[index].features[i].properties;
-                     //app.octree.add(mesh);
-                     mesh.position.z = -2
-                     app.scene.add(mesh);
+                         app.scene.add(mesh);
+                         points = [];
+                     } else {
+                         console.log(plane.layers[index].model.length);
+                         console.log("Geometry was outside bbox!");
+                     }
                      points = [];
                  }
                 
@@ -3455,14 +3498,13 @@ limitations:
                
                  //Will return strings as numbers, if they can be interpreted as such
                  function isNumeric(n) {
-                     //var noComma = (n.toString().indexOf(',') == -1);
                      return !isNaN(parseFloat(n)) && isFinite(n); //&& noComma;
                  }
 
              }
 
          }
-
+         //key had no numeric entries so we can visualize it
          for (var key in plane.layers[index].maxmin) {
              if (plane.layers[index].maxmin[key].min == Infinity || plane.layers[index].maxmin[key].max == 0) {
                  delete plane.layers[index].maxmin[key];
