@@ -86,7 +86,6 @@
     <Content Include="3D\scripts\tween.js" />
     <Content Include="3D\scripts\xml2json.js" />
     <Content Include="packages.config" />
-    <Content Include="Website\correlatepicker.html" />
     <Content Include="Website\css\style.css" />
     <Content Include="Website\index.html" />
     <Content Include="Website\js\index.js" />

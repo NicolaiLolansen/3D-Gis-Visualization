@@ -29,7 +29,9 @@ var initScene = function () {
         _scene = window.sessionStorage.scene;
 
         //EKSTERN LOAD
-        loadScene(_scene);
+        loadScene(_scene, function () {
+            document.getElementById('loader').style.display = 'none';
+        });
     }
 }
 

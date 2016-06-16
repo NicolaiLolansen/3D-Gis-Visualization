@@ -4,7 +4,6 @@ function validate() {
         name: input.username.value,
         pass: input.password.value
     };
-    console.log(form);
     
 	$.ajax({
 	    url: 'http://api-geovizjs.rhcloud.com/login/',
@@ -14,8 +13,6 @@ function validate() {
         data: JSON.stringify(form),
         
         success: function (result) {
-            console.log("Success");
-            console.log(result);
             window.sessionStorage.userRole = 'builder';
             window.location = 'geoviz.html';
         },
@@ -43,8 +40,6 @@ function getScenes() {
         header: { 'Access-Control-Allow-Origin': '*' },
 
         success: function (scene_list) {
-            console.log(scene_list);
-            
             for (var scene in scene_list.saves) {
                 var name = scene_list.saves[scene];
                 var button = document.createElement('BUTTON');
