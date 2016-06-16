@@ -411,7 +411,17 @@ limitations:
         });
         project.map = {url: "http://kortforsyningen.kms.dk/service?servicename=orto_foraar&request=GetMap&service=WMS&version=1.1.1&LOGIN=student134859&PASSWORD=3dgis&layers=orto_foraar&format=image%2Fpng&srs=EPSG%3A25832"}
         project.layers = projectJSON.layers;
-
+        /* { servicename: orto_foraar,
+             request: GetMap,
+             service: WMS,
+             version:1.1.1,
+             LOGIN: student134859,
+             PASSWORD:3dgis,
+             layers:orto_foraar,
+             format:image%2Fpng,
+             srs=EPSG%3A25832
+           }
+        */
 
         //Since this method can be called again, we need to completely wipe the THREE.JS scene for any children, lights, cameras. as these will be set up
         //We wipe clean, because it might be in a later version, that lights and camera settings can be included in the project
@@ -436,7 +446,7 @@ limitations:
         app.raycaster = new THREE.Raycaster();
 
         app.octree = new THREE.Octree({
-            // uncomment below to see the octree (may kill the fps)
+            // uncomment below to see the octree (may impact the fps)
             // scene: app.scene,
             // when undeferred = true, objects are inserted immediately
             // instead of being deferred until next octree.update() call
@@ -495,7 +505,6 @@ limitations:
         
         projectJSON.planeData.planes.forEach(function (plane, i) {
             if (plane.detail.address == true && plane.buildings !== undefined){
-                console.log("True");
                 var models = [];
                 plane.buildings.models.forEach(function (model) {
                     var loadedGeometry = JSON.parse(model);
@@ -536,7 +545,6 @@ limitations:
                 app.mergeBuilding(plane, 1);
             }
            if (plane.layers != undefined) {
-               console.log("plane.layers was not undefined");
                 plane.layers.forEach(function (layer, j) {
                     if (plane.detail.layers[j].viz == false) {
                         console.log("Viz was false");
