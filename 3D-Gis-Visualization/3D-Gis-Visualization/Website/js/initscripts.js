@@ -439,8 +439,7 @@ openSaveMenu = function () {
             download_btn.download = scene_name;
             download_btn.href = url;
             download_field.style.display = 'block';
-            loader.style.display = 'none';
-            
+            //loader.style.display = 'none';
         } else {
             loader.style.display = 'none';
             download_field.style.display = 'none';
@@ -503,7 +502,6 @@ addressToScene = function (address) {
         url: url,
         dataType: "json",
     }).success(function (response) {
-        console.log(response);
         $.ajax({
             // url: "http://dawa.aws.dk/adresser/" + response.resultater[0].adresse.id,
             url: "http://dawa.aws.dk/adgangsadresser?id="+response.resultater[0].adresse.adgangsadresseid+"&srid=25832",

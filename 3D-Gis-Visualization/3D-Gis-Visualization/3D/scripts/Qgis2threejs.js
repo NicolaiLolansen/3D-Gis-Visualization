@@ -282,13 +282,9 @@ limitations:
 
         //Iterate over the planes to fill out the planeData accordingly
         project.plane.forEach(function (plane, i) {
-            //Initialize the plane object
+            //Initialize the plane object   
             planeData.planes[i] = { detail: {} };
 
-            //TODO, remove
-            if (plane.detail.address == true) {
-                console.log("address was true");
-            }
             if (plane.layers !== undefined) {
                 //If the plane has layers, we need to check if they have been visualized
                 //If they have, we save the geometry, else we save the url so we can load it in dynamically
@@ -300,7 +296,6 @@ limitations:
                         var a = [];
                         //If the layer has been visualised, save it
                         if (plane.detail.layers[j].viz == true) {
-                            console.log("Saving a GeoJson layer to file because viz was true");
 
                             layer.model.forEach(function (model, k) {
                                 var geo = new THREE.Geometry();
@@ -314,7 +309,6 @@ limitations:
 
                                 //If blocks were used to visualize, save them
                                 if (layer.block != undefined) {
-                                    console.log("Pushing blocks to the list");
                                     var result2 = layer.block[k].toJSON();
                                     var resultJSON2 = JSON.stringify(result2);
                                     blocks.push(resultJSON2);
@@ -559,7 +553,7 @@ limitations:
                     tween.start();
                     if (plane.detail.buildings == 2) {
                         console.log("Adding to octree");
-                    app.octree.add(loadedMesh);
+                        app.octree.add(loadedMesh);
                     }
                   
 
@@ -603,32 +597,27 @@ limitations:
             }
             
            if (plane.layers != undefined) {
-               console.log("plane.layers was defined");
                plane.detail.layers.forEach(function (layer, j) {
                     if (plane.detail.layers[j].viz == false) {
-                        console.log("Viz was false");
                         //Note down that we have to call this on this layer after we assign all the layers
                         geoList.push({ i: i, url: plane.detail.layers[j].url });
                        
                     } else {
-                        console.log("Viz was true");
-
-                    //If viz is true, load the object from the file
-                    var models = [];
-                    var blocks = [];
-                    plane.layers[j].model.forEach(function (model,k) {
-                        var loadedGeometry = JSON.parse(model);
-                        var loadedMesh = loader.parse(loadedGeometry);
-                        models.push(loadedMesh);
-                        app.scene.add(loadedMesh);
-                        if (plane.layers[j].block[k] != undefined) {
-                            var loadedGeometry2 = JSON.parse(plane.layers[j].block[k]);
-                            var loadedMesh2 = loader.parse(loadedGeometry2);
-                            blocks.push(loadedMesh2);
-                            app.scene.add(loadedMesh2);
-                        }
-                        
-                    });
+                        //If viz is true, load the object from the file
+                        var models = [];
+                        var blocks = [];
+                        plane.layers[j].model.forEach(function (model,k) {
+                            var loadedGeometry = JSON.parse(model);
+                            var loadedMesh = loader.parse(loadedGeometry);
+                            models.push(loadedMesh);
+                            app.scene.add(loadedMesh);
+                            if (plane.layers[j].block[k] != undefined) {
+                                var loadedGeometry2 = JSON.parse(plane.layers[j].block[k]);
+                                var loadedMesh2 = loader.parse(loadedGeometry2);
+                                blocks.push(loadedMesh2);
+                                app.scene.add(loadedMesh2);
+                            }
+                        });
 
                         for (var x = 0; x < models.length; x++) {
                             models[x].userData.layerId = j;
@@ -639,10 +628,9 @@ limitations:
                         plane.layers[j].block = blocks;
                     }
                 });
-           }
+            }
 
             if (app.project.plane[i] != undefined) {
-            console.log("Overwriting plane with index: " + i);
             var mesh = app.project.plane[i].mesh;
             app.project.plane[i] = plane;
             app.project.plane[i].mesh = mesh;
@@ -1298,12 +1286,15 @@ limitations:
                 var height_method = 'none';
 
                 if (doColour) {
-                    colour_method = (document.getElementById('c_building').checked) ? 'building' : 'block';
-                        initSpectrum(layer.maxmin[colour_data], "GeoJSON", colour_data);
+                    colour_method = (document.getElementById('c_building').checked) ? 'building' :
+                        (document.getElementById('c_block').checked) ? 'block' : 'none';
+
+                    initSpectrum(layer.maxmin[colour_data], "GeoJSON", colour_data);
                     layer.spectrumData = colour_data;
                 }
                 if (doHeight) {
-                    height_method = (document.getElementById('h_building').checked) ? 'building' : 'block';
+                    height_method = (document.getElementById('h_building').checked) ? 'building' : 
+                        (document.getElementById('h_block').checked) ? 'block' : 'none';
                 }
 
                 //Spectrum image for turning normalized data to a color
@@ -1490,7 +1481,6 @@ limitations:
                     model = null;
                     if (layer.block != undefined) {
                         if (layer.block[i] != undefined) {
-                            console.log("Deleting blocks");
                             app.scene.remove(layer.block[i]);
                             app.octree.remove(layer.block[i]);
                             layer.block[i] = null;
@@ -1513,23 +1503,6 @@ limitations:
             obj.material = high_mat;
         };
 
- 
-        // create a highlight object (if layer type is Point, slightly bigger than the object)
-       // var highlightObject = new THREE.Group();
-        //var clone, s = (layer.type == Q3D.LayerType.Point) ? 1.01 : 1;
-
-        //console.log("Trying to make sprite with this label: " + app.address);
-        //var sprite = app.makeTextSprite(app.address, 24);
-
-        /*for (var i = 0, l = f.objs.length; i < l; i++) {
-            clone = f.objs[i].clone();
-            console.log(clone.matrixWorld);
-            clone.traverse(setMaterial);
-            if (s != 1) clone.scale.set(clone.scale.x * s, clone.scale.y * s, clone.scale.z * s);
-
-
-            highlightObject.add(clone);
-        } */
         var clone = model.clone();
         clone.material = high_mat;
         var s = 1.0;
@@ -2184,10 +2157,6 @@ limitations:
                 }
                 else if (response.features[i].geometry.type == "Polygon" || response.features[i].geometry.type == "MultiPolygon") {
 
-                    //TODO - Nicolai
-                    //console.log(response);
-                    //get points from feature
-                    //console.log("There are this many coordinates in feature " + i + " " + response.features[i].geometry.coordinates[0][0].length);
 
                     if (response.features[i].geometry.type == "Polygon") {
                         var length = response.features[i].geometry.coordinates[0].length;
@@ -2198,7 +2167,6 @@ limitations:
                     }
 
                     for (var j = 0; j < length; j++) {
-                        //  console.log(response.features[i].geometry.coordinates[0][0][j]);
                         if (polygon == "MultiPolygon") {
                             var x = response.features[i].geometry.coordinates[0][0][j][0];
                             var y = response.features[i].geometry.coordinates[0][0][j][1];
@@ -2414,7 +2382,7 @@ limitations:
       })
       .success(function (response) {
           if (response.length === 0) {
-              console.log("Bad stuff");
+              alert('Empty response');
           }
           else {
               app.address = response.vejstykke.adresseringsnavn + " " + response.husnr;
@@ -2427,16 +2395,6 @@ limitations:
               position.multiplyScalar(0.5);
               position.add(boundingBox.min);
               position.applyMatrix4(clone.matrixWorld);
-
-              /*
-              Makeshift method to iterate over all buildings in the scene
-              */
-              // for (var i = 0; i <= layer.f.length - 10; i++) {
-              //   console.log(layer.f[i].a[0]);
-              // }
-              //app.selectedLayerId = layerId;
-              //app.selectedFeatureId = featureId;
-           
 
               var n = new Date().getTime();
               var total = n - d;
@@ -2517,7 +2475,6 @@ limitations:
   }
 
   app.searchBuilding = function (value) {
-      console.log("Search buildign is called");
       var layertype = 0; //For polygons
       var featuretype = 0; //for FOT_ID
 
@@ -2525,8 +2482,6 @@ limitations:
       for (var i = 0; i < app.project.layers[layertype].a.length; i++) {
           //console.log(app.project.layers[layertype].a[1]);
           if (app.project.layers[layertype].a[i]["FOTID"] == value) {
-             // app.highlightFeature(layertype, i);
-              console.log("Highlighted building with FOT_ID: " + value);
 
              app.project.layers[layertype].model[i].geometry.computeBoundingBox();
            
