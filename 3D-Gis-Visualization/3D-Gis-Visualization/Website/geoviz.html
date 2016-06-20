@@ -149,7 +149,8 @@
             </div>
 
             <div id="enter-address" class="textfield-container">
-                <input type="text" id="address-field" placeholder="Address of scene area" class="textbox"/>
+                <input type="text" id="address-field" placeholder="Address of scene area" class="textbox"
+                        onkeydown = "if (event.keyCode == 13) document.getElementById('start-scene').click()"/>
             </div>
         </div>
         <div class="modal-footer">
@@ -235,7 +236,6 @@ and uses the following library:
 <script src="../3D/scripts/jquery-2.2.0.js"></script>
 <script src="../3D/scripts/jquery-ui.min.js"></script>
 <script src="./js/initscripts.js"></script>
-<script src="../3D/scripts/parser.js"></script>
 <script src="../3D/threejs/three.min.js"></script>
 <script src="../3D/scripts/Qgis2threejs.js"></script>
 <script src="../3D/threejs/OrbitControls.js"></script>

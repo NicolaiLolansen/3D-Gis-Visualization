@@ -17,8 +17,6 @@ Q3D.gui = {
     i: Q3D.application.showInfo,
     FOTsearch: '0000000000',
     Source: 'https://dl.dropboxusercontent.com/s/88vgr6io5q63cjg/energimaerke.csv',
-    getParseResult: getAllData,
-    getParseSources: getSources,
     getbounds: "http://wfs-kbhkort.kk.dk/k101/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=k101:karre&outputFormat=json",
     layers: [],
     opacity: 1.0,

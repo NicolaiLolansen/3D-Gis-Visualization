@@ -552,7 +552,6 @@ limitations:
                     });
                     tween.start();
                     if (plane.detail.buildings == 2) {
-                        console.log("Adding to octree");
                         app.octree.add(loadedMesh);
                     }
                   
@@ -2586,7 +2585,7 @@ limitations:
               //No buildings are present, give the opportunity to create them
               if (detail.buildings == 0) {
 
-                  folder.add(Q3D.gui.parameters, 'resolution').name('Add Buildings').onChange(function () {
+                  folder.add(Q3D.gui.parameters, 'resolution').name('Load Buildings').onChange(function () {
                       app.getBuildings(app.project.plane[index], object.userData.xmin, object.userData.ymin, object.userData.xmax, object.userData.ymax, object.userData.row, object.userData.column, object.userData.url, false,
                       function () {
                           detail.buildings = 1;

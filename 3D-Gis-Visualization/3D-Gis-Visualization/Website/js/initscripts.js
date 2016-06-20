@@ -86,6 +86,7 @@ var initGUI = function () {
         modal1.style.display = 'none';
     }
     spans[1].onclick = function () {
+        document.getElementById('start_viz').innerHTML = 'Visualize';
         //resetVizMenu();
         modal2.style.display = 'none';
     }
@@ -241,6 +242,8 @@ var startViz = function (callback) {
 
         if (colour_selected == 'default' && height_selected == 'default') {
             alert('No data source selected');
+            loader.style.display = 'none';
+            vizButton.innerHTML = 'Select data and try again.';
         } else {
             callback(colour_selected, height_selected, function () {
                 vizButton.innerHTML = 'Visualization Complete';
