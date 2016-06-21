@@ -17,7 +17,7 @@ var initScene = function () {
                 openStartMenu();
             });
         } else {
-            loadScene('kastellet', function () {
+            loadProject('kastellet', function () {
                 document.getElementById('loader').style.display = 'none';
                 openStartMenu();
             });
@@ -29,20 +29,21 @@ var initScene = function () {
         _scene = window.sessionStorage.scene;
 
         //EKSTERN LOAD
-        loadScene(_scene, function () {
+        loadProject(_scene, function () {
             document.getElementById('loader').style.display = 'none';
         });
     }
 }
 
-loadScene = function (scene_name, callback) {
-    var url = 'https://api-geovizjs.rhcloud.com/loadScene/';
+loadProject = function (scene_name, callback) {
+    var url = 'https://api-geovizjs.rhcloud.com/loadProject/';
     url = url + '?scene=' + scene_name;
     $.ajax({
         url: url,
         type: 'GET',
-        success: function (json_scene) {
-            app.loadProject(JSON.parse(json_scene));
+        data: {'project' : scene_name},
+        success: function (json_project) {
+            app.loadProject(JSON.parse(json_project));
             app.start();
             app.addEventListeners();
             callback();
@@ -287,22 +288,22 @@ var initSaveList = function () {
         contentType: "application/json; charset=utf-8",
         header: { 'Access-Control-Allow-Origin': '*' },
 
-        success: function (scene_list) {
+        success: function (project_list) {
 
-            for (var scene in scene_list.saves) {
-                var scene_name = scene_list.saves[scene];
-                if ((typeof scene_name == 'string' && scene_name.match(/.json/gi))) {
-                    var sel_name = scene_name.replace('.json', '');
+            for (var project in project_list.saves) {
+                var project_name = project_list.saves[project];
+                if ((typeof project_name == 'string' && project_name.match(/.json/gi))) {
+                    var sel_name = project_name.replace('.json', '');
                     selectMenu.options.add(new Option(sel_name, sel_name));
                 }
             }
             savedlist.appendChild(selectMenu);
             var btn = document.getElementById('load-scene');
-            btn.innerHTML = 'Select Scene From Menu Below';
+            btn.innerHTML = 'Select Project From Menu Below';
         },
         error: function (err) {
             var btn = document.getElementById('load-scene');
-            btn.innerHTML = 'No Saved Scenes';
+            btn.innerHTML = 'No Saved Projects';
         }
     });
 };
@@ -365,7 +366,7 @@ var openStartMenu = function () {
 }
 
 openSaveMenu = function () {
-    var scene_name_textbox = document.getElementById('scene-name-input');
+    var project_name_textbox = document.getElementById('project-name-input');
     var btn_save_local = document.getElementById('save-local');
     var btn_save_remote = document.getElementById('save-remote');
     var error_field = document.getElementById('save-error');
@@ -377,18 +378,18 @@ openSaveMenu = function () {
 
     btn_save_remote.onclick = function () {
        
-        var scene_name = scene_name_textbox.value;
-        if (scene_name != null && scene_name.length > 1) {
+        var project_name = project_name_textbox.value;
+        if (project_name != null && project_name.length > 1) {
             loader.style.display = 'block';
             $.ajax({
                 type: 'GET',
                 url: 'https://api-geovizjs.rhcloud.com/checkName/',
-                data: {'scene_name' : scene_name },
+                data: {'project_name' : project_name },
                 success: function (data) {
-                    var project = app.saveProject(scene_name);
+                    var project = app.saveProject(project_name);
                     var block = {
-                        scene_name: scene_name,
-                        scene: project
+                        project_name: project_name,
+                        project: project
                     };
 
                     var saveBlock = JSON.stringify(block);
@@ -396,18 +397,18 @@ openSaveMenu = function () {
 
                     $.ajax({
                         type: 'POST',
-                        url: 'https://api-geovizjs.rhcloud.com/saveScene/',
+                        url: 'https://api-geovizjs.rhcloud.com/saveProject/',
                         data: saveBlock,
                         contentType: 'application/json',
                         success: function (data) {
-                            alert("Saved Scene!");
+                            alert("Saved Project!");
                             //TODO: ADD GUI RESPONSE
                             loader.style.display = 'none';
                         },
                         failure: function (errMsg) {
-                            alert("Failed to save scene");
+                            alert("Failed to save project");
                             //TODO: ADD GUI RESPONSE
-                            error_field.innerHTML = 'Error Saving Scene';
+                            error_field.innerHTML = 'Error Saving Project';
                             error_field.style.display = 'block';
                             loader.style.display = 'none';
                         }
@@ -426,20 +427,20 @@ openSaveMenu = function () {
     }
 
     btn_save_local.onclick = function () {
-        var scene_name = scene_name_textbox.value;
+        var project_name = project_name_textbox.value;
         loader.style.display = 'block';
-        if (scene_name != null && scene_name.length > 1) {
+        if (project_name != null && project_name.length > 1) {
             error_field.style.display = 'none';
-            var scene = app.saveProject(scene_name);
-            var json = JSON.stringify(scene);
+            var project = app.saveProject(project_name);
+            var json = JSON.stringify(project);
             var blob = new Blob([json], { type: "application/json" });
             var url = URL.createObjectURL(blob);
 
-            if (!scene_name.match(/.json/gi)) {
-                scene_name = scene_name + '.json';
+            if (!project_name.match(/.json/gi)) {
+                project_name = project_name + '.json';
             }
 
-            download_btn.download = scene_name;
+            download_btn.download = project_name;
             download_btn.href = url;
             download_field.style.display = 'block';
             //loader.style.display = 'none';
@@ -455,13 +456,13 @@ openSaveMenu = function () {
 
 
 closeSaveMenu = function () {
-    var scene_name_textbox = document.getElementById('scene-name-input');
+    var project_name_textbox = document.getElementById('project-name-input');
     var btn_save_local = document.getElementById('save-local');
     var btn_save_remote = document.getElementById('save-remote');
     var error_field = document.getElementById('save-error');
     var download_btn = document.getElementById('download-link');
     var download_field = document.getElementById('download-field');
-    scene_name_textbox.value = '';
+    project_name_textbox.value = '';
     error_field.style.display = 'none';
     download_field.style.display = 'none';
     document.getElementById('save-modal').style.display = 'none';
