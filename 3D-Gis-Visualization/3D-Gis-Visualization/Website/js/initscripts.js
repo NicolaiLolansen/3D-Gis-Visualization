@@ -32,6 +32,9 @@ var initScene = function () {
         loadProject(_scene, function () {
             document.getElementById('loader').style.display = 'none';
         });
+    } else {
+        alert('Login required to access GeoViz');
+        window.location = 'index.html';
     }
 }
 
