@@ -4,9 +4,7 @@
 */
 
 var initScene = function () {
-    //TODO: REMOVE THIS LINE!!!!!!!!!
-    window.sessionStorage.userRole = 'builder';
-    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
     document.getElementById('loader').style.display = 'block';
     var _scene = 'default.json'; //Name of default scene
     if (window.sessionStorage.userRole == "builder") {
@@ -14,11 +12,12 @@ var initScene = function () {
         //TODO: REMOVE CONFIRMATION BOX BEFORE FINAL RELEASE
         var c = confirm('JEG ER KUN EN BOX UNDER TESTING\nOK -> Local Load (nordhavn.json)\nCancel -> Server Load (kastellet.json)');
         if (c) {
-            localLoad();
-            document.getElementById('loader').style.display = 'none';
-            openStartMenu();
+            localLoad(function () {
+                document.getElementById('loader').style.display = 'none';
+                openStartMenu();
+            });
         } else {
-            loadScene('kastellet', function () {
+            loadProject('kastellet', function () {
                 document.getElementById('loader').style.display = 'none';
                 openStartMenu();
             });
@@ -30,20 +29,24 @@ var initScene = function () {
         _scene = window.sessionStorage.scene;
 
         //EKSTERN LOAD
-        loadScene(_scene);
+        loadProject(_scene, function () {
+            document.getElementById('loader').style.display = 'none';
+        });
+    } else {
+        alert('Login required to access GeoViz');
+        window.location = 'index.html';
     }
 }
 
-loadScene = function (scene_name, callback) {
-    var url = 'https://api-geovizjs.rhcloud.com/loadScene/';
+loadProject = function (scene_name, callback) {
+    var url = 'https://api-geovizjs.rhcloud.com/loadProject/';
     url = url + '?scene=' + scene_name;
     $.ajax({
         url: url,
         type: 'GET',
-        success: function (json_scene) {
-            var loader = document.getElementById('loader');
-            loader.style.display = 'none';
-            app.loadProject(JSON.parse(json_scene));
+        data: {'project' : scene_name},
+        success: function (json_project) {
+            app.loadProject(JSON.parse(json_project));
             app.start();
             app.addEventListeners();
             callback();
@@ -54,13 +57,13 @@ loadScene = function (scene_name, callback) {
     });
 }
 
-localLoad = function () {
+localLoad = function (callback) {
     //LOKAL VERSION TIL TESTING
     $.getJSON("Blocktest.json", function (json) {
         app.loadProject(json);
         app.start();
         app.addEventListeners();
-        document.getElementById('loader').style.display = 'none';
+        callback();
         // this will show the info it in firebug console
     });
 }
@@ -74,7 +77,6 @@ var initGUI = function () {
     var modal2 = document.getElementById('modal-viz');
     var modal3 = document.getElementById('start-modal');
     var modal4 = document.getElementById('save-modal');
-    var modal5 = document.getElementById('load-modal');
 
     // Get the <span> element that closes the modals
     var spans = document.getElementsByClassName('close');
@@ -88,6 +90,7 @@ var initGUI = function () {
         modal1.style.display = 'none';
     }
     spans[1].onclick = function () {
+        document.getElementById('start_viz').innerHTML = 'Visualize';
         //resetVizMenu();
         modal2.style.display = 'none';
     }
@@ -97,17 +100,12 @@ var initGUI = function () {
     spans[3].onclick = function () {
         closeSaveMenu();
     }
-    spans[4].onclick = function () {
-        closeLoadMenu();
-    }
 
     //--------------------------------------- TESTING FUNCTIONS ------------------------------------
     window.onkeyup = function (e) {
         var key = e.keyCode ? e.keyCode : e.which;
 
-        if (key == 77) {
-            startViz();
-        } else if (key == 220) {
+        if (key == 220) {
             document.getElementById('loader').style.display = 'none';
         }
     }
@@ -248,6 +246,8 @@ var startViz = function (callback) {
 
         if (colour_selected == 'default' && height_selected == 'default') {
             alert('No data source selected');
+            loader.style.display = 'none';
+            vizButton.innerHTML = 'Select data and try again.';
         } else {
             callback(colour_selected, height_selected, function () {
                 vizButton.innerHTML = 'Visualization Complete';
@@ -291,22 +291,22 @@ var initSaveList = function () {
         contentType: "application/json; charset=utf-8",
         header: { 'Access-Control-Allow-Origin': '*' },
 
-        success: function (scene_list) {
+        success: function (project_list) {
 
-            for (var scene in scene_list.saves) {
-                var scene_name = scene_list.saves[scene];
-                if ((typeof scene_name == 'string' && scene_name.match(/.json/gi))) {
-                    var sel_name = scene_name.replace('.json', '');
+            for (var project in project_list.saves) {
+                var project_name = project_list.saves[project];
+                if ((typeof project_name == 'string' && project_name.match(/.json/gi))) {
+                    var sel_name = project_name.replace('.json', '');
                     selectMenu.options.add(new Option(sel_name, sel_name));
                 }
             }
             savedlist.appendChild(selectMenu);
             var btn = document.getElementById('load-scene');
-            btn.innerHTML = 'Select Scene From Menu Below';
+            btn.innerHTML = 'Select Project From Menu Below';
         },
         error: function (err) {
             var btn = document.getElementById('load-scene');
-            btn.innerHTML = 'No Saved Scenes';
+            btn.innerHTML = 'No Saved Projects';
         }
     });
 };
@@ -318,8 +318,6 @@ var initTextfield = function () {
 }
 
 var closeStartMenu = function () {
-    document.getElementById('new-scene').disabled = false;
-    document.getElementById('start-scene').disabled = true;
     document.getElementById('load-scene').style.display = 'block';
     document.getElementById('new-scene').style.display = 'block';
     document.getElementById('address-field').style.display = 'none';
@@ -333,7 +331,7 @@ var openStartMenu = function () {
     var address_div = document.getElementById('new-scene-div');
     var startScene = document.getElementById('start-scene');
     var back_arrow = document.getElementById('back_to_start');
-    startScene.disabled = true;
+    address_field.value = '';
     address_field.style.display = 'none';
     back_arrow.style.display = 'none';
 
@@ -345,75 +343,33 @@ var openStartMenu = function () {
     btn_newScene.onclick = function () {
         btn_loadScene.style.display = 'none';
         btn_newScene.style.display = 'none';
-        btn_newScene.disabled = true;
-        startScene.disabled = false;
         address_field.style.display = 'block';
         back_arrow.style.display = 'block';
+        startScene.onclick = function () {
+            var input = address_field.value;
+            if (input != null && input.length > 1) {
+                addressToScene(input);
+            } else {
+                alert('Invalid Address');
+            }
+        }
     }
 
     btn_loadScene.onclick = function () {
+        var c = confirm('Loading a new scene will cancel the current one.\nContinue?');
         if (c) {
             window.location = 'loadingpage.html';
         }
     }
 
     startScene.onclick = function () {
-        var input = address_field.value;
-        if (input != null && input.length > 1) {
-            addressToScene(input);
-        } else {
-            alert('Invalid Address');
-        }
+        closeStartMenu();
     }
     document.getElementById('start-modal').style.display = 'block';
 }
 
-var closeLoadMenu = function () {
-    var load_modal = document.getElementById('load-modal');
-    var uploader = document.getElementById('scene-uploader');
-    var local_btn = document.getElementById('load-local');
-    var remote_btn = document.getElementById('load-remote');
-    var back_btn = document.getElementById('back-btn');
-    uploader.style.display = 'none';
-    local_btn.style.display = 'block';
-    remote_btn.style.display = 'block';
-    load_modal.style.display = 'none';
-    back_btn.innerHTML = 'Back';
-}
-
-var openLoadMenu = function () {
-    var load_modal = document.getElementById('load-modal');
-    var uploader = document.getElementById('scene-uploader');
-    var local_btn = document.getElementById('load-local');
-    var remote_btn = document.getElementById('load-remote');
-    var back_btn = document.getElementById('back-btn');
-
-    uploader.style.display = 'none';
-
-    back_btn.onclick = function () {
-        closeLoadMenu();
-        openLoadMenu();
-    }
-
-    local_btn.onclick = function () {
-        if (window.File && window.FileReader && window.FileList && window.Blob) {
-            
-            local_btn.style.display = 'none';
-            remote_btn.style.display = 'none';
-            uploader.style.display = 'block';
-
-        } else {
-            alert('Scene upload not supported in this browser.');
-        }
-    }
-    remote_btn.onclick = function () {
-
-    }
-    load_modal.style.display = 'block';
-}
-
 openSaveMenu = function () {
-    var scene_name_textbox = document.getElementById('scene-name-input');
+    var project_name_textbox = document.getElementById('project-name-input');
     var btn_save_local = document.getElementById('save-local');
     var btn_save_remote = document.getElementById('save-remote');
     var error_field = document.getElementById('save-error');
@@ -425,18 +381,18 @@ openSaveMenu = function () {
 
     btn_save_remote.onclick = function () {
        
-        var scene_name = scene_name_textbox.value;
-        if (scene_name != null && scene_name.length > 1) {
+        var project_name = project_name_textbox.value;
+        if (project_name != null && project_name.length > 1) {
             loader.style.display = 'block';
             $.ajax({
                 type: 'GET',
                 url: 'https://api-geovizjs.rhcloud.com/checkName/',
-                data: {'scene_name' : scene_name },
+                data: {'project_name' : project_name },
                 success: function (data) {
-                    var project = app.saveProject(scene_name);
+                    var project = app.saveProject(project_name);
                     var block = {
-                        scene_name: scene_name,
-                        scene: project
+                        project_name: project_name,
+                        project: project
                     };
 
                     var saveBlock = JSON.stringify(block);
@@ -444,18 +400,18 @@ openSaveMenu = function () {
 
                     $.ajax({
                         type: 'POST',
-                        url: 'https://api-geovizjs.rhcloud.com/saveScene/',
+                        url: 'https://api-geovizjs.rhcloud.com/saveProject/',
                         data: saveBlock,
                         contentType: 'application/json',
                         success: function (data) {
-                            alert("Saved Scene!");
+                            alert("Saved Project!");
                             //TODO: ADD GUI RESPONSE
                             loader.style.display = 'none';
                         },
                         failure: function (errMsg) {
-                            alert("Failed to save scene");
+                            alert("Failed to save project");
                             //TODO: ADD GUI RESPONSE
-                            error_field.innerHTML = 'Error Saving Scene';
+                            error_field.innerHTML = 'Error Saving Project';
                             error_field.style.display = 'block';
                             loader.style.display = 'none';
                         }
@@ -474,24 +430,23 @@ openSaveMenu = function () {
     }
 
     btn_save_local.onclick = function () {
-        var scene_name = scene_name_textbox.value;
+        var project_name = project_name_textbox.value;
         loader.style.display = 'block';
-        if (scene_name != null && scene_name.length > 1) {
+        if (project_name != null && project_name.length > 1) {
             error_field.style.display = 'none';
-            var scene = app.saveProject(scene_name);
-            var json = JSON.stringify(scene);
+            var project = app.saveProject(project_name);
+            var json = JSON.stringify(project);
             var blob = new Blob([json], { type: "application/json" });
             var url = URL.createObjectURL(blob);
 
-            if (!scene_name.match(/.json/gi)) {
-                scene_name = scene_name + '.json';
+            if (!project_name.match(/.json/gi)) {
+                project_name = project_name + '.json';
             }
 
-            download_btn.download = scene_name;
+            download_btn.download = project_name;
             download_btn.href = url;
             download_field.style.display = 'block';
-            loader.style.display = 'none';
-            
+            //loader.style.display = 'none';
         } else {
             loader.style.display = 'none';
             download_field.style.display = 'none';
@@ -504,13 +459,13 @@ openSaveMenu = function () {
 
 
 closeSaveMenu = function () {
-    var scene_name_textbox = document.getElementById('scene-name-input');
+    var project_name_textbox = document.getElementById('project-name-input');
     var btn_save_local = document.getElementById('save-local');
     var btn_save_remote = document.getElementById('save-remote');
     var error_field = document.getElementById('save-error');
     var download_btn = document.getElementById('download-link');
     var download_field = document.getElementById('download-field');
-    scene_name_textbox.value = '';
+    project_name_textbox.value = '';
     error_field.style.display = 'none';
     download_field.style.display = 'none';
     document.getElementById('save-modal').style.display = 'none';
@@ -549,12 +504,11 @@ initSpectrum = function (attribute,type,field) {
 // ------------------------------------- ADDRESS TO SCENE ---------------------------------------------
 addressToScene = function (address) {
     var url = "http://dawa.aws.dk/datavask/adresser?betegnelse=" + address;
-
+    document.getElementById('loader').style.display = 'block';
     $.ajax({
         url: url,
         dataType: "json",
     }).success(function (response) {
-        console.log(response);
         $.ajax({
             // url: "http://dawa.aws.dk/adresser/" + response.resultater[0].adresse.id,
             url: "http://dawa.aws.dk/adgangsadresser?id="+response.resultater[0].adresse.adgangsadresseid+"&srid=25832",
@@ -576,12 +530,9 @@ addressToScene = function (address) {
                 app.project.layers.forEach(function (layer) {
                           
                     layer.model.forEach(function(child){
-
-                         
                         app.scene.remove(child);
                         app.octree.remove(child);
-                        delete child;
-                          
+                        delete child;                   
                     });
                 });
             }
@@ -641,6 +592,9 @@ addressToScene = function (address) {
     }).fail(function(error){ 
           
           
+    })
+    .done(function (e) {
+        document.getElementById('loader').style.display = 'none';
     });
 
 }

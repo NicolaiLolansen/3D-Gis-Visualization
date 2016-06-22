@@ -9,14 +9,14 @@
         type: 'GET',
         contentType: "application/json; charset=utf-8",
         header: { 'Access-Control-Allow-Origin': '*' },
-        success: function (scene_list) {
+        success: function (project_list) {
             document.getElementById('empty-list').style.display = 'none';
 
             var count = 0;
             var row = document.createElement('tr');
 
-            for (var scene in scene_list.saves) {
-                var name = scene_list.saves[scene];
+            for (var project in project_list.saves) {
+                var name = project_list.saves[project];
                 var button = document.createElement('BUTTON');
                 var text = document.createTextNode(name.replace('.json', ''));
 
@@ -46,103 +46,8 @@
 
 }
 
-// --------------------------------------- START D&D READER --------------------------------------------- 
-// DRAG AND DROP FILEREADER. source: http://www.html5rocks.com/en/tutorials/file/dndfiles/
-/*
-var reader;
-
-function abortRead() {
-    reader.abort();
-}
-
-function errorHandler(evt) {
-    switch (evt.target.error.code) {
-        case evt.target.error.NOT_FOUND_ERR:
-            alert('File Not Found!');
-            break;
-        case evt.target.error.NOT_READABLE_ERR:
-            alert('File is not readable');
-            break;
-        case evt.target.error.ABORT_ERR:
-            break; // noop
-        default:
-            alert('An error occurred reading this file.');
-    };
-}
-var count = 0;
-function updateProgress(evt) {
-    var status = document.getElementById('status-message');
-    // evt is an ProgressEvent.
-    if (evt.lengthComputable) {
-        var percentLoaded = Math.round((evt.loaded / evt.total) * 100);
-        // Increase the progress bar length.
-        if (percentLoaded < 100) {
-            progress.style.width = percentLoaded + '%';
-            progress.textContent = percentLoaded + '%';
-            for (var i = 0; i <= count; i++) {
-                status.innerHTML = status.innerHTML + '. ';
-            }
-            count = (count + 1) % 5;
-            if (count == 0) {
-                status.innerHTML = 'Loading';
-            }
-        }
-    }
-}
-
-function handleFileSelect(evt) {
-    // Reset progress indicator on new file selection.
-    progress.style.width = '0%';
-    progress.textContent = '0%';
-    var status = document.getElementById('status-message');
-    reader = new FileReader();
-    reader.onerror = errorHandler;
-    reader.onprogress = updateProgress;
-    reader.onabort = function (e) {
-        alert('File read cancelled');
-    };
-    reader.onloadstart = function (e) {
-        status.innerHTML = 'Loading';
-        document.getElementById('progress_bar').className = 'loading';
-    };
-    reader.onload = function (e) {
-        // Ensure that the progress bar displays 100% at the end.
-        progress.style.width = '100%';
-        progress.textContent = '100%';
-        var project = JSON.parse(e.target.result);
-        var name = project.title;
-        var block = {
-            scene_name: name,
-            scene: project
-        };
-
-        var saveBlock = JSON.stringify(block);
-
-
-        $.ajax({
-            type: 'POST',
-            url: 'https://api-geovizjs.rhcloud.com/saveScene/',
-            data: saveBlock,
-            contentType: 'application/json',
-            success: function (data) {
-                alert("success");
-                initLoadTable();
-            },
-            failure: function (errMsg) {
-                alert("FAIL");
-                console.log(errMsg);
-            }
-        });
-    }
-
-    // Read in the image file as a binary string.
-    reader.readAsBinaryString(evt.target.files[0]);
-}
-
-document.getElementById('files').addEventListener('change', handleFileSelect, false);
-*/
+//Upload tracker
 var progress = document.querySelector('.percent');
-
 document.getElementById('files').addEventListener('change', function (e) {
     var status = document.getElementById('status-message');
     var file = this.files[0];
@@ -187,13 +92,13 @@ document.getElementById('files').addEventListener('change', function (e) {
             status.innerHTML = 'Error Occured During Upload';
             initLoadTable();
         });
-        xhr.open('post', 'https://api-geovizjs.rhcloud.com/saveScene/', true);
+        xhr.open('post', 'https://api-geovizjs.rhcloud.com/saveProject/', true);
         xhr.setRequestHeader("Content-type", "application/json");
         var project = e.target.result;
         var projectJSON = JSON.parse(project);
         var block = {
-            scene_name: name,
-            scene: projectJSON
+            project_name: name,
+            project: projectJSON
         };
         var saveBlock = JSON.stringify(block);
 

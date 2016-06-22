@@ -17,8 +17,6 @@ Q3D.gui = {
     i: Q3D.application.showInfo,
     FOTsearch: '0000000000',
     Source: 'https://dl.dropboxusercontent.com/s/88vgr6io5q63cjg/energimaerke.csv',
-    getParseResult: getAllData,
-    getParseSources: getSources,
     getbounds: "http://wfs-kbhkort.kk.dk/k101/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=k101:karre&outputFormat=json",
     layers: [],
     opacity: 1.0,
@@ -55,15 +53,6 @@ Q3D.gui = {
   addLoadingButtons: function () {
       var dataFolder = this.gui.addFolder('Data Management');
       dataFolder.add('Load');
-      /*
-      dataFolder.add(parameters.lyr[i], 'Load').name('Load').onChange(function (value) {
-          var file = File("./randdata.csv");
-          Papa.parse(file, {
-              complete: function (results) {
-                  console.log(results);
-              }
-          });
-      }); */
   },
 
   // add commands folder for touch screen devices
@@ -83,7 +72,12 @@ Q3D.gui = {
 
       funcFolder.add(this.parameters, 'resolution').name('New Scene').onFinishChange(function () { openStartMenu(); });
       funcFolder.add(this.parameters, 'resolution').name('Save Project').onChange(function (value) { openSaveMenu(); }); 
-      funcFolder.add(this.parameters, 'resolution').name('Load Project').onChange(function (value) { openLoadMenu(); });
+      funcFolder.add(this.parameters, 'resolution').name('Load Project').onChange(function (value) {
+          var c = confirm('Exit current project to load another one?');
+          if (c) {
+              window.location = 'loadingpage.html';
+          }
+      });
 
       funcFolder.add(this.parameters, 'resolution').name('Toggle Spectrum').onChange(function (value) { toggleSpectrum(); });
   },
@@ -97,7 +91,6 @@ Q3D.gui = {
 
 //Extra functions. Refactor to seperate file.
 function colorAll(parameter){
-    console.log(color);
     console.log(parameters.WFSlayer);
     for (var i = 0; i < parameters.layers.model.length; i++) {
         console.log("Setting invisible");

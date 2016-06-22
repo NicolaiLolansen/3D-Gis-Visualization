@@ -4,7 +4,6 @@ function validate() {
         name: input.username.value,
         pass: input.password.value
     };
-    console.log(form);
     
 	$.ajax({
 	    url: 'http://api-geovizjs.rhcloud.com/login/',
@@ -14,8 +13,6 @@ function validate() {
         data: JSON.stringify(form),
         
         success: function (result) {
-            console.log("Success");
-            console.log(result);
             window.sessionStorage.userRole = 'builder';
             window.location = 'geoviz.html';
         },
@@ -42,21 +39,30 @@ function getScenes() {
         contentType: "application/json; charset=utf-8",
         header: { 'Access-Control-Allow-Origin': '*' },
 
-        success: function (scene_list) {
-            console.log(scene_list);
-            
-            for (var scene in scene_list.saves) {
-                var name = scene_list.saves[scene];
+        success: function (project_list) {
+            if (project_list.saves != undefined && project_list.saves.length > 0) {
+                for (var project in project_list.saves) {
+                    var name = project_list.saves[project];
+                    var button = document.createElement('BUTTON');
+                    var text = document.createTextNode(name.replace('.json', ''));
+                    button.id = name;
+                    button.name = name;
+                    button.type = 'button';
+                    button.onclick = function () {
+                        window.sessionStorage.scene = this.name;
+                        window.sessionStorage.userRole = 'observer';
+                        window.location = 'geoviz.html';
+                    };
+                    button.appendChild(text);
+                    element.appendChild(button);
+                }
+            } else {
                 var button = document.createElement('BUTTON');
-                var text = document.createTextNode(name.replace('.json', ''));
-                button.id = name;
-                button.name = name;
+                var text = document.createTextNode('No Saved Scenes');
                 button.type = 'button';
                 button.onclick = function () {
-                    window.sessionStorage.scene = this.name;
-                    window.sessionStorage.userRole = 'observer';
-                    window.location = 'geoviz.html';
-                };
+                    window.location = '../Website/index.html';
+                }
                 button.appendChild(text);
                 element.appendChild(button);
             }

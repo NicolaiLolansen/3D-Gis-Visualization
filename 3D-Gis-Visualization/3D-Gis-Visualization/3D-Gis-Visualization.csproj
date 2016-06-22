@@ -72,7 +72,6 @@
     <Content Include="3D\scripts\jquery-ui.min.js" />
     <Content Include="3D\scripts\menufunctions.js" />
     <Content Include="3D\scripts\Octree.js" />
-    <Content Include="3D\scripts\parser.js" />
     <Content Include="3D\stats\build\stats.min.js" />
     <Content Include="3D\threejs\OrbitControls.js" />
     <Content Include="3D\threejs\three.min.js" />
@@ -86,7 +85,6 @@
     <Content Include="3D\scripts\tween.js" />
     <Content Include="3D\scripts\xml2json.js" />
     <Content Include="packages.config" />
-    <Content Include="Website\correlatepicker.html" />
     <Content Include="Website\css\style.css" />
     <Content Include="Website\index.html" />
     <Content Include="Website\js\index.js" />

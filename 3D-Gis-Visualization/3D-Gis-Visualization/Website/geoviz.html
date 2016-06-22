@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Test</title>
+<title>GeoViz</title>
 <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     <link rel="stylesheet" type="text/css" href="css/Qgis2threejs.css">
     <link rel="stylesheet" type="text/css" href="css/style.css" >
@@ -149,7 +149,8 @@
             </div>
 
             <div id="enter-address" class="textfield-container">
-                <input type="text" id="address-field" placeholder="Address of scene area" class="textbox"/>
+                <input type="text" id="address-field" placeholder="Address of scene area" class="textbox"
+                        onkeydown = "if (event.keyCode == 13) document.getElementById('start-scene').click()"/>
             </div>
         </div>
         <div class="modal-footer">
@@ -167,7 +168,7 @@
             <h2>Save Scene</h2>
         </div>
         <div class="modal-body">
-            <input type="text" class="textbox" id="scene-name-input" placeholder="Scene Name" >
+            <input type="text" class="textbox" id="project-name-input" placeholder="Project Name" >
             <div id="save-error" style="color:#e60000; margin-left:20px; margin-bottom:20px"></div>
             <div id="download-field" class="download-field">
                 <a id="download-link"><button type="button">Click To Download Scene</button></a>
@@ -180,39 +181,6 @@
             </div>
         </div>
     </div>
-</div>
-
-<!-- load menu -->
-<div id="load-modal" class="modal">
-    <!-- Modal content -->
-    <div class="modal-content">
-        <div class="modal-header">
-            <span class="close" id="close-load-menu">×</span>
-            <h2>Load Scene</h2>
-        </div>
-        <div class="menu-button-container">
-            <button id="load-local" type="button" class="menu-button">Load From Local</button>
-            <button id="load-remote" type="button" class="menu-button">Load From Remote</button>
-            <div id="scene-uploader" class="scene-uploader">
-                <span class="upload-span">Choose File</span>
-                <input type="file" id="files" class="file-picker" />
-                <div id="progress_bar"><div class="percent">0%</div></div>
-            </div>
-        </div>
-        <div class="modal-footer">
-                <button id="back-btn">Back</button>
-        </div>
-    </div>
-</div>
-
-<div id="saved-scenes" class="modal">
-    <div class="modal-header">
-
-    </div>
-    <table class="scene-table">
-
-    </table>
-
 </div>
 
 <!-- loading circle -->
@@ -236,7 +204,7 @@
     </div>
 </div>
 <!-- popup -->
-<div class="spectrum-div" id="spectrum-div" draggable="true">
+<div class="spectrum-div" id="spectrum-div" draggable="true" style="display:none;">
     <div class="min-val" id="min-val">0</div>
     <img class="spectrum" src="resources/spectrum.png" id="spectrum">
     <div class="max-val" id="max-val">1</div>
@@ -268,7 +236,6 @@ and uses the following library:
 <script src="../3D/scripts/jquery-2.2.0.js"></script>
 <script src="../3D/scripts/jquery-ui.min.js"></script>
 <script src="./js/initscripts.js"></script>
-<script src="../3D/scripts/parser.js"></script>
 <script src="../3D/threejs/three.min.js"></script>
 <script src="../3D/scripts/Qgis2threejs.js"></script>
 <script src="../3D/threejs/OrbitControls.js"></script>
@@ -281,16 +248,17 @@ and uses the following library:
 var option = Q3D.Options;
 </script>
 <script>
+    if (typeof proj4 !== "undefined") document.getElementById("lib_proj4js").style.display = "list-item";
+    var container = document.getElementById("webgl");
+    document.getElementById('loader').style.display = 'block';
 
-if (typeof proj4 !== "undefined") document.getElementById("lib_proj4js").style.display = "list-item";
-var container = document.getElementById("webgl");
+    // initialize application
+    var app = Q3D.application;
+    app.init(container);
 
-// initialize application
-var app = Q3D.application;
-app.init(container);
-//project = new Q3D.Project({ crs: "EPSG:25832", title: "Untitled Project", baseExtent: [719777, 6187092, 722250, 6188663], rotation: 0, zShift: 0.0, width: 100.0, zExaggeration: 1.5 });
-initGUI();
-initScene();
+    //project = new Q3D.Project({ crs: "EPSG:25832", title: "Untitled Project", baseExtent: [719777, 6187092, 722250, 6188663], rotation: 0, zShift: 0.0, width: 100.0, zExaggeration: 1.5 });
+    initGUI();
+    initScene();
 </script>
 </body>
 </html>

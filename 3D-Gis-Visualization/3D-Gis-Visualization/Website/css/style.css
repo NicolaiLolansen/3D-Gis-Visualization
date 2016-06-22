@@ -107,7 +107,7 @@ body {
 .modal {
     display: none; /* Hidden by default */
     position: fixed; /* Stay in place */
-    z-index: 1; /* Sit on top */
+    z-index: 99999; /* Sit on top */
     padding-top: 100px; /* Location of the box */
     left: 0;
     top: 0;
@@ -178,7 +178,7 @@ body {
     color: white;
 }
 
-.modal-body {padding: 2px 2px;}
+.modal-body {padding: 8px 16px;}
 
 .modal-footer {
     padding: 16px 16px;
@@ -337,9 +337,6 @@ input[type="checkbox"] + label span {
 
 }
 
-.menu-button-container {
-    padding: 5px;
-}
 .menu-button {
   font-family: "Roboto", sans-serif;
   text-transform: uppercase;
