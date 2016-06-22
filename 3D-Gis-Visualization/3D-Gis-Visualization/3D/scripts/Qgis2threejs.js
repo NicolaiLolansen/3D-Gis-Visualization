@@ -1338,7 +1338,7 @@ limitations:
                             var x_max = maxminlist[colour_data].max;
                             var x_min = maxminlist[colour_data].min;
                             var x_norm = (x - x_min) / (x_max - x_min);
-                            var x_img = (x_norm * canvas.width - 1) | 0;
+                            var x_img = (x_norm * (canvas.width - 1)) | 0;
 
                             var colour = {};
                             if (!isNaN(x_img)) {
