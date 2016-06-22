@@ -143,7 +143,6 @@ limitations:
         app.stats = new Stats();
         app.stats.setMode(0); // 0: fps, 1: ms, 2: mb
 
-       
         // align top-left
         app.stats.domElement.style.position = 'absolute';
         app.stats.domElement.style.left = '0px';
@@ -476,7 +475,7 @@ limitations:
 
         app.octree = new THREE.Octree({
             // uncomment below to see the octree (may kill the fps)
-            // scene: app.scene,
+            //scene: app.scene,
             // when undeferred = true, objects are inserted immediately
             // instead of being deferred until next octree.update() call
             // this may decrease performance as it forces a matrix update
@@ -1969,13 +1968,8 @@ limitations:
       for (var column = -dim; column <= dim; column++) {
           for (var row = -dim; row <= dim; row++) {
 
-             
-
               var tempPlane = app.clonePlane.mesh.clone();
               tempPlane.visible = true;
-              //We dont want to draw the center tile
-
-
 
               THREE.ImageUtils.crossOrigin = '';
               var texture = THREE.ImageUtils.loadTexture(url + "&bbox=" + (xmin + (column * tilex)) + "," + (ymin + (row * tiley)) + "," + (xmin + ((column + 1) * tilex)) + "," + (ymin + ((row + 1) * tiley)));
@@ -2077,33 +2071,16 @@ limitations:
               materials.push(material);
 
               loader.load(url, function (texture) {
-                 
-                  /*
-                  Experiemtn if tile has tiled materials (for terrain example)
-                   loaded += 1;
-                  if (loaded == plane.material.materials.length) {    //We loaded all the images
-                  // the default
-                  var faceMaterial = new THREE.MeshFaceMaterial(materials);
-                  plane.material = faceMaterial;
-
-                       if (height <= 1024) {
-                        app.updateResolution(plane,num, width * 2, height * 2)
-
-                  }
-                    //           app.wmsTerrain(num,width,height);
-              }
-            }); */
                   plane.material = material;
                   if (height <= 1024) {
                       app.updateResolution(plane,num, width * 2, height * 2)
 
                   }
               });
-    }
+        }
   }
   
   app.removeLayer = function (id, removeoctree) {
-      //  app.wmsready = false;
           app.scene.children.forEach(function (child) {
               if (child.userData.layerId == id) {
                   app.scene.remove(child);
