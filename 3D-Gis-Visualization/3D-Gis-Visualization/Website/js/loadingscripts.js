@@ -26,7 +26,6 @@
                 button.type = 'button';
                 button.onclick = function () {
                     window.sessionStorage.scene = this.name;
-                    window.sessionStorage.userRole = 'observer';
                     window.location = 'geoviz.html';
                 };
                 button.appendChild(text);

@@ -67,11 +67,11 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="3D\dat-gui\dat.gui.min.js" />
-    <Content Include="3D\scripts\csvAPI.js" />
+    <Content Include="3D\lib\json2xml.js" />
+    <Content Include="3D\lib\xml2json.js" />
     <Content Include="3D\scripts\gml_worker.js" />
-    <Content Include="3D\scripts\jquery-ui.min.js" />
-    <Content Include="3D\scripts\menufunctions.js" />
-    <Content Include="3D\scripts\Octree.js" />
+    <Content Include="3D\lib\jquery-ui.min.js" />
+    <Content Include="3D\lib\Octree.js" />
     <Content Include="3D\stats\build\stats.min.js" />
     <Content Include="3D\threejs\OrbitControls.js" />
     <Content Include="3D\threejs\three.min.js" />
@@ -82,8 +82,7 @@
     <Content Include="Website\js\blowfish.js" />
     <Content Include="Website\js\dropzone.js" />
     <Content Include="Website\js\initscripts.js" />
-    <Content Include="3D\scripts\tween.js" />
-    <Content Include="3D\scripts\xml2json.js" />
+    <Content Include="3D\lib\tween.js" />
     <Content Include="packages.config" />
     <Content Include="Website\css\style.css" />
     <Content Include="Website\index.html" />
@@ -132,32 +131,17 @@
     <Content Include="Website\Blocktest.json" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="3D\scripts\dat-gui_panel.js" />
+    <Content Include="3D\dat-gui\dat-gui_panel.js" />
     <Content Include="Website\geoviz.html" />
-    <Content Include="3D\scripts\jquery-2.2.0.js" />
+    <Content Include="3D\lib\jquery-2.2.0.js" />
     <Content Include="Website\css\Qgis2threejs.css" />
-    <Content Include="3D\scripts\Qgis2threejs.js" />
-    <Content Include="RefactorTest\dat-gui_panel.js" />
-    <Content Include="RefactorTest\index.html" />
-    <Content Include="RefactorTest\index.js" />
-    <Content Include="RefactorTest\jquery-2.2.0.js" />
-    <Content Include="RefactorTest\parser.js" />
-    <Content Include="RefactorTest\Qgis2threejs.css" />
-    <Content Include="RefactorTest\Qgis2threejs.js" />
-    <Content Include="RefactorTest\Test.js" />
-    <Content Include="RefactorTest\Test_bygninger.js" />
-    <Content Include="RefactorTest\Test_dtu.js" />
+    <Content Include="3D\scripts\mainScript.js" />
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="RefactorTest\dat-gui\" />
-    <Folder Include="RefactorTest\PapaParse-4.1.2\" />
-    <Folder Include="RefactorTest\stats\" />
-    <Folder Include="RefactorTest\threejs\" />
-  </ItemGroup>
+  <ItemGroup />
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>

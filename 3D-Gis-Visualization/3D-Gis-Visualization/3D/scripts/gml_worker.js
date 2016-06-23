@@ -98,7 +98,6 @@ onmessage = function (e) {
    
 
     if (z > 0) {
-        //console.log((z * scale) / 2);
         geo.scale(1, 1, (z * scale) / 2);
     } else {
         geo.scale(1, 1, scale * 8);
@@ -124,7 +123,6 @@ onmessage = function (e) {
         var xml = new XMLHttpRequest();
         var url = data;
 
-        //console.log("Trying to call: " + data);
         xml.responseType = 'document';
         xml.overrideMimeType('text/xml');
         xml.onreadystatechange = function () {

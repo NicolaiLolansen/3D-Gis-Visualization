@@ -202,7 +202,7 @@
         </div>
     </div>
 </div>
-<!-- popup -->
+    <!-- Spectrum -->
 <div class="spectrum-div" id="spectrum-div" draggable="true" style="display:none;">
     <div class="min-val" id="min-val">0</div>
     <img class="spectrum" src="resources/spectrum.png" id="spectrum">
@@ -210,13 +210,13 @@
     <div class="type" id="type">"Type"</div>
     <div class="field-val" id="field-val">"Column"</div>
 </div>
+    <!-- popup -->
 <div id="popup" style="display:none;">
 <div id="closebtn">&times;</div>
 <div id="popupbar"></div>
 <div id="popupbody">
 <div id="popupcontent"></div>
 <div id="pageinfo">
-    <div><input id="urlbox" type="text"></div>
         <h1>Usage</h1>
         <div id="usage"></div>
         <h1>About</h1>
@@ -231,18 +231,21 @@ and uses the following library:
 </div>
 <!-- footer -->
 <div id="footer"></div>
-<script src="js/dropzone.js"></script>
-<script src="../3D/scripts/jquery-2.2.0.js"></script>
-<script src="../3D/scripts/jquery-ui.min.js"></script>
+<script src="../3D/lib/jquery-2.2.0.js"></script>
+<script src="../3D/lib/jquery-ui.min.js"></script>
+
+    <script src="../3D/lib/xml2json.js"></script>
+    <script src="../3D/lib/json2xml.js"></script>
+
 <script src="./js/initscripts.js"></script>
 <script src="../3D/threejs/three.min.js"></script>
-<script src="../3D/scripts/Qgis2threejs.js"></script>
+<script src="../3D/scripts/mainScript.js"></script>
 <script src="../3D/threejs/OrbitControls.js"></script>
 <script src="../3D/stats/build/stats.min.js"></script>
-<script src="../3D/scripts/tween.js"></script>
-<script src="../3D/scripts/Octree.js"></script>
+<script src="../3D/lib/tween.js"></script>
+<script src="../3D/lib/Octree.js"></script>
 <script src="../3D/dat-gui/dat.gui.min.js"></script>
-<script src="../3D/scripts/dat-gui_panel.js"></script>
+<script src="../3D/dat-gui/dat-gui_panel.js"></script>
 <script>
 var option = Q3D.Options;
 </script>
@@ -254,8 +257,6 @@ var option = Q3D.Options;
     // initialize application
     var app = Q3D.application;
     app.init(container);
-
-    //project = new Q3D.Project({ crs: "EPSG:25832", title: "Untitled Project", baseExtent: [719777, 6187092, 722250, 6188663], rotation: 0, zShift: 0.0, width: 100.0, zExaggeration: 1.5 });
     initGUI();
     initScene();
 </script>

@@ -6,22 +6,17 @@
 var initScene = function () {
 
     document.getElementById('loader').style.display = 'block';
-    var _scene = 'default.json'; //Name of default scene
+    var _scene = 'DTU.json'; //Name of default scene
+
     if (window.sessionStorage.userRole == "builder") {
         // Load default scene
-        //TODO: REMOVE CONFIRMATION BOX BEFORE FINAL RELEASE
-        var c = confirm('JEG ER KUN EN BOX UNDER TESTING\nOK -> Local Load (nordhavn.json)\nCancel -> Server Load (kastellet.json)');
-        if (c) {
-            localLoad(function () {
-                document.getElementById('loader').style.display = 'none';
-                openStartMenu();
-            });
-        } else {
-            loadProject('kastellet', function () {
-                document.getElementById('loader').style.display = 'none';
-                openStartMenu();
-            });
+        if (window.sessionStorage.scene != undefined) {
+            _scene = window.sessionStorage.scene;
         }
+        loadProject(_scene, function () {
+            document.getElementById('loader').style.display = 'none';
+            openStartMenu();
+        });
         Q3D.gui.init();
     }
     else if (window.sessionStorage.userRole == "observer") {
@@ -105,7 +100,7 @@ var initGUI = function () {
     window.onkeyup = function (e) {
         var key = e.keyCode ? e.keyCode : e.which;
 
-        if (key == 220) {
+        if (key == 27) {
             document.getElementById('loader').style.display = 'none';
         }
     }
@@ -446,7 +441,7 @@ openSaveMenu = function () {
             download_btn.download = project_name;
             download_btn.href = url;
             download_field.style.display = 'block';
-            //loader.style.display = 'none';
+            loader.style.display = 'none';
         } else {
             loader.style.display = 'none';
             download_field.style.display = 'none';

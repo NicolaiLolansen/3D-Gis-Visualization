@@ -106,7 +106,7 @@ THREE.OrbitControls = function ( object, domElement ) {
     this.noKeys = false;
 
     // The four arrow keys and additional keys
-    this.keys = { LEFT: 37, UP: 38, RIGHT: 39, BOTTOM: 40, AUTOROTATE: 82, UPSIDEDOWN: 85 };
+    this.keys = { LEFT: 37, UP: 38, RIGHT: 39, BOTTOM: 40, AUTOROTATE: 220};
 
     ////////////
     // internals
@@ -446,7 +446,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 
         if ( event.button === 0 ) {
             if ( scope.noRotate === true ) return;
-
+            
             state = STATE.ROTATE;
 
             rotateStart.set( event.clientX, event.clientY );
