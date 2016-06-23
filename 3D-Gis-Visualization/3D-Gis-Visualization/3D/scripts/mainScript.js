@@ -518,14 +518,7 @@ limitations:
                 }
                 plane.buildings.model = models;
                 plane.buildings.block = blocks;
-                /* if (app.project.plane[i] != undefined) {
-                    var mesh = app.project.plane[i].mesh;
-                    app.project.plane[i] = plane;
-                    app.project.plane[i].mesh = mesh;
-                } else {
-                    app.project.plane[i] = plane;
-                } */
-
+           
                 app.mergeBuilding(plane, 1);
             }
 
@@ -540,7 +533,7 @@ limitations:
                         var models = [];
                         var blocks = [];
                         if (plane.layers[j] != undefined) {
-                            console.log(plane.layers[j]);
+                            
 
                             if (plane.layers[j].model != undefined) {
 
@@ -716,12 +709,11 @@ limitations:
 
         //If we changed the active octree update
         if (app.octreeNeedsUpdate) {
-            //alert("Updating the octree");
+            
             app.octree.update();
             app.octreeObjects = app.octree.search(app.raycaster.ray.origin, 20, true, app.vector);
             app.octree.update();
-            //app.octreeObjects = app.octree.search(app.camera.position,20);
-
+           
         }
         //If the camera lookat has changed, search the octree
         var vector = new THREE.Vector3(0, 0, -1);
@@ -785,7 +777,6 @@ limitations:
     };
 
     app.queryableObjects = function () {
-        console.log(app.queryObjNeedsUpdate);
         if (app.queryObjNeedsUpdate) {
             app._queryableObjects = [];
 
@@ -793,7 +784,6 @@ limitations:
             if (app.project.plane != undefined) {
                 app.project.plane.forEach(function (plane) {
                     if (plane.buildings != undefined) {
-                        console.log("Plane had buildings");
                         plane.buildings.model.forEach(function (model) {
                             app._queryableObjects = app._queryableObjects.concat(model);
                         });
@@ -816,7 +806,6 @@ limitations:
             }
         }
         app.queryObjNeedsUpdate = false;
-        console.log(app._queryableObjects.length);
         return app._queryableObjects;
     };
 
@@ -970,7 +959,7 @@ limitations:
             // attributes
             r.push('<table class="attrs">');
             r.push("<caption>Attributes</caption>");
-            //   console.log(layerId);
+          
             var prop = [];
 
             for (var proper in layer.a[0]) {
@@ -1526,102 +1515,8 @@ limitations:
 
            app.buildBuildings(response,plane, xmin,ymin,xmax,ymax,row,column,url,showBuildings,callback);
 
-           /*
-
-
-           var coordinates = response.getElementsByTagName("coordinates");
-           var attributes = response.getElementsByTagName("Bygning");
-
-           //WebWorker to reduce stress on main thread
-           var myWorker1 = new Worker('../3D/scripts/gml_worker.js');
-           */
-           /*
-           Worker version of script
-           Input: GML response
-           */
-           /*
-           var count = 1;
-
-           if (coordinates.length > 0) {
-
-               plane.buildings = {};
-               plane.buildings.model = [];
-               plane.buildings.a = [];
-               plane.buildings.name = "FOT10";
-               plane.buildings.modelJSON = [];
-
-               var loader = new THREE.JSONLoader();
-               var widthP = app.project.width;
-               var heightP = app.project.height;
-
-               var widthM = xmax - xmin;
-               var heightM = ymax - ymin;
-
-               var factorX = (widthP / widthM);
-               var factorY = (heightP / heightM);
-
-               for (var i = 0; i < coordinates.length; i++) {
-                   //For every collection of coordinates, we have to convert them to threejs points
-                   var gmlPoints = new XMLSerializer().serializeToString(coordinates[i].childNodes[0]);
-                   var cords = gmlPoints.split(" ");
-
-                   if (attributes[i] != undefined) {
-                       var gmlAttributes = attributes[i].getElementsByTagName("*");
-                       plane.buildings.a[i] = {};
-                       for (var k = 0; k < gmlAttributes.length; k++) {
-                           var key = String(gmlAttributes[k].nodeName);
-                           var key = key.replace(/kms:|gml:/gi, "");
-                           var value = gmlAttributes[k].innerHTML;
-                           plane.buildings.a[i][key] = value;
-                       }
-                   }
-
-                   myWorker1.postMessage([app.project.zScale, app.project.layers.length, i, cords, widthP, heightP, column, row, xmax, ymax, factorX, factorY]);
-
-                   myWorker1.onmessage = function (e) {
-                       var loadedGeometry = JSON.parse(e.data[0]);
-
-                       var mesh = app.loader.parse(loadedGeometry);
-
-                       mesh.mapcoords = [e.data[2], e.data[3]];
-                       mesh.userData = {};
-                       mesh.userData.layerId = plane.mesh.userData.index;
-                       mesh.userData.featureId = e.data[1];
-                       mesh.userData.type = "building";
-
-                       plane.buildings.model[e.data[1]] = mesh;
-
-                       if (showBuildings == true) {
-                           app.octree.add(mesh);
-                           var opacity = 0.3;
-                       } else {
-                           var opacity = 1;
-                       }
-
-                       if (count >= coordinates.length) {
-
-                           plane.buildings.url = url;
-                           plane.buildings.name = name;
-                           plane.buildings.type = "GML";
-
-                           //Merge the buildings into one layer to save drawcalls improving FPS
-                           app.mergeBuilding(plane, 1);
-
-
-                           app.queryObjNeedsUpdate = true;
-                           app.queryableObjects();
-                           callback();
-
-                       }
-                       count++;
-                   }
-               }
-           }
-           
-           */
        })
      .fail(function (jqXHR, textStatus, errorThrown) {
-         console.log("GetBuildings is fucked");
          alert("Failed Query");
      });
 
@@ -1637,7 +1532,7 @@ limitations:
             var matrix = plane.buildings.model[i].matrix;
 
             mergeGeometry.merge(geometry, matrix, i);
-            //app.project.WFSlayers[0].model.geometry
+           
         }
 
 
@@ -1846,10 +1741,6 @@ limitations:
 
         app.clonePlane = planeObject;
         app.octree.update();
-        //app.scene.add(app.project.plane[0].mesh);
-        //app.project.plane[0].mesh.visible = false;
-        //app.updateResolution(plane, num, width, height);
-
 
 
     }
@@ -1985,11 +1876,9 @@ limitations:
             material.bbox = temp.bbox;
             materials.push(material);
 
-            console.log(plane);
             loader.load(url, function (texture) {
                 
                 plane.material = material;
-                console.log(plane.material.url);
                 if (height <= 1024) {
                     app.updateResolution(plane, detail, num, width * 2, height * 2)
 
@@ -2187,10 +2076,7 @@ limitations:
 
 
                         app.project.plane[index].buildings.a[i]["Adresse"] = address;
-                        if (index == 1) { console.log(response) };
-
-
-
+          
                         if (response.adgangspunkt.nøjagtighed == "A") {
                             app.project.plane[index].buildings.model[i].material.color.setHex(0x00ff00);
                             app.project.plane[index].buildings.a[i]["Adresse Nøjagtighed"] = "A";
@@ -2228,7 +2114,7 @@ limitations:
 
 
         for (var i = 0; i < app.project.layers[layertype].a.length; i++) {
-            //console.log(app.project.layers[layertype].a[1]);
+         
             if (app.project.layers[layertype].a[i]["FOTID"] == value) {
 
                 app.project.layers[layertype].model[i].geometry.computeBoundingBox();
@@ -2268,7 +2154,6 @@ limitations:
                 app.scene.remove(app.highlightObject);
                 app.highlightObject = null;
 
-                console.log("Closing the menu");
                 var folder = Q3D.gui.gui.__folders["Selected Feature"];
                 Q3D.gui.gui.__ul.removeChild(folder.domElement.parentNode);
                 delete Q3D.gui.gui.__folders["Selected Feature"];
@@ -2299,7 +2184,7 @@ limitations:
 
             //If we dont have the menu, open it
             if (Q3D.gui.gui.__folders["Selected Feature"] == undefined) {
-                console.log("Folder should open");
+              
                 var folder = Q3D.gui.gui.addFolder("Selected Feature");
 
                 /*
@@ -2660,7 +2545,8 @@ limitations:
                 folder.open();
 
             } else { //If we have the menu, close it unless we have a new highlight
-                console.log("Closing the menu");
+                
+
                 var folder = Q3D.gui.gui.__folders["Selected Feature"];
                 Q3D.gui.gui.__ul.removeChild(folder.domElement.parentNode);
                 delete Q3D.gui.gui.__folders["Selected Feature"];
@@ -2763,8 +2649,7 @@ limitations:
 
         var end = new Date().getTime();
         var time = end - start;
-        console.log('Execution time: ' + time);
-
+ 
 
         //for (var i = 0, l = objs.length; i < l; i++) {
         var obj = objs[0];
@@ -2783,7 +2668,6 @@ limitations:
                 app.scene.remove(app.highlightPlane);
                 app.highlightPlane = null;
 
-                console.log("Closing the menu");
                 var folder = Q3D.gui.gui.__folders["Selected Feature"];
                 Q3D.gui.gui.__ul.removeChild(folder.domElement.parentNode);
                 delete Q3D.gui.gui.__folders["Selected Feature"];
@@ -2931,12 +2815,12 @@ limitations:
             dataType: "json",
         })
        .success(function (response) {
-           console.log(response);
+          
            console.log("Found: " + response.features.length + " Features");
 
            if (response.features.length > 0) {
                if (plane.layers == undefined) {
-                   alert("Plane was empty for geoJSON");
+                
                    plane.layers = [];
                }
 
@@ -3082,9 +2966,7 @@ limitations:
                            app.scene.add(mesh);
                            points = [];
                            count++;
-                       } else {
-                           console.log("Geometry was outside bbox!");
-                       }
+                       } 
                        points = [];
                    }
 
